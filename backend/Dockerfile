@@ -1,7 +1,7 @@
-FROM eclipse-temurin:21-jdk AS build
+FROM maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY . .
-RUN ./mvnw -DskipTests package
+RUN mvn -DskipTests package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app

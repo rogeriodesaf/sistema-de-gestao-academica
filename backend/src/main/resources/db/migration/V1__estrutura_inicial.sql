@@ -1,3 +1,17 @@
+create sequence usuarios_SEQ start with 1 increment by 50;
+create sequence alunos_SEQ start with 1 increment by 50;
+create sequence professores_SEQ start with 1 increment by 50;
+create sequence cursos_SEQ start with 1 increment by 50;
+create sequence disciplinas_SEQ start with 1 increment by 50;
+create sequence turmas_SEQ start with 1 increment by 50;
+create sequence vinculos_professor_disciplina_turma_SEQ start with 1 increment by 50;
+create sequence matriculas_SEQ start with 1 increment by 50;
+create sequence historicos_escolares_SEQ start with 1 increment by 50;
+create sequence planos_ensino_SEQ start with 1 increment by 50;
+create sequence aulas_ministradas_SEQ start with 1 increment by 50;
+create sequence frequencias_SEQ start with 1 increment by 50;
+create sequence notas_SEQ start with 1 increment by 50;
+
 create table usuarios (
     id bigserial primary key,
     nome varchar(255) not null,
