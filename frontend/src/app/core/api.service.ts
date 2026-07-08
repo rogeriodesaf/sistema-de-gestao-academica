@@ -15,11 +15,25 @@ export class ApiService {
     return this.http.post(`${this.api}/${endpoint}`, dados);
   }
 
+  buscar(endpoint: string, id: number) {
+    return this.http.get<any>(`${this.api}/${endpoint}/${id}`);
+  }
+
   excluir(endpoint: string, id: number) {
     return this.http.delete(`${this.api}/${endpoint}/${id}`);
   }
 
+  enviarArquivo(endpoint: string, id: number, acao: string, arquivo: File) {
+    const dados = new FormData();
+    dados.append('arquivo', arquivo);
+    return this.http.post(`${this.api}/${endpoint}/${id}/${acao}`, dados);
+  }
+
+  removerArquivo(endpoint: string, id: number, acao: string) {
+    return this.http.delete(`${this.api}/${endpoint}/${id}/${acao}`);
+  }
+
   dashboard() {
-    return this.http.get<Record<string, number>>(`${this.api}/dashboard`);
+    return this.http.get<Record<string, any>>(`${this.api}/dashboard`);
   }
 }

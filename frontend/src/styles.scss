@@ -69,12 +69,14 @@ label {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   border: 1px solid #cfdad7;
   border-radius: 6px;
   padding: 10px;
   font: inherit;
+  background: white;
 }
 
 textarea {
@@ -89,6 +91,26 @@ button {
   color: white;
   padding: 10px 14px;
   cursor: pointer;
+}
+
+button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+button.secundario {
+  background: #e7efec;
+  color: #1c2c2d;
+}
+
+button.perigo {
+  background: #8f2f2f;
+}
+
+.acoes-form {
+  align-self: end;
+  display: flex;
+  gap: 10px;
 }
 
 .mensagem {
@@ -117,4 +139,115 @@ td {
 th {
   color: #53625f;
   font-size: .86rem;
+}
+
+.consulta {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.consulta > label {
+  max-width: 420px;
+}
+
+.matriz {
+  display: grid;
+  gap: 16px;
+}
+
+.matriz > header,
+.matriz article {
+  border: 1px solid #d8e3df;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.matriz h2,
+.matriz h3 {
+  margin: 0;
+}
+
+.matriz-modulo {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.matriz-modulo strong,
+.matriz header span {
+  color: #1f6468;
+  font-weight: 700;
+}
+
+.pdf-acoes {
+  min-width: 240px;
+}
+
+.pdf-acoes {
+  display: grid;
+  gap: 8px;
+}
+
+.pdf-acoes a {
+  color: #1f6468;
+  font-weight: 700;
+}
+
+.vazio {
+  border: 1px dashed #cfdad7;
+  border-radius: 8px;
+  padding: 18px;
+  margin-top: 18px;
+}
+
+.vazio h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+
+.graficos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.graficos article {
+  border: 1px solid #d8e3df;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.graficos h2 {
+  margin: 0 0 14px;
+  font-size: 1rem;
+}
+
+.barra {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.barra-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: .9rem;
+}
+
+.barra-trilho {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5eeeb;
+}
+
+.barra-trilho span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #1f6468;
 }

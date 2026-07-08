@@ -1,8 +1,11 @@
 package br.edu.sga.enums;
 
 public enum StatusMatriculaDisciplina {
+    ATIVA,
     MATRICULADO,
     TRANCADO,
     CANCELADO,
-    CONCLUIDO
+    CONCLUIDA,
+    CONCLUIDO,
+    REPROVADA
 }

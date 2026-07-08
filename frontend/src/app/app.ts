@@ -10,24 +10,39 @@ import { AuthService } from './core/auth.service';
   styleUrl: './app.scss'
 })
 export class App {
-  menu = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/alunos', label: 'Alunos' },
-    { path: '/professores', label: 'Professores' },
-    { path: '/cursos', label: 'Cursos' },
-    { path: '/disciplinas', label: 'Disciplinas' },
-    { path: '/turmas', label: 'Turmas' },
-    { path: '/anos-letivos', label: 'Anos letivos' },
-    { path: '/periodos-letivos', label: 'Periodos letivos' },
-    { path: '/montagem-periodo', label: 'Montagem do periodo' },
-    { path: '/ofertas-disciplinas', label: 'Ofertas' },
-    { path: '/matriculas-disciplinas', label: 'Matriculas em disciplinas' },
-    { path: '/planos-ensino', label: 'Plano de ensino' },
-    { path: '/aulas', label: 'Aulas' },
-    { path: '/frequencias', label: 'Frequencia' },
-    { path: '/notas', label: 'Notas' },
-    { path: '/historicos', label: 'Historico' },
-    { path: '/relatorios', label: 'Relatorios' }
+  menuGrupos = [
+    { titulo: 'Dashboard', itens: [{ path: '/dashboard', label: 'Dashboard' }] },
+    { titulo: 'Cadastros', itens: [
+      { path: '/alunos', label: 'Alunos' },
+      { path: '/professores', label: 'Professores' },
+      { path: '/cursos', label: 'Cursos' },
+      { path: '/disciplinas', label: 'Disciplinas' },
+      { path: '/modulos', label: 'Modulos' }
+    ] },
+    { titulo: 'Organizacao Academica', itens: [
+      { path: '/anos-letivos', label: 'Anos letivos' },
+      { path: '/periodos-letivos', label: 'Periodos letivos' },
+      { path: '/turmas', label: 'Turmas' },
+      { path: '/matriz-curricular', label: 'Matriz curricular' },
+      { path: '/montagem-periodo', label: 'Montagem do periodo' },
+      { path: '/ofertas-disciplinas', label: 'Ofertas de disciplinas' }
+    ] },
+    { titulo: 'Academico', itens: [
+      { path: '/matriculas-disciplinas', label: 'Matriculas em disciplinas' },
+      { path: '/planos-ensino', label: 'Plano de ensino' },
+      { path: '/aulas', label: 'Aulas' },
+      { path: '/frequencias', label: 'Frequencia' },
+      { path: '/notas', label: 'Notas' }
+    ] },
+    { titulo: 'Consultas', itens: [
+      { path: '/historicos', label: 'Historico escolar' },
+      { path: '/relatorios', label: 'Relatorios' }
+    ] },
+    { titulo: 'Administracao', itens: [
+      { path: '/usuarios', label: 'Usuarios' },
+      { path: '/perfis', label: 'Perfis' },
+      { path: '/configuracoes', label: 'Configuracoes' }
+    ] }
   ];
 
   constructor(public auth: AuthService) {}

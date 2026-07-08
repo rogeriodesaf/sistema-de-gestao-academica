@@ -1,9 +1,30 @@
 <section class="painel">
-  <h1>Dashboard</h1>
+  <header class="cabecalho">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Visao geral dos cadastros, ofertas, matriculas e andamento academico.</p>
+    </div>
+  </header>
+
   <div class="metricas">
-    <article *ngFor="let item of dados | keyvalue">
-      <span>{{ item.key }}</span>
-      <strong>{{ item.value }}</strong>
+    <article *ngFor="let item of metricas()">
+      <span>{{ label(item.chave) | titlecase }}</span>
+      <strong>{{ item.valor }}</strong>
+    </article>
+  </div>
+
+  <div class="graficos">
+    <article *ngFor="let grafico of graficos()">
+      <h2>{{ label(grafico.chave) | titlecase }}</h2>
+      <div class="barra" *ngFor="let item of grafico.itens">
+        <div class="barra-topo">
+          <span>{{ item.rotulo }}</span>
+          <strong>{{ item.total }}</strong>
+        </div>
+        <div class="barra-trilho">
+          <span [style.width.%]="(item.total / maior(grafico.itens)) * 100"></span>
+        </div>
+      </div>
     </article>
   </div>
 </section>

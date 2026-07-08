@@ -40,6 +40,8 @@ public class MatriculaDisciplinaResource {
     public MatriculaDisciplina atualizar(@PathParam("id") Long id, @Valid MatriculaDisciplina entrada) {
         MatriculaDisciplina atual = buscar(id);
         atual.status = entrada.status;
+        atual.notaFinal = entrada.notaFinal;
+        atual.frequenciaFinal = entrada.frequenciaFinal;
         atual.observacoes = entrada.observacoes;
         return atual;
     }

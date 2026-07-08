@@ -3,6 +3,7 @@ package br.edu.sga.entity;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -21,5 +22,6 @@ public class Professor extends PanacheEntity {
     public String formacao;
     public boolean ativo = true;
     @OneToOne
+    @JoinColumn(name = "usuario_id")
     public Usuario usuario;
 }

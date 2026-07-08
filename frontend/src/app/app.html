@@ -6,7 +6,10 @@
         <span>Sistema de Gestao Academica</span>
       </div>
       <nav>
-        <a *ngFor="let item of menu" [routerLink]="item.path" routerLinkActive="ativo">{{ item.label }}</a>
+        <section *ngFor="let grupo of menuGrupos" class="menu-grupo">
+          <h2>{{ grupo.titulo }}</h2>
+          <a *ngFor="let item of grupo.itens" [routerLink]="item.path" routerLinkActive="ativo">{{ item.label }}</a>
+        </section>
       </nav>
     </aside>
 

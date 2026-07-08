@@ -28,7 +28,21 @@
 
 nav {
   display: grid;
-  gap: 6px;
+  gap: 18px;
+}
+
+.menu-grupo {
+  display: grid;
+  gap: 5px;
+}
+
+.menu-grupo h2 {
+  margin: 0 0 4px;
+  color: #9fb8b8;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
 
 nav a {

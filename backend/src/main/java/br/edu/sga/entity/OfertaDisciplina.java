@@ -28,6 +28,12 @@ public class OfertaDisciplina extends PanacheEntity {
     @NotNull
     public PeriodoLetivo periodoLetivo;
     @ManyToOne
+    @JoinColumn(name = "curso_id")
+    public Curso curso;
+    @ManyToOne
+    @JoinColumn(name = "modulo_id")
+    public Modulo modulo;
+    @ManyToOne
     @JoinColumn(name = "disciplina_id")
     @NotNull
     public Disciplina disciplina;
@@ -35,6 +41,8 @@ public class OfertaDisciplina extends PanacheEntity {
     @JoinColumn(name = "professor_id")
     public Professor professor;
     public Integer vagas;
+    public String horario;
+    public String sala;
     @Column(name = "carga_horaria_prevista")
     public Integer cargaHorariaPrevista;
     @Column(name = "carga_horaria_ministrada")
