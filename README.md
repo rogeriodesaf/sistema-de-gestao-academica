@@ -92,9 +92,27 @@ Para o frontend, publique `frontend/Dockerfile` ou gere `npm run build` e hosped
 - Login com JWT e senha criptografada por PBKDF2.
 - Usuario administrador inicial por seed de startup.
 - CRUDs REST para alunos, professores, cursos, disciplinas, turmas, vinculos, planos de ensino, aulas e historicos.
-- Matricula com criacao automatica de historico escolar.
+- Modelo academico flexivel para seminarios e outras instituicoes: Curso -> Turma -> Ano Letivo -> Periodo Letivo -> Oferta de Disciplina -> Matricula em Disciplina -> Historico Escolar.
+- Turmas com descricao, turno, quantidade maxima de alunos e status de planejamento/abertura/andamento/encerramento.
+- Cadastro de anos letivos e periodos letivos, permitindo modulos, semestres, bimestres, trimestres ou outro formato.
+- Ofertas de disciplinas por turma, ano letivo e periodo, com professor, vagas, carga horaria e status.
+- Matricula em disciplina com controle de vagas e criacao automatica de historico escolar.
+- Matricula antiga por turma/disciplina mantida por compatibilidade.
 - Lancamento de notas com calculo automatico de media e atualizacao do historico.
 - Frequencia por aula com consolidacao percentual no historico.
 - Encerramento de disciplina com lista de pendencias.
-- Dashboard e endpoints de relatorios.
+- Dashboard com ano/periodo atual, turmas ativas, ofertas abertas, disciplinas encerradas, alunos matriculados e vagas disponiveis.
+- Relatorios de alunos por turma, alunos por disciplina, disciplinas por periodo, carga horaria ministrada, historico, notas e frequencia.
 - Angular com login, layout administrativo, menu lateral, dashboard e telas principais.
+
+## Rotas academicas principais
+
+- `GET/POST /api/turmas`
+- `GET/POST /api/anos-letivos`
+- `GET/POST /api/periodos-letivos`
+- `GET/POST /api/ofertas-disciplinas`
+- `GET/POST /api/matriculas-disciplinas`
+- `GET /api/relatorios/alunos-por-turma?turmaId=1`
+- `GET /api/relatorios/alunos-por-disciplina?ofertaDisciplinaId=1`
+- `GET /api/relatorios/disciplinas-por-periodo?periodoLetivoId=1`
+- `GET /api/relatorios/carga-horaria-ministrada?ofertaDisciplinaId=1`

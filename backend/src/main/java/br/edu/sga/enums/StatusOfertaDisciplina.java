@@ -1,10 +1,8 @@
 package br.edu.sga.enums;
 
-public enum StatusTurma {
-    PLANEJADA,
+public enum StatusOfertaDisciplina {
     ABERTA,
     EM_ANDAMENTO,
     ENCERRADA,
-    CONCLUIDA,
     CANCELADA
 }

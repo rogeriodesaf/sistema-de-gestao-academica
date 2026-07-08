@@ -9,12 +9,17 @@ const camposBase = {
   professores: ['nome', 'cpf', 'email', 'telefone', 'formacao', 'ativo'],
   cursos: ['nome', 'descricao', 'cargaHorariaTotal', 'ativo'],
   disciplinas: ['nome', 'codigo', 'cargaHoraria', 'ementa', 'bibliografia', 'ativo'],
-  turmas: ['nome', 'anoPeriodo', 'dataInicio', 'dataTermino', 'status'],
+  turmas: ['curso.id', 'nome', 'descricao', 'turno', 'quantidadeMaximaAlunos', 'anoPeriodo', 'dataInicio', 'dataTermino', 'status'],
+  'anos-letivos': ['turma.id', 'ano', 'dataInicio', 'dataFim', 'status'],
+  'periodos-letivos': ['anoLetivo.id', 'nome', 'ordem', 'tipo', 'dataInicio', 'dataFim', 'status'],
+  'ofertas-disciplinas': ['turma.id', 'anoLetivo.id', 'periodoLetivo.id', 'disciplina.id', 'professor.id', 'vagas', 'cargaHorariaPrevista', 'cargaHorariaMinistrada', 'dataInicio', 'dataFim', 'status'],
+  'montagem-periodo': ['turma.id', 'anoLetivo.id', 'periodoLetivo.id', 'disciplina.id', 'professor.id', 'vagas', 'cargaHorariaPrevista', 'dataInicio', 'dataFim', 'status'],
   matriculas: ['aluno.id', 'turma.id', 'disciplina.id'],
+  'matriculas-disciplinas': ['aluno.id', 'ofertaDisciplina.id', 'dataMatricula', 'status', 'observacoes'],
   'planos-ensino': ['disciplina.id', 'turma.id', 'objetivos', 'ementa', 'conteudoProgramatico', 'metodologia', 'criteriosAvaliacao', 'bibliografiaBasica', 'bibliografiaComplementar'],
-  aulas: ['disciplina.id', 'turma.id', 'professor.id', 'dataAula', 'conteudoMinistrado', 'observacoes', 'cargaHorariaAula'],
+  aulas: ['ofertaDisciplina.id', 'disciplina.id', 'turma.id', 'professor.id', 'dataAula', 'conteudoMinistrado', 'observacoes', 'cargaHorariaAula'],
   frequencias: ['aula.id', 'aluno.id', 'presente', 'justificativa', 'observacao'],
-  notas: ['aluno.id', 'disciplina.id', 'turma.id', 'nota1', 'nota2', 'trabalho', 'avaliacaoFinal'],
+  notas: ['aluno.id', 'ofertaDisciplina.id', 'disciplina.id', 'turma.id', 'nota1', 'nota2', 'trabalho', 'avaliacaoFinal'],
   historicos: ['aluno.id', 'turma.id', 'disciplina.id', 'notaFinal', 'frequenciaFinal', 'situacao', 'periodoCursado'],
   relatorios: []
 };
@@ -26,7 +31,7 @@ export const routes: Routes = [
     path,
     component: CadastroPage,
     canActivate: [authGuard],
-    data: { titulo: path.replace('-', ' '), endpoint: path, campos }
+    data: { titulo: path.replaceAll('-', ' '), endpoint: path === 'montagem-periodo' ? 'ofertas-disciplinas' : path, campos }
   })),
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' }

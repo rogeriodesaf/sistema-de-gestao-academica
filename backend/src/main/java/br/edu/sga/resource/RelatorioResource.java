@@ -12,13 +12,37 @@ public class RelatorioResource {
     @GET
     @Path("/alunos-por-turma")
     public Object alunosPorTurma(@QueryParam("turmaId") Long turmaId) {
-        return Matricula.list("turma.id", turmaId);
+        return MatriculaDisciplina.list("ofertaDisciplina.turma.id", turmaId);
+    }
+
+    @GET
+    @Path("/alunos-por-disciplina")
+    public Object alunosPorDisciplina(@QueryParam("ofertaDisciplinaId") Long ofertaDisciplinaId) {
+        return MatriculaDisciplina.list("ofertaDisciplina.id", ofertaDisciplinaId);
+    }
+
+    @GET
+    @Path("/disciplinas-por-periodo")
+    public Object disciplinasPorPeriodo(@QueryParam("periodoLetivoId") Long periodoLetivoId) {
+        return OfertaDisciplina.list("periodoLetivo.id", periodoLetivoId);
+    }
+
+    @GET
+    @Path("/carga-horaria-ministrada")
+    public Object cargaHorariaMinistrada(@QueryParam("ofertaDisciplinaId") Long ofertaDisciplinaId) {
+        return Map.of(
+                "ofertaDisciplinaId", ofertaDisciplinaId,
+                "cargaHorariaMinistrada", AulaMinistrada.find("ofertaDisciplina.id", ofertaDisciplinaId).stream()
+                        .map(AulaMinistrada.class::cast)
+                        .mapToInt(aula -> aula.cargaHorariaAula == null ? 0 : aula.cargaHorariaAula)
+                        .sum()
+        );
     }
 
     @GET
     @Path("/frequencia-por-disciplina")
     public Object frequenciaPorDisciplina(@QueryParam("disciplinaId") Long disciplinaId) {
-        return Frequencia.list("aula.disciplina.id", disciplinaId);
+        return Frequencia.list("aula.disciplina.id = ?1 or aula.ofertaDisciplina.disciplina.id = ?1", disciplinaId);
     }
 
     @GET

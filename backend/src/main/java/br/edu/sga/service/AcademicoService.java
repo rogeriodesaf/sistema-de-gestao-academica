@@ -14,6 +14,34 @@ import java.util.List;
 @ApplicationScoped
 public class AcademicoService {
     @Transactional
+    public MatriculaDisciplina matricularEmDisciplina(MatriculaDisciplina matricula) {
+        if (matricula.aluno == null || matricula.ofertaDisciplina == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Aluno e oferta de disciplina sao obrigatorios");
+        }
+        OfertaDisciplina oferta = OfertaDisciplina.findById(matricula.ofertaDisciplina.id);
+        Aluno aluno = Aluno.findById(matricula.aluno.id);
+        if (oferta == null || aluno == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Aluno ou oferta de disciplina nao encontrados");
+        }
+        long jaMatriculado = MatriculaDisciplina.count("aluno = ?1 and ofertaDisciplina = ?2 and status <> ?3", aluno, oferta, StatusMatriculaDisciplina.CANCELADO);
+        if (jaMatriculado > 0) {
+            throw new ApiException(Response.Status.CONFLICT, "Aluno ja matriculado nesta oferta de disciplina");
+        }
+        if (oferta.vagas != null) {
+            long ocupadas = MatriculaDisciplina.count("ofertaDisciplina = ?1 and status = ?2", oferta, StatusMatriculaDisciplina.MATRICULADO);
+            if (ocupadas >= oferta.vagas) {
+                throw new ApiException(Response.Status.CONFLICT, "Oferta de disciplina sem vagas disponiveis");
+            }
+        }
+        matricula.aluno = aluno;
+        matricula.ofertaDisciplina = oferta;
+        matricula.status = StatusMatriculaDisciplina.MATRICULADO;
+        matricula.persist();
+        criarOuAtualizarHistorico(matricula);
+        return matricula;
+    }
+
+    @Transactional
     public Matricula matricular(Matricula matricula) {
         if (matricula.aluno == null || matricula.turma == null || matricula.disciplina == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aluno, turma e disciplina sao obrigatorios");
@@ -29,6 +57,14 @@ public class AcademicoService {
 
     @Transactional
     public Nota salvarNota(Nota nota) {
+        if (nota.ofertaDisciplina != null && nota.ofertaDisciplina.id != null) {
+            OfertaDisciplina oferta = OfertaDisciplina.findById(nota.ofertaDisciplina.id);
+            if (oferta != null) {
+                nota.ofertaDisciplina = oferta;
+                nota.turma = oferta.turma;
+                nota.disciplina = oferta.disciplina;
+            }
+        }
         nota.mediaFinal = calcularMedia(nota);
         nota.situacao = situacaoNota(nota.mediaFinal);
         if (nota.id == null) {
@@ -43,7 +79,11 @@ public class AcademicoService {
         if (frequencia.id == null) {
             frequencia.persist();
         }
-        atualizarFrequenciaHistorico(frequencia.aluno, frequencia.aula.disciplina, frequencia.aula.turma);
+        if (frequencia.aula.ofertaDisciplina != null) {
+            atualizarFrequenciaHistorico(frequencia.aluno, frequencia.aula.ofertaDisciplina);
+        } else {
+            atualizarFrequenciaHistorico(frequencia.aluno, frequencia.aula.disciplina, frequencia.aula.turma);
+        }
         return frequencia;
     }
 
@@ -99,6 +139,32 @@ public class AcademicoService {
         }
     }
 
+    private void criarOuAtualizarHistorico(MatriculaDisciplina matricula) {
+        OfertaDisciplina oferta = matricula.ofertaDisciplina;
+        HistoricoEscolar historico = HistoricoEscolar.find("matriculaDisciplina = ?1", matricula).firstResult();
+        if (historico == null) {
+            historico = HistoricoEscolar.find("aluno = ?1 and ofertaDisciplina = ?2", matricula.aluno, oferta).firstResult();
+        }
+        if (historico == null) {
+            historico = new HistoricoEscolar();
+            historico.aluno = matricula.aluno;
+            historico.matriculaDisciplina = matricula;
+            historico.ofertaDisciplina = oferta;
+            historico.turma = oferta.turma;
+            historico.curso = oferta.turma == null ? null : oferta.turma.curso;
+            historico.disciplina = oferta.disciplina;
+            historico.professorResponsavel = oferta.professor;
+            historico.cargaHoraria = oferta.cargaHorariaPrevista != null ? oferta.cargaHorariaPrevista : oferta.disciplina.cargaHoraria;
+            historico.periodoCursado = oferta.periodoLetivo == null ? null : oferta.periodoLetivo.nome;
+            historico.situacao = StatusHistorico.CURSANDO;
+            historico.persist();
+        } else {
+            historico.matriculaDisciplina = matricula;
+            historico.ofertaDisciplina = oferta;
+            historico.professorResponsavel = oferta.professor;
+        }
+    }
+
     private BigDecimal calcularMedia(Nota nota) {
         List<BigDecimal> valores = new ArrayList<>();
         if (nota.nota1 != null) valores.add(nota.nota1);
@@ -117,7 +183,12 @@ public class AcademicoService {
     }
 
     private void atualizarHistoricoPorNota(Nota nota) {
-        HistoricoEscolar historico = HistoricoEscolar.find("aluno = ?1 and turma = ?2 and disciplina = ?3", nota.aluno, nota.turma, nota.disciplina).firstResult();
+        HistoricoEscolar historico;
+        if (nota.ofertaDisciplina != null) {
+            historico = HistoricoEscolar.find("aluno = ?1 and ofertaDisciplina = ?2", nota.aluno, nota.ofertaDisciplina).firstResult();
+        } else {
+            historico = HistoricoEscolar.find("aluno = ?1 and turma = ?2 and disciplina = ?3", nota.aluno, nota.turma, nota.disciplina).firstResult();
+        }
         if (historico != null) {
             historico.notaFinal = nota.mediaFinal;
             historico.situacao = nota.situacao == StatusNota.APROVADO ? StatusHistorico.APROVADO
@@ -129,6 +200,15 @@ public class AcademicoService {
         long total = Frequencia.count("aluno = ?1 and aula.disciplina = ?2 and aula.turma = ?3", aluno, disciplina, turma);
         long presentes = Frequencia.count("aluno = ?1 and aula.disciplina = ?2 and aula.turma = ?3 and presente = true", aluno, disciplina, turma);
         HistoricoEscolar historico = HistoricoEscolar.find("aluno = ?1 and disciplina = ?2 and turma = ?3", aluno, disciplina, turma).firstResult();
+        if (historico != null && total > 0) {
+            historico.frequenciaFinal = BigDecimal.valueOf(presentes * 100.0 / total).setScale(2, RoundingMode.HALF_UP);
+        }
+    }
+
+    private void atualizarFrequenciaHistorico(Aluno aluno, OfertaDisciplina oferta) {
+        long total = Frequencia.count("aluno = ?1 and aula.ofertaDisciplina = ?2", aluno, oferta);
+        long presentes = Frequencia.count("aluno = ?1 and aula.ofertaDisciplina = ?2 and presente = true", aluno, oferta);
+        HistoricoEscolar historico = HistoricoEscolar.find("aluno = ?1 and ofertaDisciplina = ?2", aluno, oferta).firstResult();
         if (historico != null && total > 0) {
             historico.frequenciaFinal = BigDecimal.valueOf(presentes * 100.0 / total).setScale(2, RoundingMode.HALF_UP);
         }
