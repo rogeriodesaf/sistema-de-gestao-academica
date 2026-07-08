@@ -1,0 +1,9 @@
+<section class="painel">
+  <h1>Dashboard</h1>
+  <div class="metricas">
+    <article *ngFor="let item of dados | keyvalue">
+      <span>{{ item.key }}</span>
+      <strong>{{ item.value }}</strong>
+    </article>
+  </div>
+</section>

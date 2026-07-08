@@ -1,0 +1,37 @@
+<section class="painel">
+  <header class="cabecalho">
+    <div>
+      <h1>{{ titulo | titlecase }}</h1>
+      <p *ngIf="endpoint !== 'relatorios'">Cadastro, consulta e manutencao dos registros academicos.</p>
+      <p *ngIf="endpoint === 'relatorios'">Relatorios disponiveis pela API: alunos por turma, frequencia, notas, historico e resultados.</p>
+    </div>
+  </header>
+
+  <form *ngIf="campos.length" class="formulario" (ngSubmit)="salvar()">
+    <label *ngFor="let campo of campos">
+      {{ campo }}
+      <textarea *ngIf="campo.includes('observ') || campo.includes('ementa') || campo.includes('bibliografia') || campo.includes('conteudo') || campo.includes('metodologia') || campo.includes('objetivos')" name="{{ campo }}" [(ngModel)]="formulario[campo]"></textarea>
+      <input *ngIf="!(campo.includes('observ') || campo.includes('ementa') || campo.includes('bibliografia') || campo.includes('conteudo') || campo.includes('metodologia') || campo.includes('objetivos'))" name="{{ campo }}" [(ngModel)]="formulario[campo]">
+    </label>
+    <button type="submit">Salvar</button>
+  </form>
+
+  <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+
+  <div class="tabela" *ngIf="registros.length">
+    <table>
+      <thead>
+        <tr>
+          <th *ngFor="let chave of chaves(registros[0])">{{ chave }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let registro of registros">
+          <td *ngFor="let chave of chaves(registro)">{{ registro[chave] }}</td>
+          <td><button type="button" (click)="excluir(registro.id)">Excluir</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

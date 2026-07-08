@@ -1,0 +1,28 @@
+<ng-container *ngIf="auth.logado(); else areaPublica">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <strong>SGA</strong>
+        <span>Sistema de Gestao Academica</span>
+      </div>
+      <nav>
+        <a *ngFor="let item of menu" [routerLink]="item.path" routerLinkActive="ativo">{{ item.label }}</a>
+      </nav>
+    </aside>
+
+    <main class="conteudo">
+      <header class="topbar">
+        <div>
+          <strong>{{ auth.usuario()?.nome }}</strong>
+          <span>{{ auth.usuario()?.perfil }}</span>
+        </div>
+        <button type="button" (click)="auth.sair()">Sair</button>
+      </header>
+      <router-outlet />
+    </main>
+  </div>
+</ng-container>
+
+<ng-template #areaPublica>
+  <router-outlet />
+</ng-template>

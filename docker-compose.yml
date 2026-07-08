@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sga-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sga}
+      POSTGRES_USER: ${DB_USER:-sga}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sga}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sga} -d ${DB_NAME:-sga}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: sga-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-sga}
+      DB_USER: ${DB_USER:-sga}
+      DB_PASSWORD: ${DB_PASSWORD:-sga}
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-em-producao-com-pelo-menos-32-caracteres}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@sga.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:8088}
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    container_name: sga-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8088:80"
+
+volumes:
+  postgres_data:
