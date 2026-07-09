@@ -19,6 +19,10 @@ export class ApiService {
     return this.http.get<any>(`${this.api}/${endpoint}/${id}`);
   }
 
+  buscarDisciplina(id: number) {
+    return this.http.get<any>(`${this.api}/disciplinas/${id}`);
+  }
+
   atualizar(endpoint: string, id: number, dados: any) {
     return this.http.put(`${this.api}/${endpoint}/${id}`, dados);
   }

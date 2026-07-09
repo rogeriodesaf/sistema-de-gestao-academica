@@ -23,10 +23,10 @@ export class DisciplinaDetalhePage implements OnInit {
 
   ngOnInit() {
     this.queryParams = { ...this.route.snapshot.queryParams };
-    this.route.paramMap.subscribe(params => this.carregar(Number(params.get('id'))));
+    this.carregar(this.idDaRota());
   }
 
-  carregar(id = Number(this.route.snapshot.paramMap.get('id'))) {
+  carregar(id = this.idDaRota()) {
     if (!id) {
       this.mensagem = 'Disciplina nao encontrada.';
       this.carregando = false;
@@ -34,7 +34,13 @@ export class DisciplinaDetalhePage implements OnInit {
     }
     this.carregando = true;
     this.mensagem = '';
-    this.api.buscar('disciplinas', id).pipe(
+    window.setTimeout(() => {
+      if (this.carregando) {
+        this.carregando = false;
+        this.mensagem = 'Nao foi possivel carregar os dados da disciplina.';
+      }
+    }, 12000);
+    this.api.buscarDisciplina(id).pipe(
       timeout({ each: 10000 }),
       finalize(() => this.carregando = false)
     ).subscribe({
@@ -46,6 +52,13 @@ export class DisciplinaDetalhePage implements OnInit {
         this.mensagem = err?.error?.mensagem || 'Nao foi possivel carregar a disciplina. Verifique sua conexao e tente novamente.';
       }
     });
+  }
+
+  private idDaRota() {
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam) return Number(idParam);
+    const [, idNaUrl] = window.location.pathname.match(/\/disciplinas\/(\d+)/) || [];
+    return Number(idNaUrl);
   }
 
   rotuloOpcao(opcao: any) {
