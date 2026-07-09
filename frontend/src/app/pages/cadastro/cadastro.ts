@@ -28,6 +28,7 @@ export class CadastroPage implements OnInit {
   disciplinasModulo: Record<number, Record<number, boolean>> = {};
   mensagem = '';
   carregando = false;
+  registroEditandoId?: number;
 
   private selects: Record<string, string> = {
     aluno: 'alunos',
@@ -111,7 +112,7 @@ export class CadastroPage implements OnInit {
       this.titulo = data['titulo'];
       this.endpoint = data['endpoint'];
       this.campos = data['campos'];
-      this.formulario = {};
+      this.cancelarEdicao();
       this.opcoes = {};
       this.carregar();
       this.carregarOpcoes();
@@ -153,10 +154,13 @@ export class CadastroPage implements OnInit {
     }
     const dados = this.montarObjeto();
     this.carregando = true;
-    this.api.salvar(this.endpoint, dados).subscribe({
+    const requisicao = this.registroEditandoId
+      ? this.api.atualizar(this.endpoint, this.registroEditandoId, dados)
+      : this.api.salvar(this.endpoint, dados);
+    requisicao.subscribe({
       next: () => {
-        this.mensagem = 'Registro salvo com sucesso';
-        this.formulario = {};
+        this.mensagem = this.registroEditandoId ? 'Registro atualizado com sucesso' : 'Registro salvo com sucesso';
+        this.cancelarEdicao();
         this.carregar();
         this.carregando = false;
       },
@@ -165,6 +169,26 @@ export class CadastroPage implements OnInit {
         this.carregando = false;
       }
     });
+  }
+
+  editar(registro: any) {
+    this.registroEditandoId = registro.id;
+    this.formulario = {};
+    for (const campo of this.campos) {
+      if (campo.endsWith('.id')) {
+        const nome = campo.split('.')[0];
+        this.formulario[campo] = registro[nome]?.id ?? '';
+      } else if (registro[campo] !== undefined && registro[campo] !== null) {
+        this.formulario[campo] = registro[campo];
+      }
+    }
+    this.mensagem = `Editando ${this.rotuloOpcao(registro)}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelarEdicao() {
+    this.formulario = {};
+    this.registroEditandoId = undefined;
   }
 
   excluir(id: number) {
@@ -220,6 +244,7 @@ export class CadastroPage implements OnInit {
 
   tituloFormulario() {
     if (this.endpoint === 'matriculas-disciplinas') return 'Matricula em disciplinas';
+    if (this.registroEditandoId) return `Edicao de ${this.titulo.replaceAll('-', ' ')}`;
     return `Cadastro de ${this.titulo.replaceAll('-', ' ')}`;
   }
 

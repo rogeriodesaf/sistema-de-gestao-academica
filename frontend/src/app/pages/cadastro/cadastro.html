@@ -58,7 +58,7 @@
     <div class="card-cabecalho">
       <div>
         <h2>{{ tituloFormulario() | titlecase }}</h2>
-        <p>Preencha as informacoes abaixo para salvar o registro.</p>
+        <p>{{ registroEditandoId ? 'Atualize as informacoes abaixo e salve as alteracoes.' : 'Preencha as informacoes abaixo para salvar o registro.' }}</p>
       </div>
     </div>
 
@@ -97,8 +97,8 @@
     </label>
 
     <div class="acoes-form">
-      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : 'Salvar' }}</button>
-      <button type="button" class="secundario" (click)="formulario = {}">Cancelar</button>
+      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alteracoes' : 'Salvar') }}</button>
+      <button type="button" class="secundario" (click)="cancelarEdicao()">{{ registroEditandoId ? 'Cancelar edicao' : 'Cancelar' }}</button>
     </div>
   </form>
 
@@ -150,6 +150,7 @@
           </td>
           <td>
             <div class="grupo-acoes compacto">
+              <button type="button" class="secundario" (click)="editar(registro)">Editar</button>
               <button type="button" class="perigo-suave" (click)="excluir(registro.id)">Excluir</button>
             </div>
           </td>
