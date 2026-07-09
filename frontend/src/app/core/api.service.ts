@@ -8,7 +8,7 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   listar(endpoint: string) {
-    return this.http.get<any[]>(`${this.api}/${endpoint}`);
+    return this.http.get<any[]>(`${this.api}/${endpoint}?tamanho=500`);
   }
 
   salvar(endpoint: string, dados: any) {
