@@ -235,13 +235,20 @@ export class CadastroPage implements OnInit {
     });
   }
 
-  linkPdf(registro: any) {
-    const acao = this.acaoPdf();
-    return `/api/${this.endpoint}/${registro.id}/${acao}`;
+  abrirPdf(registro: any) {
+    this.abrirArquivoPdf(this.endpoint, registro.id, this.acaoPdf(), this.nomePdf(registro));
   }
 
-  linkDownloadPdf(registro: any) {
-    return `${this.linkPdf(registro)}/download`;
+  baixarPdf(registro: any) {
+    this.baixarArquivoPdf(this.endpoint, registro.id, this.acaoPdf(), this.nomePdf(registro));
+  }
+
+  abrirPdfCurso(curso: any) {
+    this.abrirArquivoPdf('cursos', curso.id, 'grade-pdf', curso.gradePdfNome || 'grade-curricular.pdf');
+  }
+
+  abrirPdfDisciplina(disciplina: any) {
+    this.abrirArquivoPdf('disciplinas', disciplina.id, 'ementa-pdf', disciplina.ementaPdfNome || 'ementa.pdf');
   }
 
   temPdf(registro: any) {
@@ -386,6 +393,31 @@ export class CadastroPage implements OnInit {
     if (this.endpoint === 'cursos') return 'grade-pdf';
     if (this.endpoint === 'disciplinas') return 'ementa-pdf';
     return 'plano-pdf';
+  }
+
+  private abrirArquivoPdf(endpoint: string, id: number, acao: string, nome: string) {
+    this.api.baixarArquivo(endpoint, id, acao).subscribe({
+      next: arquivo => {
+        const url = URL.createObjectURL(new Blob([arquivo], { type: 'application/pdf' }));
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: err => this.mensagem = err?.error?.mensagem || `Nao foi possivel abrir ${nome}`
+    });
+  }
+
+  private baixarArquivoPdf(endpoint: string, id: number, acao: string, nome: string) {
+    this.api.baixarArquivo(endpoint, id, acao).subscribe({
+      next: arquivo => {
+        const url = URL.createObjectURL(new Blob([arquivo], { type: 'application/pdf' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nome || 'arquivo.pdf';
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+      error: err => this.mensagem = err?.error?.mensagem || `Nao foi possivel baixar ${nome}`
+    });
   }
 
   private carregarOfertasAgrupadas() {

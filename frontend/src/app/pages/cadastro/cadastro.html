@@ -21,7 +21,7 @@
         <div>
           <h2>{{ matriz.curso?.nome }}</h2>
           <span>{{ matriz.cargaHorariaTotal }} horas · {{ matriz.creditosTotal }} creditos</span>
-          <a *ngIf="matriz.curso?.gradePdfNome" [href]="'/api/cursos/' + matriz.curso.id + '/grade-pdf'" target="_blank" rel="noopener">Ver grade curricular oficial</a>
+          <button *ngIf="matriz.curso?.gradePdfNome" type="button" class="secundario" (click)="abrirPdfCurso(matriz.curso)">Ver grade curricular oficial</button>
         </div>
       </header>
 
@@ -51,7 +51,7 @@
               <td>{{ disciplina.cargaHoraria }} h</td>
               <td>{{ disciplina.creditos }}</td>
               <td>
-                <a *ngIf="disciplina.ementaPdfNome" [href]="'/api/disciplinas/' + disciplina.id + '/ementa-pdf'" target="_blank" rel="noopener">Ver PDF</a>
+                <button *ngIf="disciplina.ementaPdfNome" type="button" class="secundario" (click)="abrirPdfDisciplina(disciplina)">Ver PDF</button>
                 <span *ngIf="!disciplina.ementaPdfNome">{{ disciplina.ementaResumo }}</span>
               </td>
             </tr>
@@ -130,8 +130,9 @@
             <button type="button" class="secundario" (click)="salvarDisciplinasModulo(registro)">Salvar vinculos</button>
           </td>
           <td *ngIf="permitePdf()" class="pdf-acoes">
-            <a *ngIf="temPdf(registro)" [href]="linkPdf(registro)" target="_blank" rel="noopener">{{ nomePdf(registro) }}</a>
-            <a *ngIf="temPdf(registro)" [href]="linkDownloadPdf(registro)">Baixar</a>
+            <strong *ngIf="temPdf(registro)">{{ nomePdf(registro) }}</strong>
+            <button *ngIf="temPdf(registro)" type="button" class="secundario" (click)="abrirPdf(registro)">Abrir</button>
+            <button *ngIf="temPdf(registro)" type="button" class="secundario" (click)="baixarPdf(registro)">Baixar</button>
             <span *ngIf="!temPdf(registro)">Sem PDF</span>
             <input type="file" accept="application/pdf" (change)="enviarPdf(registro, $event)">
             <button *ngIf="temPdf(registro)" type="button" class="secundario" (click)="removerPdf(registro)">Remover</button>

@@ -41,6 +41,10 @@ export class ApiService {
     return this.http.delete(`${this.api}/${endpoint}/${id}/${acao}`);
   }
 
+  baixarArquivo(endpoint: string, id: number, acao: string) {
+    return this.http.get(`${this.api}/${endpoint}/${id}/${acao}`, { responseType: 'blob' });
+  }
+
   dashboard() {
     return this.http.get<Record<string, any>>(`${this.api}/dashboard`);
   }
