@@ -104,31 +104,92 @@
 
   <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
 
+  <div class="filtros card-bloco" *ngIf="endpoint === 'disciplinas'">
+    <div class="card-cabecalho">
+      <div>
+        <h2>Filtros</h2>
+        <p>Localize disciplinas por nome, curso, modulo, professor, status ou tipo.</p>
+      </div>
+      <button type="button" class="secundario" (click)="limparFiltros()">Limpar filtros</button>
+    </div>
+
+    <label>
+      Buscar por nome ou codigo
+      <input type="search" name="buscaDisciplina" [(ngModel)]="filtros.busca" placeholder="Ex.: Hermeneutica">
+    </label>
+
+    <label>
+      Curso
+      <select name="filtroCurso" [(ngModel)]="filtros.cursoId">
+        <option value="">Todos</option>
+        <option *ngFor="let curso of opcoes['curso.id']" [value]="curso.id">{{ rotuloOpcao(curso) }}</option>
+      </select>
+    </label>
+
+    <label>
+      Modulo
+      <select name="filtroModulo" [(ngModel)]="filtros.moduloId">
+        <option value="">Todos</option>
+        <option *ngFor="let modulo of opcoes['modulo.id']" [value]="modulo.id">{{ rotuloOpcao(modulo) }}</option>
+      </select>
+    </label>
+
+    <label>
+      Professor
+      <select name="filtroProfessor" [(ngModel)]="filtros.professorId">
+        <option value="">Todos</option>
+        <option *ngFor="let professor of opcoes['professorResponsavel.id']" [value]="professor.id">{{ rotuloOpcao(professor) }}</option>
+      </select>
+    </label>
+
+    <label>
+      Situacao
+      <select name="filtroStatus" [(ngModel)]="filtros.status">
+        <option value="">Todas</option>
+        <option value="ATIVA">Ativa</option>
+        <option value="INATIVA">Inativa</option>
+      </select>
+    </label>
+
+    <label>
+      Tipo
+      <select name="filtroTipo" [(ngModel)]="filtros.tipo">
+        <option value="">Todos</option>
+        <option value="OBRIGATORIA">Obrigatoria</option>
+        <option value="OPTATIVA">Optativa</option>
+      </select>
+    </label>
+  </div>
+
   <div class="vazio" *ngIf="!campos.length && endpoint !== 'relatorios' && endpoint !== 'matriz-curricular'">
     <h2>Area administrativa</h2>
     <p>Funcionalidade reservada para evolucao de usuarios, perfis e configuracoes.</p>
   </div>
 
-  <div class="tabela card-bloco" *ngIf="registros.length">
+  <div class="tabela card-bloco" *ngIf="registrosFiltrados().length">
     <div class="card-cabecalho">
       <div>
         <h2>Registros</h2>
-        <p>{{ registros.length }} item(ns) encontrado(s).</p>
+        <p>{{ registrosFiltrados().length }} item(ns) encontrado(s).</p>
       </div>
     </div>
     <table>
       <thead>
         <tr>
-          <th *ngFor="let chave of chaves(registros[0])">{{ label(chave) }}</th>
+          <th *ngFor="let chave of chaves(registrosFiltrados()[0])">{{ label(chave) }}</th>
           <th *ngIf="permiteVinculoDisciplinas()">Disciplinas do modulo</th>
           <th *ngIf="permitePdf()">{{ labelPdf() }}</th>
           <th>Acoes</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let registro of registros">
+        <tr *ngFor="let registro of registrosFiltrados()">
           <td *ngFor="let chave of chaves(registro)">{{ valor(registro, chave) }}</td>
           <td *ngIf="permiteVinculoDisciplinas()" class="vinculos-disciplina">
+            <label class="campo-busca-vinculo">
+              Buscar disciplinas
+              <input type="search" name="buscaDisciplinaModulo" [(ngModel)]="buscaDisciplinaModulo" placeholder="Digite nome ou codigo">
+            </label>
             <label *ngFor="let disciplina of disciplinasDoCurso(registro)">
               <input type="checkbox" [checked]="disciplinaMarcada(registro, disciplina)" (change)="alternarDisciplinaModulo(registro, disciplina, $event)">
               {{ disciplina.nome }}
@@ -150,6 +211,7 @@
           </td>
           <td>
             <div class="grupo-acoes compacto">
+              <button *ngIf="endpoint === 'disciplinas'" type="button" class="secundario" (click)="selecionarRegistro(registro)">Visualizar</button>
               <button type="button" class="secundario" (click)="editar(registro)">Editar</button>
               <button type="button" class="perigo-suave" (click)="excluir(registro.id)">Excluir</button>
             </div>
@@ -158,4 +220,69 @@
       </tbody>
     </table>
   </div>
+
+  <div class="vazio" *ngIf="endpoint === 'disciplinas' && registros.length && !registrosFiltrados().length">
+    <h2>Nenhuma disciplina encontrada</h2>
+    <p>Ajuste os filtros para localizar disciplinas do catalogo.</p>
+  </div>
+
+  <section class="detalhe-disciplina card-bloco" *ngIf="endpoint === 'disciplinas' && registroSelecionado">
+    <div class="card-cabecalho">
+      <div>
+        <h2>{{ registroSelecionado.nome }}</h2>
+        <p>{{ registroSelecionado.codigo || 'Sem codigo' }} - {{ labelTipoDisciplina(registroSelecionado) }}</p>
+      </div>
+      <button type="button" class="secundario" (click)="registroSelecionado = undefined">Fechar</button>
+    </div>
+
+    <div class="grade-detalhes">
+      <article>
+        <h3>Informacoes</h3>
+        <dl>
+          <div><dt>Curso</dt><dd>{{ rotuloOpcao(registroSelecionado.curso) }}</dd></div>
+          <div><dt>Modulo</dt><dd>{{ rotuloOpcao(registroSelecionado.modulo) || 'Sem modulo' }}</dd></div>
+          <div><dt>Professor responsavel</dt><dd>{{ rotuloOpcao(registroSelecionado.professorResponsavel) || 'Nao definido' }}</dd></div>
+          <div><dt>Carga horaria</dt><dd>{{ registroSelecionado.cargaHoraria || 0 }}h</dd></div>
+          <div><dt>Creditos</dt><dd>{{ registroSelecionado.creditos || 0 }}</dd></div>
+          <div><dt>Tipo</dt><dd>{{ labelTipoDisciplina(registroSelecionado) }}</dd></div>
+          <div><dt>Situacao</dt><dd>{{ registroSelecionado.ativo ? 'Ativa' : 'Inativa' }}</dd></div>
+        </dl>
+      </article>
+
+      <article>
+        <h3>Ementa</h3>
+        <app-pdf-card
+          titulo="Ementa"
+          [nomeArquivo]="registroSelecionado.ementaPdfNome || ''"
+          enviadoTexto="Ementa enviada"
+          vazioTexto="Nenhuma ementa enviada"
+          uploadTexto="Enviar Ementa"
+          (abrir)="abrirPdf(registroSelecionado)"
+          (baixar)="baixarPdf(registroSelecionado)"
+          (remover)="removerPdf(registroSelecionado)"
+          (arquivoSelecionado)="enviarPdfArquivo(registroSelecionado, $event)"
+        />
+      </article>
+
+      <article>
+        <h3>Resumo da Ementa</h3>
+        <p>{{ registroSelecionado.ementaResumo || 'Nenhum resumo cadastrado.' }}</p>
+      </article>
+
+      <article>
+        <h3>Bibliografia</h3>
+        <p>{{ registroSelecionado.bibliografia || 'Nenhuma bibliografia cadastrada.' }}</p>
+      </article>
+
+      <article>
+        <h3>Alunos matriculados</h3>
+        <p>Consulta preparada para evolucao sem alterar o fluxo atual de matricula.</p>
+      </article>
+
+      <article>
+        <h3>Notas e frequencia</h3>
+        <p>As notas e frequencias continuam sendo lancadas nas telas proprias.</p>
+      </article>
+    </div>
+  </section>
 </section>

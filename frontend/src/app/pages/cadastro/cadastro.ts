@@ -29,6 +29,16 @@ export class CadastroPage implements OnInit {
   mensagem = '';
   carregando = false;
   registroEditandoId?: number;
+  registroSelecionado?: any;
+  filtros = {
+    busca: '',
+    cursoId: '',
+    moduloId: '',
+    professorId: '',
+    status: '',
+    tipo: ''
+  };
+  buscaDisciplinaModulo = '';
 
   private selects: Record<string, string> = {
     aluno: 'alunos',
@@ -138,6 +148,7 @@ export class CadastroPage implements OnInit {
     }
     this.api.listar(this.endpoint).subscribe(registros => {
       this.registros = registros;
+      this.registroSelecionado = undefined;
       if (this.endpoint === 'matriculas-disciplinas') this.carregarOfertasAgrupadas();
     });
   }
@@ -173,6 +184,7 @@ export class CadastroPage implements OnInit {
 
   editar(registro: any) {
     this.registroEditandoId = registro.id;
+    this.registroSelecionado = registro;
     this.formulario = {};
     for (const campo of this.campos) {
       if (campo.endsWith('.id')) {
@@ -205,6 +217,9 @@ export class CadastroPage implements OnInit {
   }
 
   chaves(registro: any) {
+    if (this.endpoint === 'disciplinas') {
+      return ['nome', 'codigo', 'curso', 'modulo', 'professorResponsavel', 'ativo'];
+    }
     return Object.keys(registro).filter(chave => {
       const normalizada = chave.toLowerCase();
       return chave !== 'id'
@@ -314,6 +329,7 @@ export class CadastroPage implements OnInit {
   }
 
   valor(registro: any, chave: string) {
+    if (this.endpoint === 'disciplinas' && chave === 'ativo') return registro.ativo ? 'Ativa' : 'Inativa';
     const valor = registro[chave];
     if (valor && typeof valor === 'object') return this.rotuloOpcao(valor);
     if (typeof valor === 'boolean') return valor ? 'Sim' : 'Nao';
@@ -392,7 +408,49 @@ export class CadastroPage implements OnInit {
   }
 
   disciplinasDoCurso(modulo: any) {
-    return (this.opcoes['disciplina.id'] || []).filter(disciplina => !modulo?.curso?.id || disciplina.curso?.id === modulo.curso.id);
+    const busca = this.normalizarBusca(this.buscaDisciplinaModulo);
+    return (this.opcoes['disciplina.id'] || [])
+      .filter(disciplina => !modulo?.curso?.id || disciplina.curso?.id === modulo.curso.id)
+      .filter(disciplina => !busca || this.normalizarBusca(`${disciplina.nome} ${disciplina.codigo}`).includes(busca));
+  }
+
+  registrosFiltrados() {
+    if (this.endpoint !== 'disciplinas') return this.registros;
+    const busca = this.normalizarBusca(this.filtros.busca);
+    return this.registros.filter(registro => {
+      const tipo = this.tipoDisciplina(registro);
+      const status = registro.ativo ? 'ATIVA' : 'INATIVA';
+      return (!busca || this.normalizarBusca(`${registro.nome} ${registro.codigo}`).includes(busca))
+        && (!this.filtros.cursoId || registro.curso?.id === Number(this.filtros.cursoId))
+        && (!this.filtros.moduloId || registro.modulo?.id === Number(this.filtros.moduloId))
+        && (!this.filtros.professorId || registro.professorResponsavel?.id === Number(this.filtros.professorId))
+        && (!this.filtros.status || status === this.filtros.status)
+        && (!this.filtros.tipo || tipo === this.filtros.tipo);
+    });
+  }
+
+  selecionarRegistro(registro: any) {
+    this.registroSelecionado = registro;
+  }
+
+  tipoDisciplina(registro: any) {
+    return this.normalizarBusca(registro?.nome || '').includes('optativa') ? 'OPTATIVA' : 'OBRIGATORIA';
+  }
+
+  labelTipoDisciplina(registro: any) {
+    return this.tipoDisciplina(registro) === 'OPTATIVA' ? 'Optativa' : 'Obrigatoria';
+  }
+
+  limparFiltros() {
+    this.filtros = { busca: '', cursoId: '', moduloId: '', professorId: '', status: '', tipo: '' };
+  }
+
+  private normalizarBusca(valor: string) {
+    return (valor || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   }
 
   disciplinaMarcada(modulo: any, disciplina: any) {

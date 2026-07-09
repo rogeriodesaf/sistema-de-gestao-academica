@@ -112,6 +112,12 @@ p {
   gap: 18px;
 }
 
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
 .matricula-guiada {
   grid-column: 1 / -1;
   display: grid;
@@ -409,6 +415,11 @@ tbody tr:hover {
   align-items: center;
 }
 
+.vinculos-disciplina .campo-busca-vinculo {
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
 .vinculos-disciplina input {
   width: auto;
 }
@@ -443,6 +454,57 @@ tbody tr:hover {
   border-radius: 8px;
   padding: 16px;
   box-shadow: var(--sombra);
+}
+
+.detalhe-disciplina {
+  display: grid;
+  gap: 18px;
+}
+
+.grade-detalhes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.grade-detalhes article {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border: 1px solid var(--cinza-200);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--cinza-50);
+}
+
+.grade-detalhes h3 {
+  margin: 0;
+  color: var(--azul-900);
+  font-size: 1rem;
+}
+
+.grade-detalhes dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.grade-detalhes dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.grade-detalhes dt {
+  color: var(--cinza-500);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.grade-detalhes dd {
+  margin: 0;
+  color: var(--cinza-950);
 }
 
 .graficos h2 {
