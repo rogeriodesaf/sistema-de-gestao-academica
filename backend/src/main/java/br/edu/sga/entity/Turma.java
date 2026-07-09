@@ -21,8 +21,22 @@ public class Turma extends PanacheEntity {
     @ManyToOne
     @JoinColumn(name = "curso_id")
     public Curso curso;
+    @ManyToOne
+    @JoinColumn(name = "disciplina_id")
+    public Disciplina disciplina;
+    @ManyToOne
+    @JoinColumn(name = "professor_id")
+    public Professor professor;
+    @ManyToOne
+    @JoinColumn(name = "ano_letivo_id")
+    public AnoLetivo anoLetivo;
+    @ManyToOne
+    @JoinColumn(name = "periodo_letivo_id")
+    public PeriodoLetivo periodoLetivo;
     public String descricao;
     public String turno;
+    public String horario;
+    public String sala;
     @Column(name = "quantidade_maxima_alunos")
     public Integer quantidadeMaximaAlunos;
     @Column(name = "ano_periodo")

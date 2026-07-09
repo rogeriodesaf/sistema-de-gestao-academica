@@ -15,7 +15,7 @@ export class ApiService {
     return this.http.post(`${this.api}/${endpoint}`, dados);
   }
 
-  buscar(endpoint: string, id: number) {
+  buscar(endpoint: string, id: number | string) {
     return this.http.get<any>(`${this.api}/${endpoint}/${id}`);
   }
 
@@ -27,7 +27,11 @@ export class ApiService {
     return this.http.put(`${this.api}/${endpoint}/${id}`, dados);
   }
 
-  acao(endpoint: string, id: number, acao: string, dados: any) {
+  buscarAcao(endpoint: string, id: number | string, acao: string) {
+    return this.http.get<any>(`${this.api}/${endpoint}/${id}/${acao}`);
+  }
+
+  acao(endpoint: string, id: number | string, acao: string, dados: any) {
     return this.http.put(`${this.api}/${endpoint}/${id}/${acao}`, dados);
   }
 

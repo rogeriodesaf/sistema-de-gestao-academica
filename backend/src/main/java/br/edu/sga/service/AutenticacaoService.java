@@ -15,6 +15,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.time.LocalDateTime;
 
 @ApplicationScoped
 public class AutenticacaoService {
@@ -40,11 +41,13 @@ public class AutenticacaoService {
         }
     }
 
+    @Transactional
     public TokenDTO login(LoginDTO dto) {
         Usuario usuario = Usuario.find("email = ?1 and ativo = true", dto.email()).firstResult();
         if (usuario == null || !senhaService.conferir(dto.senha(), usuario.senhaHash)) {
             throw new ApiException(Response.Status.UNAUTHORIZED, "E-mail ou senha invalidos");
         }
+        usuario.ultimoAcesso = LocalDateTime.now();
         return new TokenDTO(jwtService.gerar(usuario), usuario.id, usuario.nome, usuario.email, usuario.perfil);
     }
 

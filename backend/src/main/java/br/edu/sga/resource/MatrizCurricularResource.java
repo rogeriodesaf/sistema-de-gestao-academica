@@ -21,7 +21,8 @@ public class MatrizCurricularResource {
 
         List<Modulo> modulos = Modulo.list("curso.id = ?1 order by ordem", cursoId);
         List<Map<String, Object>> modulosResposta = modulos.stream().map(modulo -> {
-            List<Disciplina> disciplinas = Disciplina.list("modulo.id = ?1 order by nome", modulo.id);
+            List<Disciplina> disciplinas = Disciplina.list(
+                    "(moduloOriginal.id = ?1 or (moduloOriginal is null and modulo.id = ?1)) order by nome", modulo.id);
             int cargaModulo = disciplinas.stream()
                     .mapToInt(disciplina -> disciplina.cargaHoraria == null ? 0 : disciplina.cargaHoraria)
                     .sum();
@@ -37,7 +38,9 @@ public class MatrizCurricularResource {
             dadosModulo.put("ordem", modulo.ordem);
             dadosModulo.put("cargaHorariaTotal", cargaModulo);
             dadosModulo.put("creditosTotal", creditosModulo);
-            dadosModulo.put("disciplinas", disciplinas);
+            dadosModulo.put("disciplinas", disciplinas.stream()
+                    .map(disciplina -> dadosDisciplinaMatriz(disciplina, modulo))
+                    .toList());
             return dadosModulo;
         }).toList();
 
@@ -54,5 +57,26 @@ public class MatrizCurricularResource {
         resposta.put("creditosTotal", creditosTotal);
         resposta.put("modulos", modulosResposta);
         return resposta;
+    }
+
+    private Map<String, Object> dadosDisciplinaMatriz(Disciplina disciplina, Modulo moduloOriginalDaMatriz) {
+        Map<String, Object> dados = new LinkedHashMap<>();
+        dados.put("id", disciplina.id);
+        dados.put("nome", disciplina.nome);
+        dados.put("codigo", disciplina.codigo);
+        dados.put("curso", disciplina.curso);
+        dados.put("moduloOriginal", disciplina.moduloOriginal != null ? disciplina.moduloOriginal : moduloOriginalDaMatriz);
+        dados.put("moduloAtual", disciplina.modulo);
+        dados.put("remanejada", disciplina.modulo != null && disciplina.modulo.id != null
+                && !disciplina.modulo.id.equals(moduloOriginalDaMatriz.id));
+        dados.put("professorResponsavel", disciplina.professorResponsavel);
+        dados.put("cargaHoraria", disciplina.cargaHoraria);
+        dados.put("creditos", disciplina.creditos);
+        dados.put("ementa", disciplina.ementa);
+        dados.put("ementaResumo", disciplina.ementaResumo);
+        dados.put("ementaPdfNome", disciplina.ementaPdfNome);
+        dados.put("bibliografia", disciplina.bibliografia);
+        dados.put("ativo", disciplina.ativo);
+        return dados;
     }
 }

@@ -1,0 +1,33 @@
+.status-usuario {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: .84rem;
+  font-weight: 800;
+}
+
+.status-usuario.inativo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.alternativa-senha {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.alternativa-senha input {
+  width: auto;
+}
+
+.senha-gerada {
+  border: 1px solid #b7e3c1;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #f0fff4;
+  color: #166534;
+}

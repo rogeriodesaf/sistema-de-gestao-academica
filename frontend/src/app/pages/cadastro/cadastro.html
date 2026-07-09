@@ -14,6 +14,7 @@
         <div>
           <h2>{{ matriz.curso?.nome }}</h2>
           <span>{{ matriz.cargaHorariaTotal }} horas - {{ matriz.creditosTotal }} creditos</span>
+          <p class="nota-matriz">A matriz curricular exibe o modulo original da grade. Quando houver remanejamento, o modulo atual aparece sinalizado na disciplina.</p>
           <button *ngIf="matriz.curso?.gradePdfNome" type="button" class="secundario" (click)="abrirPdfCurso(matriz.curso)">Abrir PDF</button>
         </div>
       </header>
@@ -39,7 +40,10 @@
           </thead>
           <tbody>
             <tr *ngFor="let disciplina of modulo.disciplinas">
-              <td>{{ disciplina.nome }}</td>
+              <td>
+                <strong>{{ disciplina.nome }}</strong>
+                <small *ngIf="disciplina.remanejada" class="aviso-remanejo">Ofertada atualmente em {{ disciplina.moduloAtual?.nome || 'outro modulo' }}</small>
+              </td>
               <td>{{ disciplina.codigo }}</td>
               <td>{{ disciplina.cargaHoraria }} h</td>
               <td>{{ disciplina.creditos }}</td>
@@ -184,7 +188,6 @@
       <thead>
         <tr>
           <th *ngFor="let chave of chaves(registrosPaginados()[0])">{{ label(chave) }}</th>
-          <th *ngIf="permiteVinculoDisciplinas()">Disciplinas do modulo</th>
           <th *ngIf="permitePdf()">{{ labelPdf() }}</th>
           <th>Acoes</th>
         </tr>
@@ -192,17 +195,6 @@
       <tbody>
         <tr *ngFor="let registro of registrosPaginados()">
           <td *ngFor="let chave of chaves(registro)">{{ valor(registro, chave) }}</td>
-          <td *ngIf="permiteVinculoDisciplinas()" class="vinculos-disciplina">
-            <label class="campo-busca-vinculo">
-              Buscar disciplinas
-              <input type="search" name="buscaDisciplinaModulo" [(ngModel)]="buscaDisciplinaModulo" placeholder="Digite nome ou codigo">
-            </label>
-            <label *ngFor="let disciplina of disciplinasDoCurso(registro)">
-              <input type="checkbox" [checked]="disciplinaMarcada(registro, disciplina)" (change)="alternarDisciplinaModulo(registro, disciplina, $event)">
-              {{ disciplina.nome }}
-            </label>
-            <button type="button" class="secundario" (click)="salvarDisciplinasModulo(registro)">Salvar vinculos</button>
-          </td>
           <td *ngIf="permitePdf()">
             <app-pdf-card
               [titulo]="labelPdf()"
@@ -218,7 +210,8 @@
           </td>
           <td>
             <div class="grupo-acoes compacto">
-              <button *ngIf="endpoint === 'disciplinas'" type="button" class="secundario" (click)="selecionarRegistro(registro)">Visualizar</button>
+              <button *ngIf="endpoint === 'disciplinas' || endpoint === 'modulos'" type="button" class="secundario" (click)="selecionarRegistro(registro)">Visualizar</button>
+              <button *ngIf="endpoint === 'modulos'" type="button" class="secundario" (click)="abrirGerenciamentoDisciplinas(registro)">Gerenciar disciplinas</button>
               <button type="button" class="secundario" (click)="editar(registro)">Editar</button>
               <button type="button" class="perigo-suave" (click)="excluir(registro.id)">Excluir</button>
             </div>
@@ -237,6 +230,39 @@
   <div class="vazio" *ngIf="endpoint === 'disciplinas' && registros.length && !registrosFiltrados().length">
     <h2>Nenhuma disciplina encontrada</h2>
     <p>Ajuste os filtros para localizar disciplinas do catalogo.</p>
+  </div>
+
+  <div class="modal-fundo" *ngIf="endpoint === 'modulos' && moduloGerenciado">
+    <section class="modal-grande">
+      <header class="modal-cabecalho">
+        <div>
+          <h2>Gerenciar disciplinas do {{ moduloGerenciado.nome }}</h2>
+          <p>{{ quantidadeSelecionadasModulo(moduloGerenciado) }} disciplinas selecionadas</p>
+        </div>
+        <button type="button" class="secundario" (click)="fecharGerenciamentoDisciplinas()">Fechar</button>
+      </header>
+
+      <label class="campo-modal">
+        Pesquisar por nome ou codigo
+        <input type="search" name="buscaDisciplinasModal" [(ngModel)]="buscaDisciplinasModal" placeholder="Ex.: Hermeneutica">
+      </label>
+
+      <div class="lista-disciplinas-modal">
+        <label *ngFor="let disciplina of disciplinasModal(moduloGerenciado)" class="item-disciplina-modal">
+          <input type="checkbox" [checked]="disciplinaMarcada(moduloGerenciado, disciplina)" (change)="alternarDisciplinaModulo(moduloGerenciado, disciplina, $event)">
+          <span>
+            <strong>{{ disciplina.nome }}</strong>
+            <small>{{ disciplina.codigo || 'Sem codigo' }} - {{ disciplina.cargaHoraria || 0 }}h - {{ disciplina.creditos || 0 }} creditos</small>
+          </span>
+        </label>
+        <p class="vazio-modal" *ngIf="!disciplinasModal(moduloGerenciado).length">Nenhuma disciplina encontrada para este curso.</p>
+      </div>
+
+      <div class="modal-acoes">
+        <button type="button" class="secundario" (click)="fecharGerenciamentoDisciplinas()">Cancelar</button>
+        <button type="button" (click)="salvarDisciplinasModulo(moduloGerenciado)">Salvar vinculos</button>
+      </div>
+    </section>
   </div>
 
 </section>

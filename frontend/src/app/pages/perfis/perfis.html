@@ -1,0 +1,67 @@
+<section class="painel">
+  <app-page-header titulo="Perfis" subtitulo="Configure permissões por perfil fixo do SGA." />
+
+  <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+
+  <div class="grade-perfis">
+    <article *ngFor="let perfil of perfis" class="perfil-card card-bloco">
+      <div>
+        <span class="perfil-badge">{{ perfil.codigo }}</span>
+        <h2>{{ perfil.nome }}</h2>
+        <p>{{ perfil.descricao }}</p>
+        <small *ngIf="totalMarcadas(perfil)">{{ totalMarcadas(perfil) }}</small>
+      </div>
+      <button type="button" (click)="configurar(perfil)">Configurar</button>
+    </article>
+  </div>
+
+  <div class="vazio" *ngIf="!perfis.length">
+    <h2>Nenhum perfil encontrado</h2>
+    <p>Os perfis fixos do sistema ainda nao foram carregados.</p>
+  </div>
+
+  <div class="modal-fundo" *ngIf="perfilSelecionado">
+    <section class="modal-grande modal-permissoes">
+      <header class="modal-cabecalho">
+        <div>
+          <h2>Configurar {{ perfilSelecionado.nome }}</h2>
+          <p>{{ perfilSelecionado.descricao }}</p>
+        </div>
+        <button type="button" class="secundario" (click)="fecharConfiguracao()">Fechar</button>
+      </header>
+
+      <div class="vazio" *ngIf="carregando">
+        <h2>Carregando permissoes</h2>
+        <p>Buscando as permissoes configuradas para este perfil.</p>
+      </div>
+
+      <div class="permissoes-areas" *ngIf="!carregando">
+        <section *ngFor="let area of areas" class="permissao-area">
+          <h3>{{ areaTexto(area) }}</h3>
+
+          <div class="permissao-recurso" *ngFor="let permissao of permissoesDaArea(area)">
+            <strong>{{ permissao.recurso }}</strong>
+            <label *ngFor="let acao of acoes">
+              <input
+                type="checkbox"
+                [name]="perfilSelecionado.codigo + '-' + permissao.recurso + '-' + acao.chave"
+                [(ngModel)]="permissao[acao.chave]"
+                [disabled]="bloqueiaAdministrador(acao.chave)"
+              >
+              {{ acao.label }}
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <p class="aviso-admin" *ngIf="perfilSelecionado.codigo === 'ADMINISTRADOR'">
+        O Administrador permanece com acesso total ao sistema.
+      </p>
+
+      <div class="modal-acoes">
+        <button type="button" class="secundario" (click)="fecharConfiguracao()">Cancelar</button>
+        <button type="button" [disabled]="salvando || carregando" (click)="salvarPermissoes()">{{ salvando ? 'Salvando...' : 'Salvar permissoes' }}</button>
+      </div>
+    </section>
+  </div>
+</section>

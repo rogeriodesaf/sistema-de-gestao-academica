@@ -1,0 +1,57 @@
+<section class="painel">
+  <div class="acoes-detalhe">
+    <button type="button" class="secundario" (click)="voltar()">Voltar</button>
+    <button type="button" class="secundario" (click)="editar()" *ngIf="turma()">Editar</button>
+    <button type="button" class="secundario" (click)="verMatriculas()" *ngIf="turma()">Ver Matriculas</button>
+    <button type="button" class="secundario" (click)="abrirDiario()" *ngIf="turma()">Abrir Diario</button>
+    <button type="button" class="perigo-suave" (click)="encerrar()" *ngIf="turma() && turma()?.status !== 'ENCERRADA'">Encerrar Turma</button>
+  </div>
+
+  <app-page-header
+    [titulo]="turma()?.nome || 'Turma Academica'"
+    subtitulo="Detalhes da turma da disciplina"
+  />
+
+  <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
+
+  <div class="vazio" *ngIf="carregando()">
+    <h2>Carregando turma</h2>
+    <p>Buscando dados da turma academica e alunos matriculados.</p>
+  </div>
+
+  <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando() && turma() as turma">
+    <article>
+      <h3>Turma Academica</h3>
+      <dl>
+        <div><dt>Nome da turma</dt><dd>{{ turma.nome }}</dd></div>
+        <div><dt>Disciplina</dt><dd>{{ turma.disciplina?.nome || 'Disciplina nao informada' }}</dd></div>
+        <div><dt>Professor</dt><dd>{{ turma.professor?.nome || 'Nenhum professor vinculado' }}</dd></div>
+        <div><dt>Curso de referencia</dt><dd>{{ turma.curso?.nome || 'Sem curso de referencia' }}</dd></div>
+        <div><dt>Ano letivo</dt><dd>{{ turma.anoLetivo?.ano || turma.anoPeriodo || 'Ano nao informado' }}</dd></div>
+        <div><dt>Modulo de oferta</dt><dd>{{ turma.disciplina?.modulo?.nome || 'Modulo nao informado' }}</dd></div>
+        <div><dt>Turno</dt><dd>{{ turma.turno || 'Turno nao informado' }}</dd></div>
+        <div><dt>Horario</dt><dd>{{ turma.horario || 'Horario nao definido' }}</dd></div>
+        <div><dt>Sala</dt><dd>{{ turma.sala || 'Sala nao definida' }}</dd></div>
+        <div><dt>Quantidade maxima de alunos</dt><dd>{{ capacidade() }}</dd></div>
+        <div><dt>Alunos matriculados</dt><dd>{{ matriculados() }}</dd></div>
+        <div><dt>Vagas disponiveis</dt><dd>{{ vagasDisponiveis() }}</dd></div>
+        <div><dt>Situacao</dt><dd><span class="badge-status" [ngClass]="'status-' + turma.status">{{ statusLabel(turma.status) }}</span></dd></div>
+        <div><dt>Descricao</dt><dd>{{ turma.descricao || 'Nenhuma descricao cadastrada.' }}</dd></div>
+      </dl>
+    </article>
+
+    <article>
+      <h3>Alunos matriculados</h3>
+      <p class="texto-apoio">Consulta das matriculas existentes. Inclusao, cancelamento ou remocao devem ser feitos na tela de Matriculas.</p>
+      <ol *ngIf="alunosAtivos().length; else semAlunos">
+        <li *ngFor="let matricula of alunosAtivos()">
+          <strong>{{ matricula.aluno?.nome || 'Aluno' }}</strong>
+          <span>{{ matricula.aluno?.curso?.nome || matricula.curso?.nome || 'Disciplina Avulsa' }}</span>
+        </li>
+      </ol>
+      <ng-template #semAlunos>
+        <p>Nenhum aluno matriculado.</p>
+      </ng-template>
+    </article>
+  </div>
+</section>

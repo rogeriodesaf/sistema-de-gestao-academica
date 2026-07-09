@@ -1,0 +1,185 @@
+<section class="painel">
+  <app-page-header titulo="Usuarios" subtitulo="Gerencie os acessos administrativos ao SGA." />
+
+  <form class="formulario card-bloco" (ngSubmit)="salvar()">
+    <div class="card-cabecalho">
+      <div>
+        <h2>{{ registroEditandoId ? 'Edicao de usuario' : 'Cadastro de usuario' }}</h2>
+        <p>{{ registroEditandoId ? 'Atualize os dados cadastrais e a situacao do usuario.' : 'Cadastre o usuario com uma senha provisoria de acesso.' }}</p>
+      </div>
+    </div>
+
+    <label>
+      Nome completo *
+      <input name="nome" [(ngModel)]="formulario.nome" required>
+    </label>
+
+    <label>
+      E-mail *
+      <input type="email" name="email" [(ngModel)]="formulario.email" required>
+    </label>
+
+    <label>
+      Perfil *
+      <select name="perfil" [(ngModel)]="formulario.perfil" required>
+        <option value="">Selecione</option>
+        <option *ngFor="let perfil of perfis" [value]="perfil.id">{{ perfil.nome }}</option>
+      </select>
+    </label>
+
+    <label *ngIf="!registroEditandoId">
+      Senha provisoria *
+      <input type="password" name="senha" [(ngModel)]="formulario.senha" required>
+    </label>
+
+    <label *ngIf="!registroEditandoId">
+      Confirmar senha *
+      <input type="password" name="confirmarSenha" [(ngModel)]="formulario.confirmarSenha" required>
+    </label>
+
+    <label>
+      Situacao
+      <select name="ativo" [(ngModel)]="formulario.ativo">
+        <option [ngValue]="true">Ativo</option>
+        <option [ngValue]="false">Inativo</option>
+      </select>
+    </label>
+
+    <label class="campo-longo">
+      Observacoes
+      <textarea name="observacoes" [(ngModel)]="formulario.observacoes"></textarea>
+    </label>
+
+    <div class="acoes-form">
+      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alteracoes' : 'Cadastrar usuario') }}</button>
+      <button type="button" class="secundario" (click)="cancelarEdicao()">{{ registroEditandoId ? 'Cancelar edicao' : 'Cancelar' }}</button>
+    </div>
+  </form>
+
+  <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+
+  <div class="filtros card-bloco">
+    <div class="card-cabecalho">
+      <div>
+        <h2>Filtros</h2>
+        <p>Pesquise por nome, e-mail, perfil ou situacao.</p>
+      </div>
+      <button type="button" class="secundario" (click)="limparFiltros()">Limpar filtros</button>
+    </div>
+
+    <label>
+      Buscar por nome ou e-mail
+      <input type="search" name="busca" [(ngModel)]="filtros.busca" (ngModelChange)="atualizarFiltro()" placeholder="Ex.: admin@seminario.com">
+    </label>
+
+    <label>
+      Perfil
+      <select name="filtroPerfil" [(ngModel)]="filtros.perfil" (ngModelChange)="atualizarFiltro()">
+        <option value="">Todos</option>
+        <option *ngFor="let perfil of perfis" [value]="perfil.id">{{ perfil.nome }}</option>
+      </select>
+    </label>
+
+    <label>
+      Situacao
+      <select name="filtroSituacao" [(ngModel)]="filtros.situacao" (ngModelChange)="atualizarFiltro()">
+        <option value="">Todos</option>
+        <option value="ATIVO">Ativos</option>
+        <option value="INATIVO">Inativos</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="tabela card-bloco" *ngIf="usuariosFiltrados().length">
+    <div class="card-cabecalho">
+      <div>
+        <h2>Usuarios</h2>
+        <p>{{ usuariosFiltrados().length }} usuario(s) encontrado(s).</p>
+      </div>
+      <label class="controle-pagina">
+        Por pagina
+        <select name="itensPorPagina" [(ngModel)]="itensPorPagina" (ngModelChange)="mudarTamanhoPagina()">
+          <option *ngFor="let tamanho of tamanhosPagina" [ngValue]="tamanho">{{ tamanho }}</option>
+        </select>
+      </label>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Perfil</th>
+          <th>Situacao</th>
+          <th>Ultimo acesso</th>
+          <th>Data de criacao</th>
+          <th>Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let usuario of usuariosPaginados()">
+          <td>{{ usuario.nome }}</td>
+          <td>{{ usuario.email }}</td>
+          <td>{{ perfilTexto(usuario.perfil) }}</td>
+          <td><span class="status-usuario" [class.inativo]="!usuario.ativo">{{ usuario.ativo ? 'Ativo' : 'Inativo' }}</span></td>
+          <td>{{ dataTexto(usuario.ultimoAcesso) }}</td>
+          <td>{{ dataTexto(usuario.dataCriacao) }}</td>
+          <td>
+            <div class="grupo-acoes compacto">
+              <button type="button" class="secundario" (click)="visualizar(usuario)">Visualizar</button>
+              <button type="button" class="secundario" (click)="editar(usuario)">Editar</button>
+              <button type="button" class="secundario" (click)="abrirRedefinirSenha(usuario)">Redefinir senha</button>
+              <button *ngIf="usuario.ativo" type="button" class="perigo-suave" (click)="inativar(usuario)">Inativar</button>
+              <button *ngIf="!usuario.ativo" type="button" class="secundario" (click)="reativar(usuario)">Reativar</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="paginacao">
+      <button type="button" class="secundario" [disabled]="paginaAtual === 1" (click)="mudarPagina(-1)">Anterior</button>
+      <span>Pagina {{ paginaAtual }} de {{ totalPaginas() }}</span>
+      <button type="button" class="secundario" [disabled]="paginaAtual === totalPaginas()" (click)="mudarPagina(1)">Proxima</button>
+    </div>
+  </div>
+
+  <div class="vazio" *ngIf="usuarios.length && !usuariosFiltrados().length">
+    <h2>Nenhum usuario encontrado</h2>
+    <p>Ajuste os filtros para localizar usuarios cadastrados.</p>
+  </div>
+
+  <div class="modal-fundo" *ngIf="senhaUsuario">
+    <section class="modal-grande">
+      <header class="modal-cabecalho">
+        <div>
+          <h2>Redefinir senha</h2>
+          <p>{{ senhaUsuario.nome }} - {{ senhaUsuario.email }}</p>
+        </div>
+        <button type="button" class="secundario" (click)="fecharRedefinirSenha()">Fechar</button>
+      </header>
+
+      <label class="alternativa-senha">
+        <input type="checkbox" name="gerarAutomatica" [(ngModel)]="senhaForm.gerarAutomatica">
+        Gerar senha provisoria automaticamente
+      </label>
+
+      <label *ngIf="!senhaForm.gerarAutomatica">
+        Nova senha
+        <input type="password" name="novaSenha" [(ngModel)]="senhaForm.senha">
+      </label>
+
+      <label *ngIf="!senhaForm.gerarAutomatica">
+        Confirmar nova senha
+        <input type="password" name="confirmarNovaSenha" [(ngModel)]="senhaForm.confirmarSenha">
+      </label>
+
+      <p class="senha-gerada" *ngIf="senhaGerada">Senha provisoria gerada: <strong>{{ senhaGerada }}</strong></p>
+
+      <div class="modal-acoes">
+        <button type="button" class="secundario" (click)="fecharRedefinirSenha()">Cancelar</button>
+        <button type="button" (click)="redefinirSenha()">Redefinir senha</button>
+      </div>
+    </section>
+  </div>
+</section>

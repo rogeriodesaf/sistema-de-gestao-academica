@@ -1,0 +1,168 @@
+<section class="painel">
+  <app-page-header
+    titulo="Turmas"
+    subtitulo="Gerencie turmas academicas como a oferta real de uma disciplina, com professor, horario, sala, vagas e situacao."
+  />
+
+  <form class="formulario card-bloco" (ngSubmit)="salvar()">
+    <div class="card-cabecalho">
+      <div>
+        <h2>{{ editandoId ? 'Editar turma academica' : 'Nova turma academica' }}</h2>
+        <p>Uma turma pode receber alunos de cursos diferentes e alunos matriculados apenas em disciplinas avulsas.</p>
+      </div>
+    </div>
+
+    <label>
+      Disciplina
+      <select name="disciplina" [(ngModel)]="formulario['disciplina.id']" (ngModelChange)="sugerirNome()">
+        <option value="">Selecione</option>
+        <option *ngFor="let disciplina of disciplinas" [ngValue]="disciplina.id">{{ disciplina.nome }} {{ disciplina.codigo ? '- ' + disciplina.codigo : '' }}</option>
+      </select>
+    </label>
+
+    <label>
+      Professor
+      <select name="professor" [(ngModel)]="formulario['professor.id']">
+        <option value="">Selecione</option>
+        <option *ngFor="let professor of professores" [ngValue]="professor.id">{{ professor.nome }}</option>
+      </select>
+    </label>
+
+    <label>
+      Curso de referencia
+      <select name="curso" [(ngModel)]="formulario['curso.id']">
+        <option value="">Sem curso de referencia</option>
+        <option *ngFor="let curso of cursos" [ngValue]="curso.id">{{ curso.nome }}</option>
+      </select>
+      <small>Esta turma podera receber alunos de outros cursos e alunos matriculados apenas em disciplinas avulsas.</small>
+    </label>
+
+    <label>
+      Ano letivo
+      <select name="anoLetivo" [(ngModel)]="formulario['anoLetivo.id']" (ngModelChange)="sugerirNome()">
+        <option value="">Selecione</option>
+        <option *ngFor="let ano of anosLetivos" [ngValue]="ano.id">{{ ano.ano || ano.nome || rotulo(ano) }}</option>
+      </select>
+    </label>
+
+    <label>
+      Turno
+      <select name="turno" [(ngModel)]="formulario['turno']" (ngModelChange)="sugerirNome()">
+        <option value="">Selecione</option>
+        <option value="Manha">Manha</option>
+        <option value="Tarde">Tarde</option>
+        <option value="Noite">Noite</option>
+      </select>
+    </label>
+
+    <label class="campo-longo">
+      Nome da turma
+      <input name="nome" [(ngModel)]="formulario['nome']" placeholder="Hermeneutica I - Noite - 2026">
+    </label>
+
+    <label>
+      Dia e horario
+      <input name="horario" [(ngModel)]="formulario['horario']" placeholder="Segunda 19h">
+    </label>
+
+    <label>
+      Sala
+      <input name="sala" [(ngModel)]="formulario['sala']" placeholder="Sala 02">
+    </label>
+
+    <label>
+      Quantidade maxima de alunos
+      <input type="number" min="1" name="quantidadeMaximaAlunos" [(ngModel)]="formulario['quantidadeMaximaAlunos']">
+    </label>
+
+    <label>
+      Data inicial
+      <input type="date" name="dataInicio" [(ngModel)]="formulario['dataInicio']">
+    </label>
+
+    <label>
+      Data final
+      <input type="date" name="dataTermino" [(ngModel)]="formulario['dataTermino']">
+    </label>
+
+    <label>
+      Situacao
+      <select name="status" [(ngModel)]="formulario['status']">
+        <option value="ABERTA">Aberta</option>
+        <option value="EM_ANDAMENTO">Em andamento</option>
+        <option value="ENCERRADA">Encerrada</option>
+        <option value="CANCELADA">Cancelada</option>
+      </select>
+    </label>
+
+    <label class="campo-longo">
+      Descricao
+      <textarea name="descricao" [(ngModel)]="formulario['descricao']"></textarea>
+    </label>
+
+    <div class="acoes-form">
+      <button type="submit" [disabled]="salvando">{{ salvando ? 'Salvando...' : (editandoId ? 'Salvar alteracoes' : 'Salvar turma') }}</button>
+      <button type="button" class="secundario" (click)="limparFormulario()">{{ editandoId ? 'Cancelar edicao' : 'Limpar' }}</button>
+    </div>
+  </form>
+
+  <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+  <p class="mensagem erro" *ngIf="erroCarregamento">{{ erroCarregamento }}</p>
+
+  <div class="vazio" *ngIf="carregando">
+    <h2>Carregando turmas</h2>
+    <p>Buscando disciplinas, professores, modulos de oferta e capacidade das turmas.</p>
+  </div>
+
+  <section class="tabela card-bloco" *ngIf="!carregando && !erroCarregamento && turmas.length">
+    <div class="card-cabecalho">
+      <div>
+        <h2>Turmas academicas</h2>
+        <p>{{ turmas.length }} turma(s) encontrada(s).</p>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Disciplina</th>
+          <th>Professor</th>
+          <th>Horario</th>
+          <th>Sala</th>
+          <th>Vagas</th>
+          <th>Alunos</th>
+          <th>Situacao</th>
+          <th>Acoes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let turma of turmas">
+          <td><strong>{{ turma.nome }}</strong></td>
+          <td>{{ turma.disciplina?.nome || 'Disciplina nao definida' }}</td>
+          <td>{{ turma.professor?.nome || 'Professor nao definido' }}</td>
+          <td>{{ turma.horario || 'Horario nao definido' }}</td>
+          <td>{{ turma.sala || 'Sala nao definida' }}</td>
+          <td>{{ vagasDisponiveis(turma) }}</td>
+          <td>
+            <span class="badge-ocupacao" [class.lotada]="lotada(turma)">
+              {{ ocupacao(turma) }} <strong *ngIf="lotada(turma)">Lotada</strong>
+            </span>
+          </td>
+          <td><span class="badge-status" [ngClass]="'status-' + turma.status">{{ statusLabel(turma.status) }}</span></td>
+          <td>
+            <div class="grupo-acoes compacto">
+              <button type="button" class="secundario" (click)="visualizar(turma)">Visualizar</button>
+              <button type="button" class="secundario" (click)="editar(turma)">Editar</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="vazio" *ngIf="!carregando && !erroCarregamento && !turmas.length">
+    <h2>Nenhuma turma academica cadastrada.</h2>
+    <p>Cadastre a primeira turma academica para ofertar uma disciplina.</p>
+  </div>
+</section>

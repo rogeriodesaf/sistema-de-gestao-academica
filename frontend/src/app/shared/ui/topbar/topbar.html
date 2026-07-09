@@ -1,5 +1,13 @@
 <header class="topbar">
-  <div>
+  <button type="button" class="botao-menu" aria-label="Abrir menu" (click)="abrirMenu.emit()">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <strong class="marca-mobile">SGA</strong>
+
+  <div class="usuario-topbar">
     <span>Administrador</span>
     <strong>{{ usuario?.nome }}</strong>
     <span>{{ usuario?.perfil }}</span>

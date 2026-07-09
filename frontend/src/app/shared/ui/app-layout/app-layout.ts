@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Inject, Input, OnDestroy, Output } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { MenuGrupo, SidebarComponent } from '../sidebar/sidebar';
 import { TopbarComponent } from '../topbar/topbar';
 
@@ -10,8 +11,41 @@ import { TopbarComponent } from '../topbar/topbar';
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.scss'
 })
-export class AppLayoutComponent {
+export class AppLayoutComponent implements OnDestroy {
   @Input() menuGrupos: MenuGrupo[] = [];
   @Input() usuario: any;
   @Output() sair = new EventEmitter<void>();
+
+  menuAberto = false;
+
+  constructor(@Inject(DOCUMENT) private document: Document) {}
+
+  @HostListener('document:keydown.escape')
+  fecharComEsc() {
+    this.fecharMenu();
+  }
+
+  ngOnDestroy() {
+    this.liberarRolagem();
+  }
+
+  abrirMenu() {
+    this.menuAberto = true;
+    this.document.body.style.overflow = 'hidden';
+  }
+
+  fecharMenu() {
+    if (!this.menuAberto) return;
+    this.menuAberto = false;
+    this.liberarRolagem();
+  }
+
+  emitirSair() {
+    this.fecharMenu();
+    this.sair.emit();
+  }
+
+  private liberarRolagem() {
+    this.document.body.style.overflow = '';
+  }
 }

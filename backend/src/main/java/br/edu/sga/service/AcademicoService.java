@@ -28,16 +28,18 @@ public class AcademicoService {
         if (jaMatriculado > 0) {
             throw new ApiException(Response.Status.CONFLICT, "Aluno ja matriculado nesta disciplina");
         }
-        if (oferta.vagas != null) {
+        Integer limiteVagas = oferta.vagas != null ? oferta.vagas
+                : oferta.turma == null ? null : oferta.turma.quantidadeMaximaAlunos;
+        if (limiteVagas != null) {
             long ocupadas = MatriculaDisciplina.count("ofertaDisciplina = ?1 and status in ?2",
                     oferta, List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO));
-            if (ocupadas >= oferta.vagas) {
+            if (ocupadas >= limiteVagas) {
                 throw new ApiException(Response.Status.CONFLICT, "Oferta de disciplina sem vagas disponiveis");
             }
         }
         matricula.aluno = aluno;
         matricula.ofertaDisciplina = oferta;
-        matricula.curso = oferta.curso != null ? oferta.curso : (aluno.curso != null ? aluno.curso : oferta.turma == null ? null : oferta.turma.curso);
+        matricula.curso = aluno.curso != null ? aluno.curso : (oferta.curso != null ? oferta.curso : oferta.turma == null ? null : oferta.turma.curso);
         matricula.periodoLetivo = oferta.periodoLetivo;
         matricula.status = matricula.status == null ? StatusMatriculaDisciplina.ATIVA : matricula.status;
         matricula.persist();
@@ -51,7 +53,7 @@ public class AcademicoService {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aluno, turma e disciplina sao obrigatorios");
         }
         if (matricula.curso == null) {
-            matricula.curso = matricula.turma.curso;
+            matricula.curso = matricula.aluno != null && matricula.aluno.curso != null ? matricula.aluno.curso : matricula.turma.curso;
         }
         matricula.status = StatusMatricula.ATIVA;
         matricula.persist();

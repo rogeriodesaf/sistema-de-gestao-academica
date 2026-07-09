@@ -38,6 +38,8 @@ export class CadastroPage implements OnInit {
     tipo: ''
   };
   buscaDisciplinaModulo = '';
+  moduloGerenciado?: any;
+  buscaDisciplinasModal = '';
   paginaAtual = 1;
   itensPorPagina = 10;
   tamanhosPagina = [10, 25, 50, 100];
@@ -66,7 +68,7 @@ export class CadastroPage implements OnInit {
     'professorResponsavel.id': 'Professor responsavel',
     'turma.id': 'Turma',
     'anoLetivo.id': 'Ano letivo',
-    'periodoLetivo.id': 'Periodo letivo',
+    'periodoLetivo.id': 'Modulo de oferta',
     'ofertaDisciplina.id': 'Oferta de disciplina',
     ativo: 'Ativo',
     ano: 'Ano',
@@ -98,6 +100,8 @@ export class CadastroPage implements OnInit {
     horario: 'Horario',
     justificativa: 'Justificativa',
     metodologia: 'Metodologia',
+    moduloAtual: 'Modulo atual',
+    moduloOriginalOferta: 'Modulo original',
     nome: 'Nome',
     notaFinal: 'Nota final',
     nota1: 'Nota 1',
@@ -106,7 +110,7 @@ export class CadastroPage implements OnInit {
     observacao: 'Observacao',
     objetivos: 'Objetivos',
     ordem: 'Ordem',
-    periodoCursado: 'Periodo cursado',
+    periodoCursado: 'Modulo cursado',
     presente: 'Presenca',
     quantidadeMaximaAlunos: 'Quantidade maxima de alunos',
     sala: 'Sala',
@@ -222,6 +226,15 @@ export class CadastroPage implements OnInit {
     if (this.endpoint === 'disciplinas') {
       return ['nome', 'codigo', 'curso', 'modulo', 'professorResponsavel', 'ativo', 'ementaStatus'];
     }
+    if (this.endpoint === 'modulos') {
+      return ['nome', 'descricao', 'ordem', 'curso', 'status', 'ativo', 'disciplinasVinculadas'];
+    }
+    if (this.endpoint === 'turmas') {
+      return ['nome', 'disciplina', 'professor', 'anoLetivo', 'turno', 'horario', 'sala', 'quantidadeMaximaAlunos', 'status'];
+    }
+    if (this.endpoint === 'ofertas-disciplinas' || this.endpoint === 'montagem-periodo') {
+      return ['disciplina', 'professor', 'moduloOriginalOferta', 'modulo', 'turma', 'vagas', 'horario', 'sala', 'status'];
+    }
     return Object.keys(registro).filter(chave => {
       const normalizada = chave.toLowerCase();
       return chave !== 'id'
@@ -238,17 +251,17 @@ export class CadastroPage implements OnInit {
 
   subtitulo() {
     if (this.endpoint === 'relatorios') return 'Relatorios disponiveis para acompanhamento academico e administrativo.';
-    if (this.endpoint === 'matriz-curricular') return 'Disciplinas organizadas por curso e modulo, com carga horaria consolidada.';
+    if (this.endpoint === 'matriz-curricular') return 'Grade oficial do curso. A oferta atual pode usar outro modulo quando houver remanejamento.';
     const textos: Record<string, string> = {
       alunos: 'Cadastre e acompanhe os alunos vinculados aos cursos do seminario.',
       professores: 'Mantenha professores, contatos e situacao cadastral atualizados.',
       cursos: 'Cadastre e mantenha os cursos oferecidos pelo seminario.',
       disciplinas: 'Organize disciplinas, ementas, carga horaria e professores responsaveis.',
       modulos: 'Estruture os modulos academicos e vincule suas disciplinas.',
-      turmas: 'Gerencie turmas, periodos, capacidade e situacao academica.',
+      turmas: 'Gerencie a oferta real de disciplinas por turma, professor, modulo de oferta, horario, sala e vagas.',
       'anos-letivos': 'Organize os anos letivos utilizados no planejamento academico.',
-      'periodos-letivos': 'Cadastre periodos letivos e suas datas de referencia.',
-      'ofertas-disciplinas': 'Planeje ofertas, professores, horarios, salas e vagas.',
+      'periodos-letivos': 'Cadastro tecnico mantido para compatibilidade interna das ofertas.',
+      'ofertas-disciplinas': 'Planeje a oferta real das disciplinas, com modulo de oferta, professor, turma, horarios, salas e vagas.',
       'matriculas-disciplinas': 'Matricule alunos nas disciplinas ofertadas por modulo.',
       'planos-ensino': 'Registre planos de ensino e materiais oficiais das disciplinas.',
       aulas: 'Controle aulas ministradas, conteudo e carga horaria.',
@@ -333,6 +346,10 @@ export class CadastroPage implements OnInit {
   valor(registro: any, chave: string) {
     if (this.endpoint === 'disciplinas' && chave === 'ativo') return registro.ativo ? 'Ativa' : 'Inativa';
     if (this.endpoint === 'disciplinas' && chave === 'ementaStatus') return registro.ementaPdfNome ? 'Ementa enviada' : 'Sem ementa';
+    if (this.endpoint === 'modulos' && chave === 'disciplinasVinculadas') return this.quantidadeDisciplinasModulo(registro);
+    if ((this.endpoint === 'ofertas-disciplinas' || this.endpoint === 'montagem-periodo') && chave === 'moduloOriginalOferta') {
+      return registro.disciplina?.moduloOriginal?.nome || registro.disciplina?.modulo?.nome || 'Sem modulo original';
+    }
     const valor = registro[chave];
     if (valor && typeof valor === 'object') return this.rotuloOpcao(valor);
     if (typeof valor === 'boolean') return valor ? 'Sim' : 'Nao';
@@ -403,11 +420,17 @@ export class CadastroPage implements OnInit {
     if (this.endpoint === 'matriculas-disciplinas') {
       return this.campos.filter(campo => !['aluno.id', 'ofertaDisciplina.id'].includes(campo));
     }
+    if (this.endpoint === 'ofertas-disciplinas' || this.endpoint === 'montagem-periodo') {
+      return this.campos.filter(campo => campo !== 'periodoLetivo.id');
+    }
+    if (this.endpoint === 'turmas') {
+      return this.campos.filter(campo => campo !== 'periodoLetivo.id');
+    }
     return this.campos;
   }
 
   permiteVinculoDisciplinas() {
-    return this.endpoint === 'modulos' && this.opcoes['disciplina.id']?.length;
+    return false;
   }
 
   disciplinasDoCurso(modulo: any) {
@@ -415,6 +438,37 @@ export class CadastroPage implements OnInit {
     return (this.opcoes['disciplina.id'] || [])
       .filter(disciplina => !modulo?.curso?.id || disciplina.curso?.id === modulo.curso.id)
       .filter(disciplina => !busca || this.normalizarBusca(`${disciplina.nome} ${disciplina.codigo}`).includes(busca));
+  }
+
+  abrirGerenciamentoDisciplinas(modulo: any) {
+    this.moduloGerenciado = modulo;
+    this.buscaDisciplinasModal = '';
+    if (!this.disciplinasModulo[modulo.id]) {
+      const marcadas: Record<number, boolean> = {};
+      this.disciplinasDoCurso(modulo).forEach(item => marcadas[item.id] = item.modulo?.id === modulo.id);
+      this.disciplinasModulo[modulo.id] = marcadas;
+    }
+  }
+
+  fecharGerenciamentoDisciplinas() {
+    this.moduloGerenciado = undefined;
+    this.buscaDisciplinasModal = '';
+  }
+
+  disciplinasModal(modulo: any) {
+    const buscaAnterior = this.buscaDisciplinaModulo;
+    this.buscaDisciplinaModulo = this.buscaDisciplinasModal;
+    const disciplinas = this.disciplinasDoCurso(modulo).filter(disciplina => disciplina.ativo || disciplina.modulo?.id === modulo.id);
+    this.buscaDisciplinaModulo = buscaAnterior;
+    return disciplinas;
+  }
+
+  quantidadeDisciplinasModulo(modulo: any) {
+    return (this.opcoes['disciplina.id'] || []).filter(disciplina => disciplina.modulo?.id === modulo.id).length;
+  }
+
+  quantidadeSelecionadasModulo(modulo: any) {
+    return Object.values(this.disciplinasModulo[modulo.id] || {}).filter(Boolean).length;
   }
 
   registrosFiltrados() {
@@ -437,6 +491,9 @@ export class CadastroPage implements OnInit {
       this.atualizarEstadoNaUrl(false);
       this.router.navigate(['/disciplinas', registro.id], { queryParams: this.estadoListagem() });
       return;
+    }
+    if (this.endpoint === 'modulos') {
+      this.router.navigate(['/modulos', registro.id]);
     }
   }
 
@@ -556,6 +613,7 @@ export class CadastroPage implements OnInit {
       next: () => {
         this.mensagem = 'Disciplinas vinculadas ao modulo';
         this.disciplinasModulo = {};
+        this.fecharGerenciamentoDisciplinas();
         this.carregar();
         this.carregarOpcoes();
       },
@@ -599,6 +657,10 @@ export class CadastroPage implements OnInit {
 
   private montarObjeto() {
     const saida: any = {};
+    if ((this.endpoint === 'ofertas-disciplinas' || this.endpoint === 'montagem-periodo') && !this.formulario['periodoLetivo.id']) {
+      const periodo = this.periodoTecnicoCompativel();
+      if (periodo?.id) this.formulario['periodoLetivo.id'] = periodo.id;
+    }
     for (const campo of this.campos) {
       const valor = this.formulario[campo];
       if (valor === undefined || valor === '') continue;
@@ -693,5 +755,11 @@ export class CadastroPage implements OnInit {
     this.ofertasSelecionadas = {};
     this.mensagem = falhas.length ? falhas.join('; ') : 'Matriculas realizadas com sucesso';
     this.carregar();
+  }
+
+  private periodoTecnicoCompativel() {
+    const anoId = Number(this.formulario['anoLetivo.id']);
+    return (this.opcoes['periodoLetivo.id'] || []).find(periodo => periodo.anoLetivo?.id === anoId)
+      || (this.opcoes['periodoLetivo.id'] || [])[0];
   }
 }

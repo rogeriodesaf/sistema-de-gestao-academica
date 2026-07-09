@@ -10,5 +10,6 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class TopbarComponent {
   @Input() usuario: any;
+  @Output() abrirMenu = new EventEmitter<void>();
   @Output() sair = new EventEmitter<void>();
 }

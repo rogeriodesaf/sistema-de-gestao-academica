@@ -25,6 +25,7 @@ public class ModuloResource extends CadastroResource.Crud<Modulo> {
         List<Long> ids = dto == null || dto.disciplinasIds() == null ? List.of() : dto.disciplinasIds();
         Disciplina.update("modulo = null where modulo = ?1", modulo);
         if (!ids.isEmpty()) {
+            Disciplina.update("moduloOriginal = ?1 where moduloOriginal is null and id in ?2", modulo, ids);
             Disciplina.update("modulo = ?1 where id in ?2", modulo, ids);
         }
         return modulo;

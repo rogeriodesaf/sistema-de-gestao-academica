@@ -20,6 +20,10 @@ public class CadastroResource {
 
         protected Crud(Class<T> tipo) { this.tipo = tipo; }
 
+        protected EntityManager getEntityManager() {
+            return entityManager;
+        }
+
         @GET
         public List<T> listar(@QueryParam("pagina") @DefaultValue("0") int pagina, @QueryParam("tamanho") @DefaultValue("20") int tamanho) {
             return entityManager.createQuery("from " + tipo.getSimpleName(), tipo)

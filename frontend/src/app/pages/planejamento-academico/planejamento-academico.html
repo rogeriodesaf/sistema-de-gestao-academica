@@ -1,0 +1,159 @@
+<section class="painel planejamento-academico">
+  <app-page-header
+    titulo="Oferta Academica por Modulo"
+    subtitulo="Planeje quais disciplinas serao ofertadas, definindo professor, turma, horarios, salas e vagas."
+  />
+
+  <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+
+  <div class="vazio" *ngIf="carregando">
+    <h2>Carregando planejamento</h2>
+    <p>Buscando disciplinas, modulos, turmas e ofertas academicas.</p>
+  </div>
+
+  <form *ngIf="!carregando" class="planejamento-form card-bloco" (ngSubmit)="salvar()">
+    <header class="card-cabecalho">
+      <div>
+        <h2>{{ editandoId ? 'Editar oferta academica' : 'Nova oferta academica' }}</h2>
+        <p>Esta oferta pode receber alunos de outros cursos e alunos avulsos. O curso, quando informado, e apenas referencia.</p>
+      </div>
+    </header>
+
+    <section class="planejamento-bloco">
+      <h3>1. Ano letivo</h3>
+      <label>
+        Ano letivo
+        <select name="anoLetivo" [(ngModel)]="formulario['anoLetivo.id']" (ngModelChange)="formulario['periodoLetivo.id'] = ''; selecionarPeriodoTecnico()">
+          <option value="">Selecione</option>
+          <option *ngFor="let ano of anosLetivos" [ngValue]="ano.id">{{ rotulo(ano) }}</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="planejamento-bloco">
+      <h3>2. Disciplina</h3>
+      <label>
+        Disciplina
+        <select name="disciplina" [(ngModel)]="formulario['disciplina.id']">
+          <option value="">Selecione</option>
+          <option *ngFor="let disciplina of disciplinas" [ngValue]="disciplina.id">{{ rotulo(disciplina) }}</option>
+        </select>
+      </label>
+
+      <aside class="disciplina-resumo" *ngIf="disciplinaSelecionada() as disciplina">
+        <span>Codigo: <strong>{{ disciplina.codigo || 'Sem codigo' }}</strong></span>
+        <span>Carga horaria: <strong>{{ disciplina.cargaHoraria || 0 }}h</strong></span>
+        <span>Creditos: <strong>{{ disciplina.creditos || 0 }}</strong></span>
+        <span>Modulo original: <strong>{{ moduloOriginal(disciplina)?.nome || 'Sem modulo original' }}</strong></span>
+      </aside>
+    </section>
+
+    <section class="planejamento-bloco">
+      <h3>3. Modulo de oferta</h3>
+      <label>
+        Modulo de oferta
+        <select name="modulo" [(ngModel)]="formulario['modulo.id']">
+          <option value="">Selecione</option>
+          <option *ngFor="let modulo of modulos" [ngValue]="modulo.id">{{ rotulo(modulo) }}</option>
+        </select>
+      </label>
+      <p class="aviso-planejamento" *ngIf="remanejamentoFormulario()">
+        Atencao: esta disciplina pertence originalmente ao {{ moduloOriginal()?.nome }},
+        mas sera ofertada no {{ moduloOfertaSelecionado()?.nome }}.
+      </p>
+    </section>
+
+    <section class="planejamento-bloco">
+      <h3>4. Professor e turma</h3>
+      <label>
+        Professor
+        <select name="professor" [(ngModel)]="formulario['professor.id']">
+          <option value="">Selecione</option>
+          <option *ngFor="let professor of professores" [ngValue]="professor.id">{{ rotulo(professor) }}</option>
+        </select>
+      </label>
+      <label>
+        Nome da turma/oferta
+        <input name="nomeTurma" [(ngModel)]="formulario['nomeTurma']" placeholder="Hermeneutica I - Noite - 2026">
+      </label>
+      <label>
+        Curso de referencia
+        <select name="cursoReferencia" [(ngModel)]="formulario['curso.id']">
+          <option value="">Sem curso de referencia</option>
+          <option *ngFor="let curso of cursos" [ngValue]="curso.id">{{ rotulo(curso) }}</option>
+        </select>
+        <small>Alunos de outros cursos ou alunos avulsos poderao ser matriculados nesta oferta.</small>
+      </label>
+    </section>
+
+    <section class="planejamento-bloco">
+      <h3>5. Horario, sala e vagas</h3>
+      <label>
+        Horario
+        <input name="horario" [(ngModel)]="formulario['horario']" placeholder="Segunda-feira, 19h">
+      </label>
+      <label>
+        Sala
+        <input name="sala" [(ngModel)]="formulario['sala']" placeholder="Sala 01">
+      </label>
+      <label>
+        Vagas
+        <input type="number" min="1" name="vagas" [(ngModel)]="formulario['vagas']">
+      </label>
+      <label>
+        Data inicial
+        <input type="date" name="dataInicio" [(ngModel)]="formulario['dataInicio']">
+      </label>
+      <label>
+        Data final
+        <input type="date" name="dataFim" [(ngModel)]="formulario['dataFim']">
+      </label>
+      <label>
+        Situacao
+        <select name="status" [(ngModel)]="formulario['status']">
+          <option *ngFor="let status of statusOfertas()" [ngValue]="status">{{ status }}</option>
+        </select>
+      </label>
+    </section>
+
+    <div class="acoes-form">
+      <button type="button" class="secundario" (click)="cancelar()">Cancelar</button>
+      <button type="submit" [disabled]="salvando">{{ salvando ? 'Salvando...' : 'Salvar Oferta' }}</button>
+    </div>
+  </form>
+
+  <section *ngIf="!carregando" class="ofertas-lista">
+    <header class="card-cabecalho">
+      <div>
+        <h2>Ofertas planejadas</h2>
+        <p>{{ ofertas.length }} oferta(s) encontrada(s).</p>
+      </div>
+    </header>
+
+    <article *ngFor="let oferta of ofertas" class="oferta-card card-bloco">
+      <div class="oferta-card-topo">
+        <div>
+          <h3>{{ oferta.disciplina?.nome || 'Disciplina nao informada' }}</h3>
+          <p>Codigo: {{ oferta.disciplina?.codigo || 'Sem codigo' }}</p>
+        </div>
+        <span class="badge-remanejada" *ngIf="remanejada(oferta)">Remanejada</span>
+      </div>
+
+      <dl>
+        <div><dt>Modulo original</dt><dd>{{ moduloOriginal(oferta.disciplina)?.nome || 'Sem modulo original' }}</dd></div>
+        <div><dt>Ofertada em</dt><dd>{{ oferta.modulo?.nome || 'Sem modulo de oferta' }}</dd></div>
+        <div><dt>Professor</dt><dd>{{ oferta.professor?.nome || 'Professor nao definido' }}</dd></div>
+        <div><dt>Turma</dt><dd>{{ oferta.turma?.nome || 'Turma nao definida' }}</dd></div>
+        <div><dt>Horario</dt><dd>{{ oferta.horario || 'Horario nao definido' }}</dd></div>
+        <div><dt>Sala</dt><dd>{{ oferta.sala || 'Sala nao definida' }}</dd></div>
+        <div><dt>Vagas</dt><dd>{{ oferta.vagas || 0 }}</dd></div>
+        <div><dt>Situacao</dt><dd>{{ oferta.status }}</dd></div>
+      </dl>
+
+      <div class="grupo-acoes compacto">
+        <button type="button" class="secundario" (click)="visualizar(oferta)">Visualizar</button>
+        <button type="button" class="secundario" (click)="editar(oferta)">Editar</button>
+      </div>
+    </article>
+  </section>
+</section>

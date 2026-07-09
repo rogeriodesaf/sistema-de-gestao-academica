@@ -12,7 +12,7 @@
   box-shadow: 0 12px 30px rgba(16, 47, 74, .06);
 }
 
-.topbar div {
+.usuario-topbar {
   display: grid;
   gap: 2px;
 }
@@ -25,4 +25,82 @@
 .botao-sair {
   background: #eef5fb;
   color: #16334d;
+}
+
+.botao-menu,
+.marca-mobile {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    min-height: 62px;
+    margin: -4px 0 18px;
+    padding: 0 12px;
+  }
+
+  .botao-menu {
+    width: 42px;
+    height: 42px;
+    display: inline-grid;
+    place-items: center;
+    gap: 4px;
+    align-self: center;
+    border-radius: 8px;
+    padding: 9px;
+    background: #eef5fb;
+    color: #16334d;
+  }
+
+  .botao-menu span {
+    width: 20px;
+    height: 2px;
+    display: block;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .marca-mobile {
+    display: block;
+    color: #102f4a;
+    font-size: 1.1rem;
+  }
+
+  .usuario-topbar {
+    min-width: 0;
+    margin-left: auto;
+  }
+
+  .usuario-topbar span:first-child {
+    display: none;
+  }
+
+  .usuario-topbar strong,
+  .usuario-topbar span {
+    max-width: 34vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .botao-sair {
+    padding: 9px 11px;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    gap: 10px;
+  }
+
+  .usuario-topbar span {
+    display: none;
+  }
+
+  .botao-sair {
+    padding: 9px 10px;
+  }
 }

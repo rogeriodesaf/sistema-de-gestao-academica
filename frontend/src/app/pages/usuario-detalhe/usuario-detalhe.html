@@ -1,0 +1,38 @@
+<section class="painel">
+  <div class="acoes-detalhe">
+    <a class="voltar" routerLink="/usuarios">Voltar para Usuarios</a>
+    <button type="button" class="secundario" (click)="editar()">Editar</button>
+    <button type="button" class="secundario" (click)="redefinirSenha()">Redefinir senha</button>
+  </div>
+
+  <app-page-header
+    [titulo]="usuario()?.nome || 'Usuario'"
+    subtitulo="Detalhes do usuario do sistema"
+  />
+
+  <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
+
+  <div class="vazio" *ngIf="carregando()">
+    <h2>Carregando usuario</h2>
+    <p>Buscando as informacoes administrativas do usuario.</p>
+  </div>
+
+  <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando() && usuario() as usuario">
+    <article>
+      <h3>Informacoes</h3>
+      <dl>
+        <div><dt>Nome</dt><dd>{{ usuario.nome }}</dd></div>
+        <div><dt>E-mail</dt><dd>{{ usuario.email }}</dd></div>
+        <div><dt>Perfil</dt><dd>{{ perfilTexto(usuario.perfil) }}</dd></div>
+        <div><dt>Situacao</dt><dd>{{ usuario.ativo ? 'Ativo' : 'Inativo' }}</dd></div>
+        <div><dt>Data de criacao</dt><dd>{{ dataTexto(usuario.dataCriacao) }}</dd></div>
+        <div><dt>Ultimo acesso</dt><dd>{{ dataTexto(usuario.ultimoAcesso) }}</dd></div>
+      </dl>
+    </article>
+
+    <article>
+      <h3>Observacoes</h3>
+      <p>{{ usuario.observacoes || 'Nenhuma observacao cadastrada.' }}</p>
+    </article>
+  </div>
+</section>

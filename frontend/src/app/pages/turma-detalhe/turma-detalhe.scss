@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.acoes-detalhe {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.texto-apoio {
+  color: var(--cinza-700);
+  font-weight: 500;
+  margin-top: -4px;
+}

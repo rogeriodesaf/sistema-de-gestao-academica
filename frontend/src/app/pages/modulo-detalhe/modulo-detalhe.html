@@ -1,0 +1,46 @@
+<section class="painel">
+  <div class="acoes-detalhe">
+    <a class="voltar" routerLink="/modulos">Voltar para Modulos</a>
+    <a class="botao-link secundario" routerLink="/modulos">Gerenciar disciplinas</a>
+    <a class="botao-link secundario" routerLink="/modulos">Editar</a>
+  </div>
+
+  <app-page-header
+    [titulo]="modulo()?.nome || 'Modulo'"
+    [subtitulo]="modulo()?.descricao || 'Detalhes do modulo'"
+  />
+
+  <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
+
+  <div class="vazio" *ngIf="carregando()">
+    <h2>Carregando modulo</h2>
+    <p>Buscando as informacoes do agrupamento de disciplinas.</p>
+  </div>
+
+  <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando() && modulo() as modulo">
+    <article>
+      <h3>Informacoes</h3>
+      <dl>
+        <div><dt>Descricao</dt><dd>{{ modulo.descricao || 'Nenhuma descricao cadastrada.' }}</dd></div>
+        <div><dt>Curso</dt><dd>{{ rotuloOpcao(modulo.curso) }}</dd></div>
+        <div><dt>Ordem</dt><dd>{{ modulo.ordem }}</dd></div>
+        <div><dt>Situacao</dt><dd>{{ modulo.status }}</dd></div>
+        <div><dt>Ativo</dt><dd>{{ modulo.ativo ? 'Sim' : 'Nao' }}</dd></div>
+        <div><dt>Disciplinas vinculadas</dt><dd>{{ disciplinas().length }}</dd></div>
+      </dl>
+    </article>
+
+    <article class="disciplinas-detalhe">
+      <h3>Disciplinas vinculadas</h3>
+      <ol *ngIf="disciplinas().length; else semDisciplinas">
+        <li *ngFor="let disciplina of disciplinas()">
+          <strong>{{ disciplina.nome }}</strong>
+          <span>{{ disciplina.codigo || 'Sem codigo' }} - {{ disciplina.cargaHoraria || 0 }}h - {{ disciplina.creditos || 0 }} creditos</span>
+        </li>
+      </ol>
+      <ng-template #semDisciplinas>
+        <p>Nenhuma disciplina vinculada a este modulo.</p>
+      </ng-template>
+    </article>
+  </div>
+</section>

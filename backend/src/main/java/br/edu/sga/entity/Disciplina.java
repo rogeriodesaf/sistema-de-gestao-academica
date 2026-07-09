@@ -23,6 +23,9 @@ public class Disciplina extends PanacheEntity {
     @JoinColumn(name = "modulo_id")
     public Modulo modulo;
     @ManyToOne
+    @JoinColumn(name = "modulo_original_id")
+    public Modulo moduloOriginal;
+    @ManyToOne
     @JoinColumn(name = "professor_responsavel_id")
     public Professor professorResponsavel;
     @Min(1)

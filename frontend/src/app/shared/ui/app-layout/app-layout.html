@@ -1,8 +1,20 @@
-<div class="shell">
-  <app-sidebar [grupos]="menuGrupos" />
+<div class="shell" [class.menu-aberto]="menuAberto">
+  <app-sidebar class="sidebar-desktop" [grupos]="menuGrupos" />
+
+  <button
+    type="button"
+    class="menu-overlay"
+    aria-label="Fechar menu"
+    *ngIf="menuAberto"
+    (click)="fecharMenu()"
+  ></button>
+
+  <div class="menu-mobile" [class.aberto]="menuAberto" role="dialog" aria-label="Menu principal">
+    <app-sidebar [grupos]="menuGrupos" [mobile]="true" (navegar)="fecharMenu()" />
+  </div>
 
   <main class="conteudo">
-    <app-topbar [usuario]="usuario" (sair)="sair.emit()" />
+    <app-topbar [usuario]="usuario" (abrirMenu)="abrirMenu()" (sair)="emitirSair()" />
     <ng-content />
   </main>
 </div>

@@ -335,6 +335,19 @@ tbody tr:hover {
   font-weight: 700;
 }
 
+.nota-matriz {
+  margin-top: 8px;
+  max-width: 760px;
+  font-size: .9rem;
+}
+
+.aviso-remanejo {
+  display: block;
+  margin-top: 4px;
+  color: #7c2d12;
+  font-weight: 700;
+}
+
 .pdf-acoes {
   min-width: 280px;
   display: grid;
@@ -441,6 +454,235 @@ tbody tr:hover {
 
 .vinculos-disciplina input {
   width: auto;
+}
+
+.modal-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 37, 58, .42);
+}
+
+.modal-grande {
+  width: min(920px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--cinza-200);
+  border-radius: 8px;
+  padding: 20px;
+  background: var(--branco);
+  box-shadow: 0 24px 70px rgba(16, 47, 74, .22);
+}
+
+.modal-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--cinza-200);
+}
+
+.modal-cabecalho h2 {
+  margin: 0 0 4px;
+  color: var(--azul-900);
+  font-size: 1.15rem;
+}
+
+.campo-modal {
+  grid-column: 1 / -1;
+}
+
+.lista-disciplinas-modal {
+  display: grid;
+  gap: 8px;
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.item-disciplina-modal {
+  grid-column: 1 / -1;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  border: 1px solid var(--cinza-200);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--cinza-50);
+}
+
+.item-disciplina-modal input {
+  width: auto;
+  margin-top: 4px;
+}
+
+.item-disciplina-modal span {
+  display: grid;
+  gap: 3px;
+}
+
+.item-disciplina-modal small {
+  color: var(--cinza-700);
+}
+
+.vazio-modal {
+  border: 1px dashed var(--cinza-200);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--cinza-50);
+}
+
+.modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--cinza-200);
+}
+
+.planejamento-form {
+  display: grid;
+  gap: 18px;
+}
+
+.planejamento-bloco {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--cinza-200);
+  border-radius: 8px;
+  background: var(--cinza-50);
+}
+
+.planejamento-bloco h3 {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--azul-900);
+  font-size: 1rem;
+}
+
+.planejamento-bloco small {
+  color: var(--cinza-700);
+  font-weight: 500;
+}
+
+.disciplina-resumo {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.disciplina-resumo span,
+.badge-remanejada {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--azul-100);
+  color: var(--azul-900);
+  font-size: .85rem;
+}
+
+.aviso-planejamento {
+  grid-column: 1 / -1;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff7ed;
+  color: #7c2d12;
+  font-weight: 700;
+}
+
+.ofertas-lista {
+  display: grid;
+  gap: 14px;
+}
+
+.oferta-card {
+  display: grid;
+  gap: 14px;
+}
+
+.oferta-card-topo {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.oferta-card h3 {
+  margin: 0 0 4px;
+  color: var(--azul-900);
+  font-size: 1.1rem;
+}
+
+.badge-remanejada {
+  background: #fff7ed;
+  color: #7c2d12;
+  font-weight: 800;
+}
+
+.badge-ocupacao,
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: .82rem;
+  font-weight: 800;
+  background: var(--azul-100);
+  color: var(--azul-900);
+  white-space: nowrap;
+}
+
+.badge-ocupacao.lotada,
+.badge-status.status-CANCELADA,
+.badge-status.status-ENCERRADA,
+.badge-status.status-CONCLUIDA {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.badge-status.status-ABERTA {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-status.status-EM_ANDAMENTO {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-status.status-PLANEJADA {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.oferta-card dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.oferta-card dt {
+  color: var(--cinza-500);
+  font-size: .76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.oferta-card dd {
+  margin: 2px 0 0;
+  color: var(--cinza-950);
 }
 
 .pdf-acoes a {

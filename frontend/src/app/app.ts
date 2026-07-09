@@ -13,37 +13,36 @@ import { MenuGrupo } from './shared/ui/sidebar/sidebar';
 })
 export class App {
   menuGrupos: MenuGrupo[] = [
-    { titulo: 'Principal', itens: [{ path: '/dashboard', label: 'Dashboard', icone: 'D' }] },
+    { titulo: 'Principal', itens: [{ path: '/dashboard', label: 'Dashboard', icone: 'dashboard' }] },
     { titulo: 'Academico', itens: [
-      { path: '/cursos', label: 'Cursos', icone: 'C' },
-      { path: '/disciplinas', label: 'Disciplinas', icone: 'D' },
-      { path: '/modulos', label: 'Modulos', icone: 'M' },
-      { path: '/turmas', label: 'Turmas', icone: 'T' },
-      { path: '/matriz-curricular', label: 'Matriz curricular', icone: 'G' },
-      { path: '/ofertas-disciplinas', label: 'Ofertas de disciplinas', icone: 'O' },
-      { path: '/montagem-periodo', label: 'Montagem do periodo', icone: 'P' }
+      { path: '/cursos', label: 'Cursos', icone: 'course' },
+      { path: '/matriz-curricular', label: 'Matriz curricular', icone: 'matrix' },
+      { path: '/disciplinas', label: 'Disciplinas', icone: 'book' },
+      { path: '/modulos', label: 'Modulos', icone: 'layers' },
+      { path: '/montagem-periodo', label: 'Oferta por modulo', icone: 'calendar' },
+      { path: '/ofertas-disciplinas', label: 'Ofertas de disciplinas', icone: 'checklist' },
+      { path: '/turmas', label: 'Turmas', icone: 'users' },
+      { path: '/anos-letivos', label: 'Anos letivos', icone: 'calendar' },
+      { path: '/planos-ensino', label: 'Planos de ensino', icone: 'plan' },
+      { path: '/aulas', label: 'Aulas', icone: 'lesson' }
     ] },
     { titulo: 'Pessoas', itens: [
-      { path: '/alunos', label: 'Alunos', icone: 'A' },
-      { path: '/professores', label: 'Professores', icone: 'P' }
+      { path: '/alunos', label: 'Alunos', icone: 'student' },
+      { path: '/professores', label: 'Professores', icone: 'teacher' }
     ] },
-    { titulo: 'Organizacao Academica', itens: [
-      { path: '/anos-letivos', label: 'Anos letivos', icone: 'A' },
-      { path: '/periodos-letivos', label: 'Periodos letivos', icone: 'P' },
-      { path: '/matriculas-disciplinas', label: 'Matriculas em disciplinas', icone: 'M' },
-      { path: '/planos-ensino', label: 'Plano de ensino', icone: 'E' },
-      { path: '/aulas', label: 'Aulas', icone: 'L' },
-      { path: '/frequencias', label: 'Frequencia', icone: 'F' },
-      { path: '/notas', label: 'Notas', icone: 'N' }
+    { titulo: 'Avaliacao', itens: [
+      { path: '/matriculas-disciplinas', label: 'Matriculas', icone: 'document-check' },
+      { path: '/frequencias', label: 'Frequencia', icone: 'attendance' },
+      { path: '/notas', label: 'Notas', icone: 'grade' }
     ] },
     { titulo: 'Consultas', itens: [
-      { path: '/historicos', label: 'Historico escolar', icone: 'H' },
-      { path: '/relatorios', label: 'Relatorios', icone: 'R' }
+      { path: '/historicos', label: 'Historico escolar', icone: 'history' },
+      { path: '/relatorios', label: 'Relatorios', icone: 'chart' }
     ] },
     { titulo: 'Administracao', itens: [
-      { path: '/usuarios', label: 'Usuarios', icone: 'U' },
-      { path: '/perfis', label: 'Perfis', icone: 'P' },
-      { path: '/configuracoes', label: 'Configuracoes', icone: 'S' }
+      { path: '/usuarios', label: 'Usuarios', icone: 'user' },
+      { path: '/perfis', label: 'Perfis', icone: 'shield' },
+      { path: '/configuracoes', label: 'Configuracoes', icone: 'settings' }
     ] }
   ];
 

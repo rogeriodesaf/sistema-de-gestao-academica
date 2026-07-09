@@ -1,0 +1,51 @@
+<section class="painel">
+  <div class="acoes-detalhe">
+    <button type="button" class="secundario" (click)="voltar()">Voltar</button>
+    <button type="button" class="secundario" (click)="editar()" *ngIf="oferta()">Editar</button>
+    <button type="button" class="perigo-suave" (click)="encerrar()" *ngIf="oferta() && oferta()?.status !== 'ENCERRADA'">Encerrar Oferta</button>
+  </div>
+
+  <app-page-header
+    [titulo]="oferta()?.disciplina?.nome || 'Oferta Academica'"
+    subtitulo="Detalhes da oferta academica por modulo"
+  />
+
+  <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
+
+  <div class="vazio" *ngIf="carregando()">
+    <h2>Carregando oferta</h2>
+    <p>Buscando dados da disciplina, turma e matriculas.</p>
+  </div>
+
+  <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando() && oferta() as oferta">
+    <article>
+      <h3>Oferta Academica</h3>
+      <dl>
+        <div><dt>Disciplina</dt><dd>{{ oferta.disciplina?.nome || 'Disciplina nao informada' }}</dd></div>
+        <div><dt>Codigo</dt><dd>{{ oferta.disciplina?.codigo || 'Sem codigo' }}</dd></div>
+        <div><dt>Modulo original</dt><dd>{{ moduloOriginal()?.nome || 'Sem modulo original' }}</dd></div>
+        <div><dt>Modulo de oferta</dt><dd>{{ oferta.modulo?.nome || 'Sem modulo de oferta' }}</dd></div>
+        <div><dt>Professor</dt><dd>{{ oferta.professor?.nome || 'Professor nao definido' }}</dd></div>
+        <div><dt>Turma</dt><dd>{{ oferta.turma?.nome || 'Turma nao definida' }}</dd></div>
+        <div><dt>Horario</dt><dd>{{ oferta.horario || 'Horario nao definido' }}</dd></div>
+        <div><dt>Sala</dt><dd>{{ oferta.sala || 'Sala nao definida' }}</dd></div>
+        <div><dt>Vagas</dt><dd>{{ oferta.vagas || 0 }}</dd></div>
+        <div><dt>Alunos matriculados</dt><dd>{{ ocupacao() }}</dd></div>
+        <div><dt>Situacao</dt><dd>{{ oferta.status }}</dd></div>
+      </dl>
+    </article>
+
+    <article>
+      <h3>Alunos matriculados</h3>
+      <ol *ngIf="alunosAtivos().length; else semAlunos">
+        <li *ngFor="let matricula of alunosAtivos()">
+          <strong>{{ matricula.aluno?.nome || 'Aluno' }}</strong>
+          <span>{{ matricula.aluno?.curso?.nome || matricula.curso?.nome || 'Disciplina avulsa' }}</span>
+        </li>
+      </ol>
+      <ng-template #semAlunos>
+        <p>Nenhum aluno matriculado nesta oferta.</p>
+      </ng-template>
+    </article>
+  </div>
+</section>
