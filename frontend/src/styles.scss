@@ -230,6 +230,12 @@ button.perigo {
   background: var(--vermelho);
 }
 
+button.perigo-suave {
+  border: 1px solid #fecaca;
+  background: var(--vermelho-50);
+  color: var(--vermelho);
+}
+
 .acoes-form {
   grid-column: 1 / -1;
   align-self: end;

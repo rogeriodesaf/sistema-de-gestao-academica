@@ -1,0 +1,146 @@
+.pdf-card {
+  min-width: 260px;
+  display: grid;
+  gap: 12px;
+}
+
+.pdf-topo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.pdf-icone {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.sem-arquivo .pdf-icone {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.pdf-topo strong {
+  display: block;
+  color: #102f4a;
+  font-size: .92rem;
+}
+
+.pdf-nome,
+.pdf-ajuda {
+  display: block;
+  max-width: 220px;
+  overflow: hidden;
+  color: #536575;
+  font-size: .85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-acoes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button,
+.botao-upload,
+.menu-lista label {
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 11px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.acao-primaria,
+.botao-upload {
+  display: inline-flex;
+  width: fit-content;
+  background: #256fa8;
+  color: #fff;
+}
+
+.acao-secundaria,
+.acao-menu,
+.menu-lista label {
+  background: #eaf4ff;
+  color: #102f4a;
+}
+
+.acao-menu {
+  min-width: 38px;
+}
+
+.menu-pdf {
+  position: relative;
+}
+
+.menu-lista {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 180px;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid #dfe7ef;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(16, 47, 74, .16);
+}
+
+.menu-lista label,
+.menu-lista button {
+  width: 100%;
+  text-align: left;
+}
+
+input[type='file'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.acao-destrutiva {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.confirmacao {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fff7f7;
+}
+
+.confirmacao p {
+  color: #536575;
+  font-size: .86rem;
+}
+
+.confirmacao div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.confirmacao .destaque {
+  background: #b42318;
+  color: #fff;
+}

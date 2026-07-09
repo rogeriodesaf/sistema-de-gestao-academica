@@ -1,0 +1,41 @@
+<div class="pdf-card" [class.sem-arquivo]="!temArquivo">
+  <div class="pdf-topo">
+    <span class="pdf-icone" aria-hidden="true">{{ temArquivo ? 'PDF' : '!' }}</span>
+    <div>
+      <strong>{{ temArquivo ? enviadoTexto : vazioTexto }}</strong>
+      <span *ngIf="temArquivo" class="pdf-nome" [title]="nomeArquivo">{{ nomeArquivo }}</span>
+      <span *ngIf="!temArquivo" class="pdf-ajuda">{{ titulo }}</span>
+    </div>
+  </div>
+
+  <div class="pdf-acoes" *ngIf="temArquivo; else envioInicial">
+    <button type="button" class="acao-primaria" (click)="abrir.emit()">Abrir</button>
+    <button type="button" class="acao-secundaria" (click)="baixar.emit()">Baixar</button>
+    <div class="menu-pdf">
+      <button type="button" class="acao-menu" aria-label="Mais acoes do PDF" (click)="menuAberto = !menuAberto">...</button>
+      <div class="menu-lista" *ngIf="menuAberto">
+        <label>
+          Substituir PDF
+          <input type="file" accept="application/pdf" (change)="selecionarArquivo($event)">
+        </label>
+        <button type="button" class="acao-destrutiva" (click)="solicitarRemocao()">Remover PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #envioInicial>
+    <label class="botao-upload">
+      {{ uploadTexto }}
+      <input type="file" accept="application/pdf" (change)="selecionarArquivo($event)">
+    </label>
+  </ng-template>
+
+  <div class="confirmacao" *ngIf="confirmandoRemocao">
+    <strong>Deseja remover este PDF?</strong>
+    <p>Esta acao nao podera ser desfeita.</p>
+    <div>
+      <button type="button" class="acao-secundaria" (click)="confirmandoRemocao = false">Cancelar</button>
+      <button type="button" class="acao-destrutiva destaque" (click)="confirmarRemocao()">Remover PDF</button>
+    </div>
+  </div>
+</div>

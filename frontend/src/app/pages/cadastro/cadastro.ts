@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
+import { PdfCardComponent } from '../../shared/ui/pdf-card/pdf-card';
 
 @Component({
   selector: 'app-cadastro',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, PdfCardComponent],
   templateUrl: './cadastro.html'
 })
 export class CadastroPage implements OnInit {
@@ -235,6 +236,18 @@ export class CadastroPage implements OnInit {
     return 'Plano de ensino';
   }
 
+  textoPdfEnviado() {
+    if (this.endpoint === 'cursos') return 'Grade curricular enviada';
+    if (this.endpoint === 'disciplinas') return 'Ementa enviada';
+    return 'Plano de ensino enviado';
+  }
+
+  textoUploadPdf() {
+    if (this.endpoint === 'cursos') return 'Enviar Grade Curricular';
+    if (this.endpoint === 'disciplinas') return 'Enviar Ementa';
+    return 'Enviar Plano de Ensino';
+  }
+
   isSelect(campo: string) {
     return campo.endsWith('.id') || ['status', 'tipo', 'ativo', 'presente'].includes(campo);
   }
@@ -286,6 +299,10 @@ export class CadastroPage implements OnInit {
     const input = event.target as HTMLInputElement;
     const arquivo = input.files?.[0];
     if (!arquivo) return;
+    this.enviarPdfArquivo(registro, arquivo);
+  }
+
+  enviarPdfArquivo(registro: any, arquivo: File) {
     if (arquivo.type !== 'application/pdf') {
       this.mensagem = 'Envie um arquivo PDF';
       return;
