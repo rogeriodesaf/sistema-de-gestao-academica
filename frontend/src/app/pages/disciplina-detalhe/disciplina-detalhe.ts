@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { finalize, timeout } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 import { PdfCardComponent } from '../../shared/ui/pdf-card/pdf-card';
@@ -22,20 +23,27 @@ export class DisciplinaDetalhePage implements OnInit {
 
   ngOnInit() {
     this.queryParams = { ...this.route.snapshot.queryParams };
-    this.carregar();
+    this.route.paramMap.subscribe(params => this.carregar(Number(params.get('id'))));
   }
 
-  carregar() {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+  carregar(id = Number(this.route.snapshot.paramMap.get('id'))) {
+    if (!id) {
+      this.mensagem = 'Disciplina nao encontrada.';
+      this.carregando = false;
+      return;
+    }
     this.carregando = true;
-    this.api.buscar('disciplinas', id).subscribe({
+    this.mensagem = '';
+    this.api.buscar('disciplinas', id).pipe(
+      timeout({ each: 10000 }),
+      finalize(() => this.carregando = false)
+    ).subscribe({
       next: disciplina => {
         this.disciplina = disciplina;
-        this.carregando = false;
       },
       error: err => {
-        this.mensagem = err?.error?.mensagem || 'Nao foi possivel carregar a disciplina';
-        this.carregando = false;
+        this.disciplina = undefined;
+        this.mensagem = err?.error?.mensagem || 'Nao foi possivel carregar a disciplina. Verifique sua conexao e tente novamente.';
       }
     });
   }
@@ -69,7 +77,7 @@ export class DisciplinaDetalhePage implements OnInit {
     this.api.enviarArquivo('disciplinas', this.disciplina.id, 'ementa-pdf', arquivo).subscribe({
       next: () => {
         this.mensagem = 'Ementa enviada com sucesso';
-        this.carregar();
+        this.carregar(this.disciplina.id);
       },
       error: err => this.mensagem = err?.error?.mensagem || 'Nao foi possivel enviar a ementa'
     });
@@ -80,7 +88,7 @@ export class DisciplinaDetalhePage implements OnInit {
     this.api.removerArquivo('disciplinas', this.disciplina.id, 'ementa-pdf').subscribe({
       next: () => {
         this.mensagem = 'Ementa removida';
-        this.carregar();
+        this.carregar(this.disciplina.id);
       },
       error: err => this.mensagem = err?.error?.mensagem || 'Nao foi possivel remover a ementa'
     });

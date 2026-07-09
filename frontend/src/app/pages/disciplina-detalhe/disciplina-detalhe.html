@@ -13,6 +13,11 @@
     <p>Buscando informacoes do catalogo academico.</p>
   </div>
 
+  <div class="vazio" *ngIf="!carregando && !disciplina">
+    <h2>Disciplina nao localizada</h2>
+    <p>Volte para a listagem e selecione uma disciplina cadastrada.</p>
+  </div>
+
   <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando && disciplina">
     <article>
       <h3>Informacoes</h3>
@@ -20,7 +25,7 @@
         <div><dt>Codigo</dt><dd>{{ disciplina.codigo || 'Sem codigo' }}</dd></div>
         <div><dt>Curso</dt><dd>{{ rotuloOpcao(disciplina.curso) }}</dd></div>
         <div><dt>Modulo</dt><dd>{{ rotuloOpcao(disciplina.modulo) || 'Sem modulo' }}</dd></div>
-        <div><dt>Professor responsavel</dt><dd>{{ rotuloOpcao(disciplina.professorResponsavel) || 'Nao definido' }}</dd></div>
+        <div><dt>Professor responsavel</dt><dd>{{ rotuloOpcao(disciplina.professorResponsavel) || 'Nenhum professor vinculado.' }}</dd></div>
         <div><dt>Carga horaria</dt><dd>{{ disciplina.cargaHoraria || 0 }}h</dd></div>
         <div><dt>Creditos</dt><dd>{{ disciplina.creditos || 0 }}</dd></div>
         <div><dt>Tipo</dt><dd>{{ tipoDisciplina() }}</dd></div>
@@ -29,12 +34,12 @@
     </article>
 
     <article>
-      <h3>Ementa</h3>
+      <h3>Ementa em PDF</h3>
       <app-pdf-card
         titulo="Ementa"
         [nomeArquivo]="disciplina.ementaPdfNome || ''"
         enviadoTexto="Ementa enviada"
-        vazioTexto="Nenhuma ementa enviada"
+        vazioTexto="Nenhuma ementa enviada."
         uploadTexto="Enviar Ementa"
         (abrir)="abrirEmenta()"
         (baixar)="baixarEmenta()"
