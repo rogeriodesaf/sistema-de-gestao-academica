@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
 import { CadastroPage } from './pages/cadastro/cadastro';
 import { DashboardPage } from './pages/dashboard/dashboard';
+import { DisciplinaDetalhePage } from './pages/disciplina-detalhe/disciplina-detalhe';
 import { LoginPage } from './pages/login/login';
 
 const camposBase = {
@@ -32,6 +33,7 @@ const camposBase = {
 export const routes: Routes = [
   { path: 'login', component: LoginPage },
   { path: 'dashboard', component: DashboardPage, canActivate: [authGuard] },
+  { path: 'disciplinas/:id', component: DisciplinaDetalhePage, canActivate: [authGuard] },
   ...Object.entries(camposBase).map(([path, campos]) => ({
     path,
     component: CadastroPage,

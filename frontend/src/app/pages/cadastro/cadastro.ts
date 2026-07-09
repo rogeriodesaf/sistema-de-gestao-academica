@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 import { PdfCardComponent } from '../../shared/ui/pdf-card/pdf-card';
@@ -29,7 +29,6 @@ export class CadastroPage implements OnInit {
   mensagem = '';
   carregando = false;
   registroEditandoId?: number;
-  registroSelecionado?: any;
   filtros = {
     busca: '',
     cursoId: '',
@@ -39,6 +38,9 @@ export class CadastroPage implements OnInit {
     tipo: ''
   };
   buscaDisciplinaModulo = '';
+  paginaAtual = 1;
+  itensPorPagina = 10;
+  tamanhosPagina = [10, 25, 50, 100];
 
   private selects: Record<string, string> = {
     aluno: 'alunos',
@@ -88,6 +90,7 @@ export class CadastroPage implements OnInit {
     dataTermino: 'Data de termino',
     descricao: 'Descricao',
     ementaResumo: 'Resumo da ementa',
+    ementaStatus: 'Ementa',
     email: 'E-mail',
     endereco: 'Endereco',
     formacao: 'Formacao',
@@ -115,7 +118,7 @@ export class CadastroPage implements OnInit {
     vagas: 'Vagas'
   };
 
-  constructor(private route: ActivatedRoute, private api: ApiService) {}
+  constructor(private route: ActivatedRoute, private router: Router, private api: ApiService) {}
 
   ngOnInit() {
     this.route.data.subscribe(data => {
@@ -123,6 +126,7 @@ export class CadastroPage implements OnInit {
       this.endpoint = data['endpoint'];
       this.campos = data['campos'];
       this.cancelarEdicao();
+      this.aplicarEstadoDaUrl();
       this.opcoes = {};
       this.carregar();
       this.carregarOpcoes();
@@ -148,7 +152,6 @@ export class CadastroPage implements OnInit {
     }
     this.api.listar(this.endpoint).subscribe(registros => {
       this.registros = registros;
-      this.registroSelecionado = undefined;
       if (this.endpoint === 'matriculas-disciplinas') this.carregarOfertasAgrupadas();
     });
   }
@@ -184,7 +187,6 @@ export class CadastroPage implements OnInit {
 
   editar(registro: any) {
     this.registroEditandoId = registro.id;
-    this.registroSelecionado = registro;
     this.formulario = {};
     for (const campo of this.campos) {
       if (campo.endsWith('.id')) {
@@ -218,7 +220,7 @@ export class CadastroPage implements OnInit {
 
   chaves(registro: any) {
     if (this.endpoint === 'disciplinas') {
-      return ['nome', 'codigo', 'curso', 'modulo', 'professorResponsavel', 'ativo'];
+      return ['nome', 'codigo', 'curso', 'modulo', 'professorResponsavel', 'ativo', 'ementaStatus'];
     }
     return Object.keys(registro).filter(chave => {
       const normalizada = chave.toLowerCase();
@@ -303,7 +305,7 @@ export class CadastroPage implements OnInit {
   }
 
   permitePdf() {
-    return this.endpoint === 'cursos' || this.endpoint === 'disciplinas' || this.endpoint === 'planos-ensino';
+    return this.endpoint === 'cursos' || this.endpoint === 'planos-ensino';
   }
 
   opcoesCampo(campo: string) {
@@ -330,6 +332,7 @@ export class CadastroPage implements OnInit {
 
   valor(registro: any, chave: string) {
     if (this.endpoint === 'disciplinas' && chave === 'ativo') return registro.ativo ? 'Ativa' : 'Inativa';
+    if (this.endpoint === 'disciplinas' && chave === 'ementaStatus') return registro.ementaPdfNome ? 'Ementa enviada' : 'Sem ementa';
     const valor = registro[chave];
     if (valor && typeof valor === 'object') return this.rotuloOpcao(valor);
     if (typeof valor === 'boolean') return valor ? 'Sim' : 'Nao';
@@ -430,7 +433,11 @@ export class CadastroPage implements OnInit {
   }
 
   selecionarRegistro(registro: any) {
-    this.registroSelecionado = registro;
+    if (this.endpoint === 'disciplinas') {
+      this.atualizarEstadoNaUrl(false);
+      this.router.navigate(['/disciplinas', registro.id], { queryParams: this.estadoListagem() });
+      return;
+    }
   }
 
   tipoDisciplina(registro: any) {
@@ -443,6 +450,42 @@ export class CadastroPage implements OnInit {
 
   limparFiltros() {
     this.filtros = { busca: '', cursoId: '', moduloId: '', professorId: '', status: '', tipo: '' };
+    this.paginaAtual = 1;
+    this.atualizarEstadoNaUrl();
+  }
+
+  atualizarFiltro() {
+    this.paginaAtual = 1;
+    this.atualizarEstadoNaUrl();
+  }
+
+  registrosPaginados() {
+    if (this.endpoint !== 'disciplinas') return this.registrosFiltrados();
+    const inicio = (this.paginaAtual - 1) * this.itensPorPagina;
+    return this.registrosFiltrados().slice(inicio, inicio + this.itensPorPagina);
+  }
+
+  totalPaginas() {
+    return Math.max(Math.ceil(this.registrosFiltrados().length / this.itensPorPagina), 1);
+  }
+
+  indiceInicial() {
+    if (!this.registrosFiltrados().length) return 0;
+    return (this.paginaAtual - 1) * this.itensPorPagina + 1;
+  }
+
+  indiceFinal() {
+    return Math.min(this.paginaAtual * this.itensPorPagina, this.registrosFiltrados().length);
+  }
+
+  mudarPagina(delta: number) {
+    this.paginaAtual = Math.min(Math.max(this.paginaAtual + delta, 1), this.totalPaginas());
+    this.atualizarEstadoNaUrl();
+  }
+
+  mudarTamanhoPagina() {
+    this.paginaAtual = 1;
+    this.atualizarEstadoNaUrl();
   }
 
   private normalizarBusca(valor: string) {
@@ -451,6 +494,43 @@ export class CadastroPage implements OnInit {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim();
+  }
+
+  private aplicarEstadoDaUrl() {
+    const params = this.route.snapshot.queryParamMap;
+    this.filtros = {
+      busca: params.get('busca') || '',
+      cursoId: params.get('cursoId') || '',
+      moduloId: params.get('moduloId') || '',
+      professorId: params.get('professorId') || '',
+      status: params.get('status') || '',
+      tipo: params.get('tipo') || ''
+    };
+    const tamanho = Number(params.get('tamanho') || 10);
+    this.itensPorPagina = this.tamanhosPagina.includes(tamanho) ? tamanho : 10;
+    this.paginaAtual = Math.max(Number(params.get('pagina') || 1), 1);
+  }
+
+  private atualizarEstadoNaUrl(replaceUrl = true) {
+    if (this.endpoint !== 'disciplinas') return;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: this.estadoListagem(),
+      replaceUrl
+    });
+  }
+
+  private estadoListagem() {
+    return {
+      busca: this.filtros.busca || null,
+      cursoId: this.filtros.cursoId || null,
+      moduloId: this.filtros.moduloId || null,
+      professorId: this.filtros.professorId || null,
+      status: this.filtros.status || null,
+      tipo: this.filtros.tipo || null,
+      pagina: this.paginaAtual,
+      tamanho: this.itensPorPagina
+    };
   }
 
   disciplinaMarcada(modulo: any, disciplina: any) {

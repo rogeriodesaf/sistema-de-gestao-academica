@@ -1,0 +1,66 @@
+<section class="painel">
+  <a class="voltar" routerLink="/disciplinas" [queryParams]="queryParams">Voltar para Disciplinas</a>
+
+  <app-page-header
+    [titulo]="disciplina?.nome || 'Disciplina'"
+    [subtitulo]="disciplina?.codigo || 'Detalhes da disciplina'"
+  />
+
+  <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+
+  <div class="vazio" *ngIf="carregando">
+    <h2>Carregando disciplina</h2>
+    <p>Buscando informacoes do catalogo academico.</p>
+  </div>
+
+  <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando && disciplina">
+    <article>
+      <h3>Informacoes</h3>
+      <dl>
+        <div><dt>Codigo</dt><dd>{{ disciplina.codigo || 'Sem codigo' }}</dd></div>
+        <div><dt>Curso</dt><dd>{{ rotuloOpcao(disciplina.curso) }}</dd></div>
+        <div><dt>Modulo</dt><dd>{{ rotuloOpcao(disciplina.modulo) || 'Sem modulo' }}</dd></div>
+        <div><dt>Professor responsavel</dt><dd>{{ rotuloOpcao(disciplina.professorResponsavel) || 'Nao definido' }}</dd></div>
+        <div><dt>Carga horaria</dt><dd>{{ disciplina.cargaHoraria || 0 }}h</dd></div>
+        <div><dt>Creditos</dt><dd>{{ disciplina.creditos || 0 }}</dd></div>
+        <div><dt>Tipo</dt><dd>{{ tipoDisciplina() }}</dd></div>
+        <div><dt>Situacao</dt><dd>{{ disciplina.ativo ? 'Ativa' : 'Inativa' }}</dd></div>
+      </dl>
+    </article>
+
+    <article>
+      <h3>Ementa</h3>
+      <app-pdf-card
+        titulo="Ementa"
+        [nomeArquivo]="disciplina.ementaPdfNome || ''"
+        enviadoTexto="Ementa enviada"
+        vazioTexto="Nenhuma ementa enviada"
+        uploadTexto="Enviar Ementa"
+        (abrir)="abrirEmenta()"
+        (baixar)="baixarEmenta()"
+        (remover)="removerEmenta()"
+        (arquivoSelecionado)="enviarEmenta($event)"
+      />
+    </article>
+
+    <article>
+      <h3>Resumo da Ementa</h3>
+      <p>{{ disciplina.ementaResumo || 'Nenhum resumo cadastrado.' }}</p>
+    </article>
+
+    <article>
+      <h3>Bibliografia</h3>
+      <p>{{ disciplina.bibliografia || 'Nenhuma bibliografia cadastrada.' }}</p>
+    </article>
+
+    <article>
+      <h3>Alunos Matriculados</h3>
+      <p>Consulta preparada para evolucao sem alterar a matricula individual por disciplina.</p>
+    </article>
+
+    <article>
+      <h3>Notas e Frequencia</h3>
+      <p>As notas e frequencias continuam sendo lancadas nas telas proprias.</p>
+    </article>
+  </div>
+</section>

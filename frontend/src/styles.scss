@@ -378,6 +378,25 @@ tbody tr:hover {
   justify-content: flex-end;
 }
 
+.controle-pagina {
+  grid-column: auto;
+  min-width: 150px;
+}
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 16px;
+}
+
+.paginacao span {
+  color: var(--cinza-700);
+  font-weight: 700;
+}
+
 .upload-pdf {
   grid-column: auto;
   display: inline-flex;
