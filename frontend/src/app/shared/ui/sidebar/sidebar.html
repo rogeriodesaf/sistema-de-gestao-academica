@@ -1,0 +1,19 @@
+<aside class="sidebar">
+  <div class="brand">
+    <span class="brand-selo">SGA</span>
+    <div>
+      <strong>SGA</strong>
+      <span>Sistema de Gestao Academica</span>
+    </div>
+  </div>
+
+  <nav aria-label="Menu principal">
+    <section *ngFor="let grupo of grupos" class="menu-grupo">
+      <h2>{{ grupo.titulo }}</h2>
+      <a *ngFor="let item of grupo.itens" [routerLink]="item.path" routerLinkActive="ativo">
+        <span aria-hidden="true">{{ item.icone }}</span>
+        {{ item.label }}
+      </a>
+    </section>
+  </nav>
+</aside>

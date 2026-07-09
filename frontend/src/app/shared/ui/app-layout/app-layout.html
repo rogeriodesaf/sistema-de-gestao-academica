@@ -1,0 +1,8 @@
+<div class="shell">
+  <app-sidebar [grupos]="menuGrupos" />
+
+  <main class="conteudo">
+    <app-topbar [usuario]="usuario" (sair)="sair.emit()" />
+    <ng-content />
+  </main>
+</div>

@@ -1,0 +1,10 @@
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 2px 0;
+}
+
+.cabecalho p {
+  max-width: 760px;
+}

@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
+import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageHeaderComponent],
   templateUrl: './dashboard.html'
 })
 export class DashboardPage implements OnInit {

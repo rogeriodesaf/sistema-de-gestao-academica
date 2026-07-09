@@ -1,0 +1,28 @@
+.topbar {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 0 20px;
+  background: #fff;
+  border: 1px solid #dfe7ef;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(16, 47, 74, .06);
+}
+
+.topbar div {
+  display: grid;
+  gap: 2px;
+}
+
+.topbar span {
+  color: #6d7d8c;
+  font-size: .88rem;
+}
+
+.botao-sair {
+  background: #eef5fb;
+  color: #16334d;
+}

@@ -1,36 +1,7 @@
 <ng-container *ngIf="auth.logado(); else areaPublica">
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <span class="brand-selo">SGA</span>
-        <div>
-          <strong>SGA</strong>
-          <span>Sistema de Gestao Academica</span>
-        </div>
-      </div>
-      <nav>
-        <section *ngFor="let grupo of menuGrupos" class="menu-grupo">
-          <h2>{{ grupo.titulo }}</h2>
-          <a *ngFor="let item of grupo.itens" [routerLink]="item.path" routerLinkActive="ativo">
-            <span aria-hidden="true">{{ item.icone }}</span>
-            {{ item.label }}
-          </a>
-        </section>
-      </nav>
-    </aside>
-
-    <main class="conteudo">
-      <header class="topbar">
-        <div>
-          <span>Administrador</span>
-          <strong>{{ auth.usuario()?.nome }}</strong>
-          <span>{{ auth.usuario()?.perfil }}</span>
-        </div>
-        <button type="button" class="botao-sair" (click)="auth.sair()">Sair</button>
-      </header>
-      <router-outlet />
-    </main>
-  </div>
+  <app-layout [menuGrupos]="menuGrupos" [usuario]="auth.usuario()" (sair)="auth.sair()">
+    <router-outlet />
+  </app-layout>
 </ng-container>
 
 <ng-template #areaPublica>

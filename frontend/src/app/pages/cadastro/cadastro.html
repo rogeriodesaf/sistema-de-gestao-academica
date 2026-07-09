@@ -1,10 +1,5 @@
 <section class="painel">
-  <header class="cabecalho">
-    <div>
-      <h1>{{ titulo | titlecase }}</h1>
-      <p>{{ subtitulo() }}</p>
-    </div>
-  </header>
+  <app-page-header [titulo]="titulo | titlecase" [subtitulo]="subtitulo()" />
 
   <div *ngIf="endpoint === 'matriz-curricular'" class="consulta card-bloco">
     <label>
