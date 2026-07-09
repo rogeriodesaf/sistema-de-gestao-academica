@@ -2,13 +2,11 @@
   <header class="cabecalho">
     <div>
       <h1>{{ titulo | titlecase }}</h1>
-      <p *ngIf="endpoint !== 'relatorios' && endpoint !== 'matriz-curricular'">Cadastro, consulta e manutencao dos registros academicos.</p>
-      <p *ngIf="endpoint === 'relatorios'">Relatorios disponiveis pela API: alunos por turma, alunos por disciplina, disciplinas por periodo, carga horaria, frequencia, notas, historico e resultados.</p>
-      <p *ngIf="endpoint === 'matriz-curricular'">Disciplinas organizadas por curso e modulo, com carga horaria consolidada.</p>
+      <p>{{ subtitulo() }}</p>
     </div>
   </header>
 
-  <div *ngIf="endpoint === 'matriz-curricular'" class="consulta">
+  <div *ngIf="endpoint === 'matriz-curricular'" class="consulta card-bloco">
     <label>
       Curso
       <select name="cursoSelecionado" [(ngModel)]="cursoSelecionado" (ngModelChange)="carregarMatriz()">
@@ -21,7 +19,7 @@
         <div>
           <h2>{{ matriz.curso?.nome }}</h2>
           <span>{{ matriz.cargaHorariaTotal }} horas · {{ matriz.creditosTotal }} creditos</span>
-          <button *ngIf="matriz.curso?.gradePdfNome" type="button" class="secundario" (click)="abrirPdfCurso(matriz.curso)">Ver grade curricular oficial</button>
+          <button *ngIf="matriz.curso?.gradePdfNome" type="button" class="secundario" (click)="abrirPdfCurso(matriz.curso)">Abrir PDF</button>
         </div>
       </header>
 
@@ -51,7 +49,7 @@
               <td>{{ disciplina.cargaHoraria }} h</td>
               <td>{{ disciplina.creditos }}</td>
               <td>
-                <button *ngIf="disciplina.ementaPdfNome" type="button" class="secundario" (click)="abrirPdfDisciplina(disciplina)">Ver PDF</button>
+                <button *ngIf="disciplina.ementaPdfNome" type="button" class="secundario" (click)="abrirPdfDisciplina(disciplina)">Abrir PDF</button>
                 <span *ngIf="!disciplina.ementaPdfNome">{{ disciplina.ementaResumo }}</span>
               </td>
             </tr>
@@ -61,7 +59,14 @@
     </div>
   </div>
 
-  <form *ngIf="campos.length" class="formulario" (ngSubmit)="salvar()">
+  <form *ngIf="campos.length" class="formulario card-bloco" (ngSubmit)="salvar()">
+    <div class="card-cabecalho">
+      <div>
+        <h2>{{ tituloFormulario() | titlecase }}</h2>
+        <p>Preencha as informacoes abaixo para salvar o registro.</p>
+      </div>
+    </div>
+
     <div *ngIf="mostrarMatriculaGuiada()" class="matricula-guiada">
       <label>
         Aluno
@@ -83,7 +88,7 @@
       </section>
     </div>
 
-    <label *ngFor="let campo of camposFormulario()">
+    <label *ngFor="let campo of camposFormulario()" [class.campo-longo]="isTextoLongo(campo)">
       {{ label(campo) }}
 
       <select *ngIf="isSelect(campo)" [name]="campo" [(ngModel)]="formulario[campo]">
@@ -98,7 +103,7 @@
 
     <div class="acoes-form">
       <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : 'Salvar' }}</button>
-      <button type="button" class="secundario" (click)="formulario = {}">Limpar</button>
+      <button type="button" class="secundario" (click)="formulario = {}">Cancelar</button>
     </div>
   </form>
 
@@ -109,13 +114,19 @@
     <p>Funcionalidade reservada para evolucao de usuarios, perfis e configuracoes.</p>
   </div>
 
-  <div class="tabela" *ngIf="registros.length">
+  <div class="tabela card-bloco" *ngIf="registros.length">
+    <div class="card-cabecalho">
+      <div>
+        <h2>Registros</h2>
+        <p>{{ registros.length }} item(ns) encontrado(s).</p>
+      </div>
+    </div>
     <table>
       <thead>
         <tr>
           <th *ngFor="let chave of chaves(registros[0])">{{ label(chave) }}</th>
           <th *ngIf="permiteVinculoDisciplinas()">Disciplinas do modulo</th>
-          <th *ngIf="permitePdf()">PDF</th>
+          <th *ngIf="permitePdf()">{{ labelPdf() }}</th>
           <th>Acoes</th>
         </tr>
       </thead>
@@ -130,14 +141,25 @@
             <button type="button" class="secundario" (click)="salvarDisciplinasModulo(registro)">Salvar vinculos</button>
           </td>
           <td *ngIf="permitePdf()" class="pdf-acoes">
-            <strong *ngIf="temPdf(registro)">{{ nomePdf(registro) }}</strong>
-            <button *ngIf="temPdf(registro)" type="button" class="secundario" (click)="abrirPdf(registro)">Abrir</button>
-            <button *ngIf="temPdf(registro)" type="button" class="secundario" (click)="baixarPdf(registro)">Baixar</button>
-            <span *ngIf="!temPdf(registro)">Sem PDF</span>
-            <input type="file" accept="application/pdf" (change)="enviarPdf(registro, $event)">
-            <button *ngIf="temPdf(registro)" type="button" class="secundario" (click)="removerPdf(registro)">Remover</button>
+            <div class="pdf-status" [class.sem-pdf]="!temPdf(registro)">
+              <span aria-hidden="true">{{ temPdf(registro) ? '✓' : '!' }}</span>
+              <strong>{{ textoPdf(registro) }}</strong>
+            </div>
+            <div class="grupo-acoes" *ngIf="temPdf(registro)">
+              <button type="button" class="secundario" (click)="abrirPdf(registro)">Abrir PDF</button>
+              <button type="button" class="secundario" (click)="baixarPdf(registro)">Baixar PDF</button>
+              <button type="button" class="secundario" (click)="removerPdf(registro)">Remover PDF</button>
+            </div>
+            <label class="upload-pdf">
+              <span>{{ temPdf(registro) ? 'Substituir PDF' : 'Escolher PDF' }}</span>
+              <input type="file" accept="application/pdf" (change)="enviarPdf(registro, $event)">
+            </label>
           </td>
-          <td><button type="button" class="perigo" (click)="excluir(registro.id)">Excluir</button></td>
+          <td>
+            <div class="grupo-acoes compacto">
+              <button type="button" class="perigo" (click)="excluir(registro.id)">Excluir</button>
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>

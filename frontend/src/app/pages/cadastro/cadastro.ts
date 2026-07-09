@@ -54,6 +54,8 @@ export class CadastroPage implements OnInit {
     'periodoLetivo.id': 'Periodo letivo',
     'ofertaDisciplina.id': 'Oferta de disciplina',
     ativo: 'Ativo',
+    ano: 'Ano',
+    anoPeriodo: 'Ano/periodo',
     avaliacaoFinal: 'Avaliacao final',
     bibliografiaBasica: 'Bibliografia basica',
     bibliografiaComplementar: 'Bibliografia complementar',
@@ -70,13 +72,34 @@ export class CadastroPage implements OnInit {
     dataInicio: 'Data inicial',
     dataMatricula: 'Data da matricula',
     dataNascimento: 'Data de nascimento',
+    dataTermino: 'Data de termino',
+    descricao: 'Descricao',
     ementaResumo: 'Resumo da ementa',
+    email: 'E-mail',
+    endereco: 'Endereco',
+    formacao: 'Formacao',
     frequenciaFinal: 'Frequencia final',
+    horario: 'Horario',
+    justificativa: 'Justificativa',
+    metodologia: 'Metodologia',
+    nome: 'Nome',
     notaFinal: 'Nota final',
     nota1: 'Nota 1',
     nota2: 'Nota 2',
     observacoes: 'Observacoes',
-    quantidadeMaximaAlunos: 'Quantidade maxima de alunos'
+    observacao: 'Observacao',
+    objetivos: 'Objetivos',
+    ordem: 'Ordem',
+    periodoCursado: 'Periodo cursado',
+    presente: 'Presenca',
+    quantidadeMaximaAlunos: 'Quantidade maxima de alunos',
+    sala: 'Sala',
+    situacao: 'Situacao',
+    status: 'Situacao',
+    telefone: 'Telefone',
+    trabalho: 'Trabalho',
+    turno: 'Turno',
+    vagas: 'Vagas'
   };
 
   constructor(private route: ActivatedRoute, private api: ApiService) {}
@@ -160,6 +183,47 @@ export class CadastroPage implements OnInit {
 
   label(campo: string) {
     return this.labels[campo] || campo.replace('.id', '').replace(/([A-Z])/g, ' $1').trim();
+  }
+
+  subtitulo() {
+    if (this.endpoint === 'relatorios') return 'Relatorios disponiveis para acompanhamento academico e administrativo.';
+    if (this.endpoint === 'matriz-curricular') return 'Disciplinas organizadas por curso e modulo, com carga horaria consolidada.';
+    const textos: Record<string, string> = {
+      alunos: 'Cadastre e acompanhe os alunos vinculados aos cursos do seminario.',
+      professores: 'Mantenha professores, contatos e situacao cadastral atualizados.',
+      cursos: 'Cadastre e mantenha os cursos oferecidos pelo seminario.',
+      disciplinas: 'Organize disciplinas, ementas, carga horaria e professores responsaveis.',
+      modulos: 'Estruture os modulos academicos e vincule suas disciplinas.',
+      turmas: 'Gerencie turmas, periodos, capacidade e situacao academica.',
+      'anos-letivos': 'Organize os anos letivos utilizados no planejamento academico.',
+      'periodos-letivos': 'Cadastre periodos letivos e suas datas de referencia.',
+      'ofertas-disciplinas': 'Planeje ofertas, professores, horarios, salas e vagas.',
+      'matriculas-disciplinas': 'Matricule alunos nas disciplinas ofertadas por modulo.',
+      'planos-ensino': 'Registre planos de ensino e materiais oficiais das disciplinas.',
+      aulas: 'Controle aulas ministradas, conteudo e carga horaria.',
+      frequencias: 'Registre presencas, justificativas e observacoes.',
+      notas: 'Lance notas e acompanhe resultados academicos.',
+      historicos: 'Consulte e mantenha historicos escolares consolidados.'
+    };
+    return textos[this.endpoint] || 'Cadastro, consulta e manutencao dos registros academicos.';
+  }
+
+  tituloFormulario() {
+    if (this.endpoint === 'matriculas-disciplinas') return 'Matricula em disciplinas';
+    return `Cadastro de ${this.titulo.replaceAll('-', ' ')}`;
+  }
+
+  textoPdf(registro: any) {
+    if (this.temPdf(registro)) return this.nomePdf(registro);
+    if (this.endpoint === 'cursos') return 'Nenhuma grade curricular enviada';
+    if (this.endpoint === 'disciplinas') return 'Nenhuma ementa enviada';
+    return 'Nenhum plano de ensino enviado';
+  }
+
+  labelPdf() {
+    if (this.endpoint === 'cursos') return 'Grade curricular';
+    if (this.endpoint === 'disciplinas') return 'Ementa';
+    return 'Plano de ensino';
   }
 
   isSelect(campo: string) {

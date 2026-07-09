@@ -1,28 +1,50 @@
 .shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px 1fr;
-  background: #eef3f1;
+  grid-template-columns: 292px 1fr;
+  background: #f3f6f9;
 }
 
 .sidebar {
-  background: #173b3f;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #102f4a 0%, #0f253a 100%);
   color: #fff;
-  padding: 24px 18px;
+  padding: 24px 16px;
+  box-shadow: 14px 0 36px rgba(15, 37, 58, .14);
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 30px;
+  padding: 0 8px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+.brand-selo {
+  width: 46px;
+  height: 46px;
   display: grid;
-  gap: 4px;
-  margin-bottom: 28px;
+  place-items: center;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #102f4a;
+  font-weight: 800;
+  letter-spacing: .02em;
 }
 
 .brand strong {
-  font-size: 1.8rem;
+  display: block;
+  font-size: 1.45rem;
+  line-height: 1;
 }
 
 .brand span {
-  color: #c9d8d5;
+  color: #c7d7e6;
   font-size: .9rem;
 }
 
@@ -46,33 +68,46 @@ nav {
 }
 
 nav a {
-  color: #eef8f6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #eef6ff;
   text-decoration: none;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: .94rem;
+}
+
+nav a span {
+  width: 22px;
+  color: #9ed0ff;
+  text-align: center;
 }
 
 nav a.ativo,
 nav a:hover {
-  background: #265e63;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
 }
 
 .conteudo {
   min-width: 0;
-  padding: 20px;
+  padding: 24px;
 }
 
 .topbar {
-  min-height: 64px;
+  min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
-  padding: 0 18px;
+  margin-bottom: 24px;
+  padding: 0 20px;
   background: #fff;
-  border: 1px solid #d8e3df;
+  border: 1px solid #dfe7ef;
   border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(16, 47, 74, .06);
 }
 
 .topbar div {
@@ -81,17 +116,13 @@ nav a:hover {
 }
 
 .topbar span {
-  color: #60706c;
+  color: #6d7d8c;
   font-size: .88rem;
 }
 
-button {
-  border: 0;
-  border-radius: 6px;
-  background: #1f6468;
-  color: white;
-  padding: 10px 14px;
-  cursor: pointer;
+.botao-sair {
+  background: #eef5fb;
+  color: #16334d;
 }
 
 @media (max-width: 860px) {
@@ -101,6 +132,7 @@ button {
 
   .sidebar {
     position: static;
+    height: auto;
   }
 
   nav {

@@ -3,7 +3,9 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: linear-gradient(135deg, #173b3f, #eef3f1);
+  background:
+    linear-gradient(135deg, rgba(16, 47, 74, .94), rgba(22, 58, 89, .88)),
+    #102f4a;
 }
 
 section {
@@ -11,7 +13,7 @@ section {
   background: #fff;
   border-radius: 8px;
   padding: 28px;
-  box-shadow: 0 20px 60px rgba(15, 30, 32, .22);
+  box-shadow: 0 24px 70px rgba(15, 30, 32, .24);
 }
 
 .marca {
@@ -22,7 +24,11 @@ section {
 
 .marca strong {
   font-size: 2rem;
-  color: #173b3f;
+  color: #102f4a;
+}
+
+.marca span {
+  color: #536575;
 }
 
 form,
@@ -36,7 +42,7 @@ form {
 }
 
 input {
-  border: 1px solid #cfdad7;
+  border: 1px solid #dfe7ef;
   border-radius: 6px;
   padding: 12px;
 }
@@ -44,12 +50,13 @@ input {
 button {
   border: 0;
   border-radius: 6px;
-  background: #1f6468;
+  background: #256fa8;
   color: white;
   padding: 12px;
   cursor: pointer;
+  font-weight: 700;
 }
 
 .erro {
-  color: #9d1c1c;
+  color: #b42318;
 }
