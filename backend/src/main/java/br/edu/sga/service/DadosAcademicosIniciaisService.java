@@ -23,7 +23,11 @@ public class DadosAcademicosIniciaisService {
 
     @Transactional
     void criarDadosAcademicos(@Observes StartupEvent evento) {
-        if (Curso.count("nome", "Curso de Teologia") > 0) {
+        limparReferenciasDeArquivosAusentes();
+
+        Curso existente = Curso.find("nome", "Curso de Teologia").firstResult();
+        if (existente != null) {
+            garantirGradePlaceholder(existente);
             return;
         }
 
@@ -97,6 +101,41 @@ public class DadosAcademicosIniciaisService {
         matricula.ofertaDisciplina = ofertaHermeneutica;
         matricula.status = StatusMatriculaDisciplina.ATIVA;
         matricula.persist();
+    }
+
+    private void garantirGradePlaceholder(Curso curso) {
+        boolean semArquivo = curso.gradePdfCaminho == null || !Files.exists(Path.of(curso.gradePdfCaminho));
+        boolean placeholder = curso.gradePdfNome == null || curso.gradePdfNome.equals("grade-curricular-teologia-placeholder.pdf");
+        if (semArquivo && placeholder) {
+            anexarGradePlaceholder(curso);
+        }
+    }
+
+    private void limparReferenciasDeArquivosAusentes() {
+        Curso.<Curso>listAll().forEach(curso -> {
+            if (curso.gradePdfCaminho != null && !Files.exists(Path.of(curso.gradePdfCaminho))) {
+                curso.gradePdfCaminho = null;
+                curso.gradePdfNome = null;
+                curso.gradePdfTipo = null;
+                curso.gradePdfTamanho = null;
+            }
+        });
+        Disciplina.<Disciplina>listAll().forEach(disciplina -> {
+            if (disciplina.ementaPdfCaminho != null && !Files.exists(Path.of(disciplina.ementaPdfCaminho))) {
+                disciplina.ementaPdfCaminho = null;
+                disciplina.ementaPdfNome = null;
+                disciplina.ementaPdfTipo = null;
+                disciplina.ementaPdfTamanho = null;
+            }
+        });
+        PlanoEnsino.<PlanoEnsino>listAll().forEach(plano -> {
+            if (plano.planoPdfCaminho != null && !Files.exists(Path.of(plano.planoPdfCaminho))) {
+                plano.planoPdfCaminho = null;
+                plano.planoPdfNome = null;
+                plano.planoPdfTipo = null;
+                plano.planoPdfTamanho = null;
+            }
+        });
     }
 
     private Usuario usuario(String nome, String email, Perfil perfil) {

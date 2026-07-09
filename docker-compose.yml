@@ -32,8 +32,11 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@sga.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:8088}
+      SGA_UPLOAD_DIR: ${SGA_UPLOAD_DIR:-/app/uploads}
     ports:
       - "8080:8080"
+    volumes:
+      - backend_uploads:/app/uploads
 
   frontend:
     build: ./frontend
@@ -45,3 +48,4 @@ services:
 
 volumes:
   postgres_data:
+  backend_uploads:
