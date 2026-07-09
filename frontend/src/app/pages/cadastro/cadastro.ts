@@ -167,7 +167,15 @@ export class CadastroPage implements OnInit {
 
   excluir(id: number) {
     if (!confirm('Deseja excluir este registro?')) return;
-    this.api.excluir(this.endpoint, id).subscribe(() => this.carregar());
+    this.api.excluir(this.endpoint, id).subscribe({
+      next: () => {
+        this.mensagem = 'Registro excluido com sucesso';
+        this.carregar();
+      },
+      error: err => {
+        this.mensagem = err?.error?.mensagem || 'Nao foi possivel excluir. Verifique se este registro esta vinculado a outros cadastros.';
+      }
+    });
   }
 
   chaves(registro: any) {
