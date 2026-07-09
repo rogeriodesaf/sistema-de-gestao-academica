@@ -2,23 +2,23 @@
   <a class="voltar" routerLink="/disciplinas" [queryParams]="queryParams">Voltar para Disciplinas</a>
 
   <app-page-header
-    [titulo]="disciplina?.nome || 'Disciplina'"
-    [subtitulo]="disciplina?.codigo || 'Detalhes da disciplina'"
+    [titulo]="disciplina()?.nome || 'Disciplina'"
+    [subtitulo]="disciplina()?.codigo || 'Detalhes da disciplina'"
   />
 
-  <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+  <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
 
-  <div class="vazio" *ngIf="carregando">
+  <div class="vazio" *ngIf="carregando()">
     <h2>Carregando disciplina</h2>
     <p>Buscando informacoes do catalogo academico.</p>
   </div>
 
-  <div class="vazio" *ngIf="!carregando && !disciplina">
+  <div class="vazio" *ngIf="!carregando() && !disciplina()">
     <h2>Disciplina nao localizada</h2>
     <p>Volte para a listagem e selecione uma disciplina cadastrada.</p>
   </div>
 
-  <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando && disciplina">
+  <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando() && disciplina() as disciplina">
     <article>
       <h3>Informacoes</h3>
       <dl>

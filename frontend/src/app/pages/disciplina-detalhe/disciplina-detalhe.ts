@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -14,9 +14,9 @@ import { PdfCardComponent } from '../../shared/ui/pdf-card/pdf-card';
   styleUrl: './disciplina-detalhe.scss'
 })
 export class DisciplinaDetalhePage implements OnInit {
-  disciplina?: any;
-  mensagem = '';
-  carregando = true;
+  disciplina = signal<any | undefined>(undefined);
+  mensagem = signal('');
+  carregando = signal(true);
   queryParams: Record<string, any> = {};
 
   constructor(private route: ActivatedRoute, private api: ApiService) {}
@@ -28,28 +28,28 @@ export class DisciplinaDetalhePage implements OnInit {
 
   carregar(id = this.idDaRota()) {
     if (!id) {
-      this.mensagem = 'Disciplina nao encontrada.';
-      this.carregando = false;
+      this.mensagem.set('Disciplina nao encontrada.');
+      this.carregando.set(false);
       return;
     }
-    this.carregando = true;
-    this.mensagem = '';
+    this.carregando.set(true);
+    this.mensagem.set('');
     window.setTimeout(() => {
-      if (this.carregando) {
-        this.carregando = false;
-        this.mensagem = 'Nao foi possivel carregar os dados da disciplina.';
+      if (this.carregando()) {
+        this.carregando.set(false);
+        this.mensagem.set('Nao foi possivel carregar os dados da disciplina.');
       }
     }, 12000);
     this.api.buscarDisciplina(id).pipe(
       timeout({ each: 10000 }),
-      finalize(() => this.carregando = false)
+      finalize(() => this.carregando.set(false))
     ).subscribe({
       next: disciplina => {
-        this.disciplina = disciplina;
+        this.disciplina.set(disciplina);
       },
       error: err => {
-        this.disciplina = undefined;
-        this.mensagem = err?.error?.mensagem || 'Nao foi possivel carregar a disciplina. Verifique sua conexao e tente novamente.';
+        this.disciplina.set(undefined);
+        this.mensagem.set(err?.error?.mensagem || 'Nao foi possivel carregar a disciplina. Verifique sua conexao e tente novamente.');
       }
     });
   }
@@ -76,34 +76,36 @@ export class DisciplinaDetalhePage implements OnInit {
   }
 
   tipoDisciplina() {
-    return (this.disciplina?.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('optativa')
+    return (this.disciplina()?.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('optativa')
       ? 'Optativa'
       : 'Obrigatoria';
   }
 
   enviarEmenta(arquivo: File) {
-    if (!this.disciplina) return;
+    const disciplina = this.disciplina();
+    if (!disciplina) return;
     if (arquivo.type !== 'application/pdf') {
-      this.mensagem = 'Envie um arquivo PDF';
+      this.mensagem.set('Envie um arquivo PDF');
       return;
     }
-    this.api.enviarArquivo('disciplinas', this.disciplina.id, 'ementa-pdf', arquivo).subscribe({
+    this.api.enviarArquivo('disciplinas', disciplina.id, 'ementa-pdf', arquivo).subscribe({
       next: () => {
-        this.mensagem = 'Ementa enviada com sucesso';
-        this.carregar(this.disciplina.id);
+        this.mensagem.set('Ementa enviada com sucesso');
+        this.carregar(disciplina.id);
       },
-      error: err => this.mensagem = err?.error?.mensagem || 'Nao foi possivel enviar a ementa'
+      error: err => this.mensagem.set(err?.error?.mensagem || 'Nao foi possivel enviar a ementa')
     });
   }
 
   removerEmenta() {
-    if (!this.disciplina) return;
-    this.api.removerArquivo('disciplinas', this.disciplina.id, 'ementa-pdf').subscribe({
+    const disciplina = this.disciplina();
+    if (!disciplina) return;
+    this.api.removerArquivo('disciplinas', disciplina.id, 'ementa-pdf').subscribe({
       next: () => {
-        this.mensagem = 'Ementa removida';
-        this.carregar(this.disciplina.id);
+        this.mensagem.set('Ementa removida');
+        this.carregar(disciplina.id);
       },
-      error: err => this.mensagem = err?.error?.mensagem || 'Nao foi possivel remover a ementa'
+      error: err => this.mensagem.set(err?.error?.mensagem || 'Nao foi possivel remover a ementa')
     });
   }
 
@@ -116,14 +118,15 @@ export class DisciplinaDetalhePage implements OnInit {
   }
 
   private baixarOuAbrir(download: boolean) {
-    if (!this.disciplina) return;
-    this.api.baixarArquivo('disciplinas', this.disciplina.id, 'ementa-pdf').subscribe({
+    const disciplina = this.disciplina();
+    if (!disciplina) return;
+    this.api.baixarArquivo('disciplinas', disciplina.id, 'ementa-pdf').subscribe({
       next: arquivo => {
         const url = URL.createObjectURL(new Blob([arquivo], { type: 'application/pdf' }));
         if (download) {
           const link = document.createElement('a');
           link.href = url;
-          link.download = this.disciplina.ementaPdfNome || 'ementa.pdf';
+          link.download = disciplina.ementaPdfNome || 'ementa.pdf';
           link.click();
           URL.revokeObjectURL(url);
           return;
@@ -131,7 +134,7 @@ export class DisciplinaDetalhePage implements OnInit {
         window.open(url, '_blank', 'noopener');
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       },
-      error: err => this.mensagem = err?.error?.mensagem || 'Nao foi possivel acessar a ementa'
+      error: err => this.mensagem.set(err?.error?.mensagem || 'Nao foi possivel acessar a ementa')
     });
   }
 }
