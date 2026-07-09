@@ -10,11 +10,22 @@ import { ApiService } from '../../core/api.service';
 })
 export class DashboardPage implements OnInit {
   dados: Record<string, any> = {};
+  carregando = true;
+  erro = '';
 
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.api.dashboard().subscribe(dados => this.dados = dados);
+    this.api.dashboard().subscribe({
+      next: dados => {
+        this.dados = dados || {};
+        this.carregando = false;
+      },
+      error: err => {
+        this.erro = err?.error?.mensagem || 'Nao foi possivel carregar o dashboard. Entre novamente e tente outra vez.';
+        this.carregando = false;
+      }
+    });
   }
 
   metricas() {
@@ -38,5 +49,9 @@ export class DashboardPage implements OnInit {
 
   maior(itens: { total: number }[]) {
     return Math.max(...itens.map(item => item.total), 1);
+  }
+
+  vazio() {
+    return !this.carregando && !this.erro && this.metricas().length === 0 && this.graficos().length === 0;
   }
 }

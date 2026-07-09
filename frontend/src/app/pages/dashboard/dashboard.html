@@ -6,14 +6,29 @@
     </div>
   </header>
 
-  <div class="metricas">
+  <div class="vazio" *ngIf="carregando">
+    <h2>Carregando dashboard</h2>
+    <p>Buscando os indicadores academicos do sistema.</p>
+  </div>
+
+  <div class="vazio" *ngIf="erro">
+    <h2>Dashboard indisponivel</h2>
+    <p>{{ erro }}</p>
+  </div>
+
+  <div class="vazio" *ngIf="vazio()">
+    <h2>Nenhum indicador encontrado</h2>
+    <p>Cadastre cursos, disciplinas, ofertas e matriculas para alimentar o dashboard.</p>
+  </div>
+
+  <div class="metricas" *ngIf="!carregando && !erro">
     <article *ngFor="let item of metricas()">
       <span>{{ label(item.chave) | titlecase }}</span>
       <strong>{{ item.valor }}</strong>
     </article>
   </div>
 
-  <div class="graficos">
+  <div class="graficos" *ngIf="!carregando && !erro">
     <article *ngFor="let grafico of graficos()">
       <h2>{{ label(grafico.chave) | titlecase }}</h2>
       <div class="barra" *ngFor="let item of grafico.itens">
