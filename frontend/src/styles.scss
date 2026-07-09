@@ -61,6 +61,49 @@ p {
   margin: 18px 0;
 }
 
+.matricula-guiada {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #d8e3df;
+  border-radius: 8px;
+  background: #f7faf9;
+}
+
+.grupo-ofertas {
+  display: grid;
+  gap: 8px;
+}
+
+.grupo-ofertas h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.opcao-disciplina {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  border: 1px solid #e3ebe8;
+  border-radius: 6px;
+  padding: 10px;
+  background: #fff;
+}
+
+.opcao-disciplina input {
+  width: auto;
+  margin-top: 3px;
+}
+
+.opcao-disciplina span {
+  display: grid;
+  gap: 4px;
+}
+
+.opcao-disciplina small {
+  color: #61706d;
+}
+
 label {
   display: grid;
   gap: 6px;
@@ -188,6 +231,24 @@ th {
 .pdf-acoes {
   display: grid;
   gap: 8px;
+}
+
+.vinculos-disciplina {
+  min-width: 260px;
+}
+
+.vinculos-disciplina {
+  display: grid;
+  gap: 8px;
+}
+
+.vinculos-disciplina label {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.vinculos-disciplina input {
+  width: auto;
 }
 
 .pdf-acoes a {

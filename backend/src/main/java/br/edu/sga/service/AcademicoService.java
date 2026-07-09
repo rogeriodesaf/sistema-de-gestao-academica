@@ -23,10 +23,10 @@ public class AcademicoService {
         if (oferta == null || aluno == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aluno ou oferta de disciplina nao encontrados");
         }
-        long jaMatriculado = MatriculaDisciplina.count("aluno = ?1 and ofertaDisciplina = ?2 and status not in ?3",
-                aluno, oferta, List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO));
+        long jaMatriculado = MatriculaDisciplina.count("aluno = ?1 and ofertaDisciplina.disciplina = ?2 and status not in ?3",
+                aluno, oferta.disciplina, List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO));
         if (jaMatriculado > 0) {
-            throw new ApiException(Response.Status.CONFLICT, "Aluno ja matriculado nesta oferta de disciplina");
+            throw new ApiException(Response.Status.CONFLICT, "Aluno ja matriculado nesta disciplina");
         }
         if (oferta.vagas != null) {
             long ocupadas = MatriculaDisciplina.count("ofertaDisciplina = ?1 and status in ?2",
@@ -61,6 +61,11 @@ public class AcademicoService {
 
     @Transactional
     public Nota salvarNota(Nota nota) {
+        return salvarNota(nota, null, null);
+    }
+
+    @Transactional
+    public Nota salvarNota(Nota nota, Perfil perfil, Long usuarioId) {
         if (nota.ofertaDisciplina != null && nota.ofertaDisciplina.id != null) {
             OfertaDisciplina oferta = OfertaDisciplina.findById(nota.ofertaDisciplina.id);
             if (oferta != null) {
@@ -69,6 +74,7 @@ public class AcademicoService {
                 nota.disciplina = oferta.disciplina;
             }
         }
+        validarProfessorVinculado(perfil, usuarioId, nota.ofertaDisciplina, nota.disciplina, nota.turma);
         nota.mediaFinal = calcularMedia(nota);
         nota.situacao = situacaoNota(nota.mediaFinal);
         if (nota.id == null) {
@@ -80,6 +86,20 @@ public class AcademicoService {
 
     @Transactional
     public Frequencia salvarFrequencia(Frequencia frequencia) {
+        return salvarFrequencia(frequencia, null, null);
+    }
+
+    @Transactional
+    public Frequencia salvarFrequencia(Frequencia frequencia, Perfil perfil, Long usuarioId) {
+        if (frequencia.aula == null || frequencia.aula.id == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Aula e obrigatoria para lancar frequencia");
+        }
+        AulaMinistrada aula = AulaMinistrada.findById(frequencia.aula.id);
+        if (aula == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Aula nao encontrada");
+        }
+        frequencia.aula = aula;
+        validarProfessorVinculado(perfil, usuarioId, aula.ofertaDisciplina, aula.disciplina, aula.turma);
         if (frequencia.id == null) {
             frequencia.persist();
         }
@@ -89,6 +109,40 @@ public class AcademicoService {
             atualizarFrequenciaHistorico(frequencia.aluno, frequencia.aula.disciplina, frequencia.aula.turma);
         }
         return frequencia;
+    }
+
+    private void validarProfessorVinculado(Perfil perfil, Long usuarioId, OfertaDisciplina oferta, Disciplina disciplina, Turma turma) {
+        if (perfil != Perfil.PROFESSOR) {
+            return;
+        }
+        Professor professor = Professor.find("usuario.id", usuarioId).firstResult();
+        if (professor == null) {
+            throw new ApiException(Response.Status.FORBIDDEN, "Professor nao encontrado para o usuario logado");
+        }
+        if (oferta != null) {
+            OfertaDisciplina ofertaCompleta = OfertaDisciplina.findById(oferta.id);
+            if (ofertaCompleta != null && mesmoProfessor(professor, ofertaCompleta.professor)) {
+                return;
+            }
+            if (ofertaCompleta != null && ofertaCompleta.disciplina != null && mesmoProfessor(professor, ofertaCompleta.disciplina.professorResponsavel)) {
+                return;
+            }
+        }
+        if (disciplina != null) {
+            Disciplina disciplinaCompleta = Disciplina.findById(disciplina.id);
+            if (disciplinaCompleta != null && mesmoProfessor(professor, disciplinaCompleta.professorResponsavel)) {
+                return;
+            }
+        }
+        if (disciplina != null && turma != null && VinculoProfessorDisciplinaTurma.count(
+                "professor = ?1 and disciplina.id = ?2 and turma.id = ?3", professor, disciplina.id, turma.id) > 0) {
+            return;
+        }
+        throw new ApiException(Response.Status.FORBIDDEN, "Professor nao vinculado a esta disciplina");
+    }
+
+    private boolean mesmoProfessor(Professor logado, Professor vinculado) {
+        return logado != null && vinculado != null && logado.id != null && logado.id.equals(vinculado.id);
     }
 
     public List<String> pendenciasEncerramento(Long turmaId, Long disciplinaId) {

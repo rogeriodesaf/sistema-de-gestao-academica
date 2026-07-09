@@ -22,9 +22,14 @@ public class Disciplina extends PanacheEntity {
     @ManyToOne
     @JoinColumn(name = "modulo_id")
     public Modulo modulo;
+    @ManyToOne
+    @JoinColumn(name = "professor_responsavel_id")
+    public Professor professorResponsavel;
     @Min(1)
     @Column(name = "carga_horaria")
     public Integer cargaHoraria;
+    @Min(0)
+    public Integer creditos;
     @Column(length = 4000)
     public String ementa;
     @Column(name = "ementa_resumo", length = 4000)

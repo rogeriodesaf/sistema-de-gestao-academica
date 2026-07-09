@@ -1,8 +1,11 @@
 package br.edu.sga.entity;
 
+import br.edu.sga.enums.StatusModulo;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -22,5 +25,8 @@ public class Modulo extends PanacheEntity {
     @JoinColumn(name = "curso_id")
     @NotNull
     public Curso curso;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    public StatusModulo status = StatusModulo.ABERTO;
     public boolean ativo = true;
 }

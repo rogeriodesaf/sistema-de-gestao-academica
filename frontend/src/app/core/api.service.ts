@@ -19,6 +19,14 @@ export class ApiService {
     return this.http.get<any>(`${this.api}/${endpoint}/${id}`);
   }
 
+  atualizar(endpoint: string, id: number, dados: any) {
+    return this.http.put(`${this.api}/${endpoint}/${id}`, dados);
+  }
+
+  acao(endpoint: string, id: number, acao: string, dados: any) {
+    return this.http.put(`${this.api}/${endpoint}/${id}/${acao}`, dados);
+  }
+
   excluir(endpoint: string, id: number) {
     return this.http.delete(`${this.api}/${endpoint}/${id}`);
   }

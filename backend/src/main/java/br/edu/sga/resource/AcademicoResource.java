@@ -37,7 +37,7 @@ public class AcademicoResource {
     @Path("/notas")
     public Nota salvarNota(@Valid Nota nota) {
         permissaoService.exigir(contexto, Perfil.COORDENADOR, Perfil.PROFESSOR);
-        return academicoService.salvarNota(nota);
+        return academicoService.salvarNota(nota, permissaoService.perfil(contexto), permissaoService.usuarioId(contexto));
     }
 
     @GET
@@ -50,7 +50,7 @@ public class AcademicoResource {
     @Path("/frequencias")
     public Frequencia salvarFrequencia(@Valid Frequencia frequencia) {
         permissaoService.exigir(contexto, Perfil.COORDENADOR, Perfil.PROFESSOR);
-        return academicoService.salvarFrequencia(frequencia);
+        return academicoService.salvarFrequencia(frequencia, permissaoService.perfil(contexto), permissaoService.usuarioId(contexto));
     }
 
     @GET

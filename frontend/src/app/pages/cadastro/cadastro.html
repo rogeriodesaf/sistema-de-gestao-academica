@@ -19,8 +19,9 @@
     <div class="matriz" *ngIf="matriz">
       <header>
         <div>
-          <h2>{{ matriz.curso }}</h2>
-          <span>{{ matriz.totalCargaHoraria }} horas totais</span>
+          <h2>{{ matriz.curso?.nome }}</h2>
+          <span>{{ matriz.cargaHorariaTotal }} horas · {{ matriz.creditosTotal }} creditos</span>
+          <a *ngIf="matriz.curso?.gradePdfNome" [href]="'/api/cursos/' + matriz.curso.id + '/grade-pdf'" target="_blank" rel="noopener">Ver grade curricular oficial</a>
         </div>
       </header>
 
@@ -30,7 +31,7 @@
             <h3>{{ modulo.nome }}</h3>
             <p>{{ modulo.descricao }}</p>
           </div>
-          <strong>{{ modulo.totalCargaHoraria }} h</strong>
+          <strong>{{ modulo.cargaHorariaTotal }} h · {{ modulo.creditosTotal }} cred.</strong>
         </div>
 
         <table *ngIf="modulo.disciplinas?.length">
@@ -39,6 +40,7 @@
               <th>Disciplina</th>
               <th>Codigo</th>
               <th>Carga horaria</th>
+              <th>Creditos</th>
               <th>Ementa</th>
             </tr>
           </thead>
@@ -47,7 +49,11 @@
               <td>{{ disciplina.nome }}</td>
               <td>{{ disciplina.codigo }}</td>
               <td>{{ disciplina.cargaHoraria }} h</td>
-              <td>{{ disciplina.ementaResumo || disciplina.ementa }}</td>
+              <td>{{ disciplina.creditos }}</td>
+              <td>
+                <a *ngIf="disciplina.ementaPdfNome" [href]="'/api/disciplinas/' + disciplina.id + '/ementa-pdf'" target="_blank" rel="noopener">Ver PDF</a>
+                <span *ngIf="!disciplina.ementaPdfNome">{{ disciplina.ementaResumo }}</span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -56,7 +62,28 @@
   </div>
 
   <form *ngIf="campos.length" class="formulario" (ngSubmit)="salvar()">
-    <label *ngFor="let campo of campos">
+    <div *ngIf="mostrarMatriculaGuiada()" class="matricula-guiada">
+      <label>
+        Aluno
+        <select name="alunoSelecionado" [(ngModel)]="alunoSelecionado">
+          <option value="">Selecione</option>
+          <option *ngFor="let aluno of opcoes['aluno.id']" [ngValue]="aluno.id">{{ rotuloOpcao(aluno) }}</option>
+        </select>
+      </label>
+
+      <section *ngFor="let grupo of ofertasPorModulo" class="grupo-ofertas">
+        <h2>{{ grupo.nome }}</h2>
+        <label *ngFor="let oferta of grupo.ofertas" class="opcao-disciplina">
+          <input type="checkbox" [name]="'oferta-' + oferta.id" [(ngModel)]="ofertasSelecionadas[oferta.id]">
+          <span>
+            <strong>{{ oferta.disciplina?.nome }}</strong>
+            <small>{{ oferta.professor?.nome || oferta.disciplina?.professorResponsavel?.nome || 'Professor nao definido' }} · {{ oferta.horario || 'Horario nao definido' }} · {{ oferta.sala || 'Sala nao definida' }}</small>
+          </span>
+        </label>
+      </section>
+    </div>
+
+    <label *ngFor="let campo of camposFormulario()">
       {{ label(campo) }}
 
       <select *ngIf="isSelect(campo)" [name]="campo" [(ngModel)]="formulario[campo]">
@@ -87,6 +114,7 @@
       <thead>
         <tr>
           <th *ngFor="let chave of chaves(registros[0])">{{ label(chave) }}</th>
+          <th *ngIf="permiteVinculoDisciplinas()">Disciplinas do modulo</th>
           <th *ngIf="permitePdf()">PDF</th>
           <th>Acoes</th>
         </tr>
@@ -94,8 +122,16 @@
       <tbody>
         <tr *ngFor="let registro of registros">
           <td *ngFor="let chave of chaves(registro)">{{ valor(registro, chave) }}</td>
+          <td *ngIf="permiteVinculoDisciplinas()" class="vinculos-disciplina">
+            <label *ngFor="let disciplina of disciplinasDoCurso(registro)">
+              <input type="checkbox" [checked]="disciplinaMarcada(registro, disciplina)" (change)="alternarDisciplinaModulo(registro, disciplina, $event)">
+              {{ disciplina.nome }}
+            </label>
+            <button type="button" class="secundario" (click)="salvarDisciplinasModulo(registro)">Salvar vinculos</button>
+          </td>
           <td *ngIf="permitePdf()" class="pdf-acoes">
             <a *ngIf="temPdf(registro)" [href]="linkPdf(registro)" target="_blank" rel="noopener">{{ nomePdf(registro) }}</a>
+            <a *ngIf="temPdf(registro)" [href]="linkDownloadPdf(registro)">Baixar</a>
             <span *ngIf="!temPdf(registro)">Sem PDF</span>
             <input type="file" accept="application/pdf" (change)="enviarPdf(registro, $event)">
             <button *ngIf="temPdf(registro)" type="button" class="secundario" (click)="removerPdf(registro)">Remover</button>

@@ -60,6 +60,19 @@ public class PlanoEnsinoResource extends CadastroResource.Crud<PlanoEnsino> {
                 .build();
     }
 
+    @GET
+    @Path("/{id}/plano-pdf/download")
+    @Produces("application/pdf")
+    public Response baixarPlanoComoAnexo(@PathParam("id") Long id) {
+        PlanoEnsino plano = PlanoEnsino.findById(id);
+        if (plano == null || plano.planoPdfCaminho == null) throw new NotFoundException();
+        File arquivo = new File(plano.planoPdfCaminho);
+        if (!arquivo.exists()) throw new NotFoundException();
+        return Response.ok(arquivo, "application/pdf")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + plano.planoPdfNome + "\"")
+                .build();
+    }
+
     @DELETE
     @Path("/{id}/plano-pdf")
     @Transactional

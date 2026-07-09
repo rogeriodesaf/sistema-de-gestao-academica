@@ -20,6 +20,10 @@ export class CadastroPage implements OnInit {
   cursos: any[] = [];
   cursoSelecionado?: number;
   matriz?: any;
+  alunoSelecionado?: number;
+  ofertasPorModulo: any[] = [];
+  ofertasSelecionadas: Record<number, boolean> = {};
+  disciplinasModulo: Record<number, Record<number, boolean>> = {};
   mensagem = '';
   carregando = false;
 
@@ -30,6 +34,7 @@ export class CadastroPage implements OnInit {
     disciplina: 'disciplinas',
     modulo: 'modulos',
     professor: 'professores',
+    professorResponsavel: 'professores',
     turma: 'turmas',
     anoLetivo: 'anos-letivos',
     periodoLetivo: 'periodos-letivos',
@@ -43,6 +48,7 @@ export class CadastroPage implements OnInit {
     'disciplina.id': 'Disciplina',
     'modulo.id': 'Modulo',
     'professor.id': 'Professor',
+    'professorResponsavel.id': 'Professor responsavel',
     'turma.id': 'Turma',
     'anoLetivo.id': 'Ano letivo',
     'periodoLetivo.id': 'Periodo letivo',
@@ -52,6 +58,7 @@ export class CadastroPage implements OnInit {
     bibliografiaBasica: 'Bibliografia basica',
     bibliografiaComplementar: 'Bibliografia complementar',
     cargaHoraria: 'Carga horaria',
+    creditos: 'Creditos',
     cargaHorariaPrevista: 'Carga horaria prevista',
     cargaHorariaMinistrada: 'Carga horaria ministrada',
     conteudoMinistrado: 'Conteudo ministrado',
@@ -103,7 +110,10 @@ export class CadastroPage implements OnInit {
       this.registros = [];
       return;
     }
-    this.api.listar(this.endpoint).subscribe(registros => this.registros = registros);
+    this.api.listar(this.endpoint).subscribe(registros => {
+      this.registros = registros;
+      if (this.endpoint === 'matriculas-disciplinas') this.carregarOfertasAgrupadas();
+    });
   }
 
   carregarMatriz() {
@@ -112,6 +122,10 @@ export class CadastroPage implements OnInit {
   }
 
   salvar() {
+    if (this.endpoint === 'matriculas-disciplinas' && Object.values(this.ofertasSelecionadas).some(Boolean)) {
+      this.salvarMatriculasSelecionadas();
+      return;
+    }
     const dados = this.montarObjeto();
     this.carregando = true;
     this.api.salvar(this.endpoint, dados).subscribe({
@@ -134,7 +148,14 @@ export class CadastroPage implements OnInit {
   }
 
   chaves(registro: any) {
-    return Object.keys(registro).filter(chave => !Array.isArray(registro[chave]) && !chave.toLowerCase().includes('senha') && !chave.toLowerCase().includes('caminho'));
+    return Object.keys(registro).filter(chave => {
+      const normalizada = chave.toLowerCase();
+      return chave !== 'id'
+        && !Array.isArray(registro[chave])
+        && !normalizada.includes('senha')
+        && !normalizada.includes('caminho')
+        && !normalizada.includes('pdf');
+    });
   }
 
   label(campo: string) {
@@ -146,17 +167,17 @@ export class CadastroPage implements OnInit {
   }
 
   isTextoLongo(campo: string) {
-    return campo.includes('observ') || campo.includes('ementa') || campo.includes('bibliografia') || campo.includes('conteudo') || campo.includes('metodologia') || campo.includes('objetivos') || campo.includes('descricao');
+    return campo.includes('observ') || campo.includes('ementaResumo') || campo.includes('bibliografia') || campo.includes('conteudo') || campo.includes('metodologia') || campo.includes('objetivos') || campo.includes('descricao');
   }
 
   tipoCampo(campo: string) {
     if (campo.toLowerCase().includes('data')) return 'date';
-    if (['ano', 'ordem', 'vagas', 'cargaHoraria', 'cargaHorariaTotal', 'cargaHorariaPrevista', 'cargaHorariaMinistrada', 'cargaHorariaAula', 'quantidadeMaximaAlunos', 'nota1', 'nota2', 'trabalho', 'avaliacaoFinal', 'notaFinal', 'frequenciaFinal'].includes(campo)) return 'number';
+    if (['ano', 'ordem', 'vagas', 'creditos', 'cargaHoraria', 'cargaHorariaTotal', 'cargaHorariaPrevista', 'cargaHorariaMinistrada', 'cargaHorariaAula', 'quantidadeMaximaAlunos', 'nota1', 'nota2', 'trabalho', 'avaliacaoFinal', 'notaFinal', 'frequenciaFinal'].includes(campo)) return 'number';
     return 'text';
   }
 
   permitePdf() {
-    return this.endpoint === 'disciplinas' || this.endpoint === 'planos-ensino';
+    return this.endpoint === 'cursos' || this.endpoint === 'disciplinas' || this.endpoint === 'planos-ensino';
   }
 
   opcoesCampo(campo: string) {
@@ -196,7 +217,7 @@ export class CadastroPage implements OnInit {
       this.mensagem = 'Envie um arquivo PDF';
       return;
     }
-    const acao = this.endpoint === 'disciplinas' ? 'ementa-pdf' : 'plano-pdf';
+    const acao = this.acaoPdf();
     this.api.enviarArquivo(this.endpoint, registro.id, acao, arquivo).subscribe({
       next: () => {
         this.mensagem = 'PDF enviado com sucesso';
@@ -207,7 +228,7 @@ export class CadastroPage implements OnInit {
   }
 
   removerPdf(registro: any) {
-    const acao = this.endpoint === 'disciplinas' ? 'ementa-pdf' : 'plano-pdf';
+    const acao = this.acaoPdf();
     this.api.removerArquivo(this.endpoint, registro.id, acao).subscribe(() => {
       this.mensagem = 'PDF removido';
       this.carregar();
@@ -215,16 +236,105 @@ export class CadastroPage implements OnInit {
   }
 
   linkPdf(registro: any) {
-    const acao = this.endpoint === 'disciplinas' ? 'ementa-pdf' : 'plano-pdf';
+    const acao = this.acaoPdf();
     return `/api/${this.endpoint}/${registro.id}/${acao}`;
   }
 
+  linkDownloadPdf(registro: any) {
+    return `${this.linkPdf(registro)}/download`;
+  }
+
   temPdf(registro: any) {
+    if (this.endpoint === 'cursos') return !!registro.gradePdfNome;
     return this.endpoint === 'disciplinas' ? !!registro.ementaPdfNome : !!registro.planoPdfNome;
   }
 
   nomePdf(registro: any) {
+    if (this.endpoint === 'cursos') return registro.gradePdfNome;
     return this.endpoint === 'disciplinas' ? registro.ementaPdfNome : registro.planoPdfNome;
+  }
+
+  mostrarMatriculaGuiada() {
+    return this.endpoint === 'matriculas-disciplinas' && this.opcoes['aluno.id']?.length;
+  }
+
+  camposFormulario() {
+    if (this.endpoint === 'matriculas-disciplinas') {
+      return this.campos.filter(campo => !['aluno.id', 'ofertaDisciplina.id'].includes(campo));
+    }
+    return this.campos;
+  }
+
+  permiteVinculoDisciplinas() {
+    return this.endpoint === 'modulos' && this.opcoes['disciplina.id']?.length;
+  }
+
+  disciplinasDoCurso(modulo: any) {
+    return (this.opcoes['disciplina.id'] || []).filter(disciplina => !modulo?.curso?.id || disciplina.curso?.id === modulo.curso.id);
+  }
+
+  disciplinaMarcada(modulo: any, disciplina: any) {
+    if (!this.disciplinasModulo[modulo.id]) {
+      const marcadas: Record<number, boolean> = {};
+      this.disciplinasDoCurso(modulo).forEach(item => marcadas[item.id] = item.modulo?.id === modulo.id);
+      this.disciplinasModulo[modulo.id] = marcadas;
+    }
+    return this.disciplinasModulo[modulo.id][disciplina.id];
+  }
+
+  alternarDisciplinaModulo(modulo: any, disciplina: any, event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!this.disciplinasModulo[modulo.id]) this.disciplinaMarcada(modulo, disciplina);
+    this.disciplinasModulo[modulo.id][disciplina.id] = input.checked;
+  }
+
+  salvarDisciplinasModulo(modulo: any) {
+    const disciplinasIds = Object.entries(this.disciplinasModulo[modulo.id] || {})
+      .filter(([, marcado]) => marcado)
+      .map(([id]) => Number(id));
+    this.api.acao('modulos', modulo.id, 'disciplinas', { disciplinasIds }).subscribe({
+      next: () => {
+        this.mensagem = 'Disciplinas vinculadas ao modulo';
+        this.disciplinasModulo = {};
+        this.carregar();
+        this.carregarOpcoes();
+      },
+      error: err => this.mensagem = err?.error?.mensagem || 'Nao foi possivel vincular disciplinas'
+    });
+  }
+
+  salvarMatriculasSelecionadas() {
+    if (!this.alunoSelecionado) {
+      this.mensagem = 'Selecione um aluno';
+      return;
+    }
+    const ofertas = Object.entries(this.ofertasSelecionadas)
+      .filter(([, selecionada]) => selecionada)
+      .map(([id]) => Number(id));
+    if (!ofertas.length) {
+      this.mensagem = 'Selecione ao menos uma disciplina';
+      return;
+    }
+    this.carregando = true;
+    let concluidas = 0;
+    let falhas: string[] = [];
+    ofertas.forEach(ofertaId => {
+      this.api.salvar(this.endpoint, {
+        aluno: { id: this.alunoSelecionado },
+        ofertaDisciplina: { id: ofertaId },
+        status: 'ATIVA'
+      }).subscribe({
+        next: () => {
+          concluidas++;
+          this.finalizarLoteMatriculas(concluidas, ofertas.length, falhas);
+        },
+        error: err => {
+          falhas.push(err?.error?.mensagem || 'Nao foi possivel matricular uma disciplina');
+          concluidas++;
+          this.finalizarLoteMatriculas(concluidas, ofertas.length, falhas);
+        }
+      });
+    });
   }
 
   private montarObjeto() {
@@ -251,9 +361,18 @@ export class CadastroPage implements OnInit {
       if (!endpoint || this.opcoes[campo]) continue;
       this.api.listar(endpoint).subscribe(opcoes => this.opcoes[campo] = opcoes);
     }
+    if (this.endpoint === 'matriculas-disciplinas') {
+      this.api.listar('ofertas-disciplinas').subscribe(() => this.carregarOfertasAgrupadas());
+    }
+    if (this.endpoint === 'modulos') {
+      this.api.listar('disciplinas').subscribe(opcoes => this.opcoes['disciplina.id'] = opcoes);
+    }
   }
 
   private opcoesStatus() {
+    if (this.endpoint === 'modulos') {
+      return ['ABERTO', 'FECHADO', 'INATIVO'].map(valor => ({ id: valor, nome: valor }));
+    }
     if (this.endpoint === 'matriculas-disciplinas') {
       return ['ATIVA', 'CONCLUIDA', 'CANCELADA', 'REPROVADA', 'TRANCADA'].map(valor => ({ id: valor, nome: valor }));
     }
@@ -261,5 +380,33 @@ export class CadastroPage implements OnInit {
       return ['PLANEJADA', 'ABERTA', 'EM_ANDAMENTO', 'ENCERRADA', 'CANCELADA'].map(valor => ({ id: valor, nome: valor }));
     }
     return ['ATIVO', 'INATIVO', 'PLANEJADO', 'EM_ANDAMENTO', 'ABERTA', 'ENCERRADA', 'PENDENTE', 'APROVADO', 'REPROVADO', 'CURSANDO'].map(valor => ({ id: valor, nome: valor }));
+  }
+
+  private acaoPdf() {
+    if (this.endpoint === 'cursos') return 'grade-pdf';
+    if (this.endpoint === 'disciplinas') return 'ementa-pdf';
+    return 'plano-pdf';
+  }
+
+  private carregarOfertasAgrupadas() {
+    this.api.listar('ofertas-disciplinas').subscribe(ofertas => {
+      const grupos = new Map<string, any>();
+      ofertas
+        .filter(oferta => ['ABERTA', 'EM_ANDAMENTO', 'PLANEJADA'].includes(oferta.status))
+        .forEach(oferta => {
+          const modulo = oferta.modulo?.nome || 'Sem modulo';
+          if (!grupos.has(modulo)) grupos.set(modulo, { nome: modulo, ofertas: [] });
+          grupos.get(modulo).ofertas.push(oferta);
+        });
+      this.ofertasPorModulo = Array.from(grupos.values());
+    });
+  }
+
+  private finalizarLoteMatriculas(concluidas: number, total: number, falhas: string[]) {
+    if (concluidas !== total) return;
+    this.carregando = false;
+    this.ofertasSelecionadas = {};
+    this.mensagem = falhas.length ? falhas.join('; ') : 'Matriculas realizadas com sucesso';
+    this.carregar();
   }
 }

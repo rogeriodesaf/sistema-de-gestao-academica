@@ -58,6 +58,19 @@ public class DisciplinaResource extends CadastroResource.Crud<Disciplina> {
                 .build();
     }
 
+    @GET
+    @Path("/{id}/ementa-pdf/download")
+    @Produces("application/pdf")
+    public Response baixarEmentaComoAnexo(@PathParam("id") Long id) {
+        Disciplina disciplina = Disciplina.findById(id);
+        if (disciplina == null || disciplina.ementaPdfCaminho == null) throw new NotFoundException();
+        File arquivo = new File(disciplina.ementaPdfCaminho);
+        if (!arquivo.exists()) throw new NotFoundException();
+        return Response.ok(arquivo, "application/pdf")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + disciplina.ementaPdfNome + "\"")
+                .build();
+    }
+
     @DELETE
     @Path("/{id}/ementa-pdf")
     @Transactional

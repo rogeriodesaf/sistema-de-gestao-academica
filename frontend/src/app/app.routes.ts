@@ -7,9 +7,9 @@ import { LoginPage } from './pages/login/login';
 const camposBase = {
   alunos: ['curso.id', 'nome', 'cpf', 'email', 'telefone', 'dataNascimento', 'endereco', 'status', 'dataIngresso', 'observacoes'],
   professores: ['nome', 'cpf', 'email', 'telefone', 'formacao', 'ativo'],
-  cursos: ['nome', 'descricao', 'cargaHorariaTotal', 'ativo'],
-  modulos: ['curso.id', 'nome', 'descricao', 'ordem', 'ativo'],
-  disciplinas: ['curso.id', 'modulo.id', 'nome', 'codigo', 'cargaHoraria', 'ementaResumo', 'ementa', 'bibliografia', 'ativo'],
+  cursos: ['nome', 'descricao', 'ativo'],
+  modulos: ['curso.id', 'nome', 'descricao', 'ordem', 'status', 'ativo'],
+  disciplinas: ['curso.id', 'modulo.id', 'professorResponsavel.id', 'nome', 'codigo', 'cargaHoraria', 'creditos', 'ementaResumo', 'bibliografia', 'ativo'],
   turmas: ['curso.id', 'nome', 'descricao', 'turno', 'quantidadeMaximaAlunos', 'anoPeriodo', 'dataInicio', 'dataTermino', 'status'],
   'anos-letivos': ['turma.id', 'ano', 'dataInicio', 'dataFim', 'status'],
   'periodos-letivos': ['anoLetivo.id', 'nome', 'ordem', 'tipo', 'dataInicio', 'dataFim', 'status'],

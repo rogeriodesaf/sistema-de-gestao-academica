@@ -25,12 +25,18 @@ public class MatrizCurricularResource {
             int cargaModulo = disciplinas.stream()
                     .mapToInt(disciplina -> disciplina.cargaHoraria == null ? 0 : disciplina.cargaHoraria)
                     .sum();
+            int creditosModulo = disciplinas.stream()
+                    .mapToInt(disciplina -> disciplina.creditos == null ? 0 : disciplina.creditos)
+                    .sum();
 
             Map<String, Object> dadosModulo = new LinkedHashMap<>();
             dadosModulo.put("id", modulo.id);
             dadosModulo.put("nome", modulo.nome);
+            dadosModulo.put("descricao", modulo.descricao);
+            dadosModulo.put("status", modulo.status);
             dadosModulo.put("ordem", modulo.ordem);
             dadosModulo.put("cargaHorariaTotal", cargaModulo);
+            dadosModulo.put("creditosTotal", creditosModulo);
             dadosModulo.put("disciplinas", disciplinas);
             return dadosModulo;
         }).toList();
@@ -38,10 +44,14 @@ public class MatrizCurricularResource {
         int cargaTotal = modulosResposta.stream()
                 .mapToInt(modulo -> ((Number) modulo.get("cargaHorariaTotal")).intValue())
                 .sum();
+        int creditosTotal = modulosResposta.stream()
+                .mapToInt(modulo -> ((Number) modulo.get("creditosTotal")).intValue())
+                .sum();
 
         Map<String, Object> resposta = new LinkedHashMap<>();
         resposta.put("curso", curso);
         resposta.put("cargaHorariaTotal", cargaTotal);
+        resposta.put("creditosTotal", creditosTotal);
         resposta.put("modulos", modulosResposta);
         return resposta;
     }
