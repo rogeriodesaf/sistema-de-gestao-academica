@@ -246,12 +246,12 @@ public class DadosAcademicosIniciaisService {
             modulo = new Modulo();
             modulo.curso = curso;
             modulo.ordem = ordem;
-            modulo.persist();
         }
         modulo.nome = "Módulo " + ordem;
         modulo.descricao = "Matriz curricular do curso de Teologia Ministerial.";
         modulo.status = StatusModulo.ABERTO;
         modulo.ativo = true;
+        if (!modulo.isPersistent()) modulo.persist();
         return modulo;
     }
 
@@ -265,7 +265,6 @@ public class DadosAcademicosIniciaisService {
         if (disciplina == null) {
             disciplina = new Disciplina();
             disciplina.codigo = codigo;
-            disciplina.persist();
         }
         disciplina.curso = curso;
         disciplina.nome = componente.nome();
@@ -277,6 +276,7 @@ public class DadosAcademicosIniciaisService {
         disciplina.ementaResumo = disciplina.ementaResumo == null
                 ? "Ementa a ser cadastrada conforme o plano de ensino." : disciplina.ementaResumo;
         disciplina.ativo = true;
+        if (!disciplina.isPersistent()) disciplina.persist();
     }
 
     private String codigoPreservado(String nome) {
