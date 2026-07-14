@@ -2,8 +2,10 @@ package br.edu.sga.resource;
 
 import br.edu.sga.entity.Disciplina;
 import br.edu.sga.service.ArquivoPdfService;
+import br.edu.sga.service.IntegralizacaoCursoService;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -12,6 +14,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -23,9 +26,44 @@ import java.io.File;
 public class DisciplinaResource extends CadastroResource.Crud<Disciplina> {
     @Inject
     ArquivoPdfService arquivoPdfService;
+    @Inject
+    IntegralizacaoCursoService integralizacaoCursoService;
 
     public DisciplinaResource() {
         super(Disciplina.class);
+    }
+
+    @POST
+    @Transactional
+    @Override
+    public Disciplina criar(@Valid Disciplina disciplina) {
+        Disciplina salva = super.criar(disciplina);
+        integralizacaoCursoService.recalcularCurso(salva.curso);
+        return salva;
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Transactional
+    @Override
+    public Disciplina atualizar(@PathParam("id") Long id, @Valid Disciplina disciplina) {
+        var cursoAnterior = buscar(id).curso;
+        Disciplina salva = super.atualizar(id, disciplina);
+        integralizacaoCursoService.recalcularCurso(cursoAnterior);
+        if (salva.curso != null && (cursoAnterior == null || !salva.curso.id.equals(cursoAnterior.id))) {
+            integralizacaoCursoService.recalcularCurso(salva.curso);
+        }
+        return salva;
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Transactional
+    @Override
+    public void excluir(@PathParam("id") Long id) {
+        var curso = buscar(id).curso;
+        super.excluir(id);
+        integralizacaoCursoService.recalcularCurso(curso);
     }
 
     @POST
@@ -34,6 +72,7 @@ public class DisciplinaResource extends CadastroResource.Crud<Disciplina> {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Disciplina enviarEmenta(@PathParam("id") Long id, @RestForm("arquivo") FileUpload arquivo) {
+        exigirGestaoAcademica();
         Disciplina disciplina = Disciplina.findById(id);
         if (disciplina == null) throw new NotFoundException();
         arquivoPdfService.remover(disciplina.ementaPdfCaminho);
@@ -75,6 +114,7 @@ public class DisciplinaResource extends CadastroResource.Crud<Disciplina> {
     @Path("/{id}/ementa-pdf")
     @Transactional
     public void removerEmenta(@PathParam("id") Long id) {
+        exigirGestaoAcademica();
         Disciplina disciplina = Disciplina.findById(id);
         if (disciplina == null) throw new NotFoundException();
         arquivoPdfService.remover(disciplina.ementaPdfCaminho);

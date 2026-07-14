@@ -58,7 +58,7 @@
     </div>
   </div>
 
-  <form *ngIf="campos.length" class="formulario card-bloco" (ngSubmit)="salvar()">
+  <form *ngIf="campos.length && !somenteConsulta()" class="formulario card-bloco" (ngSubmit)="salvar()">
     <div class="card-cabecalho">
       <div>
         <h2>{{ tituloFormulario() | titlecase }}</h2>
@@ -87,8 +87,9 @@
       </section>
     </div>
 
-    <label *ngFor="let campo of camposFormulario()" [class.campo-longo]="isTextoLongo(campo)">
-      {{ label(campo) }}
+    <ng-container *ngFor="let campo of camposFormulario()">
+    <label [class.campo-longo]="isTextoLongo(campo)">
+      {{ endpoint === 'planos-ensino' && campo === 'metodologia' ? 'Metodologia oficial' : endpoint === 'planos-ensino' && campo === 'observacoes' ? 'Observações da disciplina' : label(campo) }}
 
       <select *ngIf="isSelect(campo)" [name]="campo" [(ngModel)]="formulario[campo]">
         <option value="">Selecione</option>
@@ -99,6 +100,12 @@
 
       <input *ngIf="!isSelect(campo) && !isTextoLongo(campo)" [type]="tipoCampo(campo)" [name]="campo" [(ngModel)]="formulario[campo]">
     </label>
+    <label *ngIf="endpoint === 'planos-ensino' && campo === 'objetivos'" class="campo-longo">
+      Ementa oficial em PDF
+      <input type="file" accept="application/pdf,.pdf" name="ementaOficial" (change)="selecionarEmentaPlano($event)">
+      <small>{{ ementaPlanoPendente?.name || 'Selecione um PDF para enviar junto com o plano.' }}</small>
+    </label>
+    </ng-container>
 
     <div class="acoes-form">
       <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alteracoes' : 'Salvar') }}</button>
@@ -107,6 +114,13 @@
   </form>
 
   <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+
+  <div class="filtros card-bloco" *ngIf="endpoint === 'historicos'">
+    <label>
+      Pesquisar aluno
+      <input type="search" name="buscaHistorico" [(ngModel)]="buscaHistorico" placeholder="Nome do aluno">
+    </label>
+  </div>
 
   <div class="filtros card-bloco" *ngIf="endpoint === 'disciplinas'">
     <div class="card-cabecalho">
@@ -189,13 +203,13 @@
         <tr>
           <th *ngFor="let chave of chaves(registrosPaginados()[0])">{{ label(chave) }}</th>
           <th *ngIf="permitePdf()">{{ labelPdf() }}</th>
-          <th>Acoes</th>
+          <th *ngIf="!somenteConsulta()">Ações</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let registro of registrosPaginados()">
-          <td *ngFor="let chave of chaves(registro)">{{ valor(registro, chave) }}</td>
-          <td *ngIf="permitePdf()">
+          <td *ngFor="let chave of chaves(registro)" [attr.data-label]="label(chave)">{{ valor(registro, chave) }}</td>
+          <td *ngIf="permitePdf()" [attr.data-label]="labelPdf()">
             <app-pdf-card
               [titulo]="labelPdf()"
               [nomeArquivo]="nomePdf(registro) || ''"
@@ -208,12 +222,15 @@
               (arquivoSelecionado)="enviarPdfArquivo(registro, $event)"
             />
           </td>
-          <td>
+          <td *ngIf="!somenteConsulta()" data-label="Ações">
             <div class="grupo-acoes compacto">
               <button *ngIf="endpoint === 'disciplinas' || endpoint === 'modulos'" type="button" class="secundario" (click)="selecionarRegistro(registro)">Visualizar</button>
               <button *ngIf="endpoint === 'modulos'" type="button" class="secundario" (click)="abrirGerenciamentoDisciplinas(registro)">Gerenciar disciplinas</button>
-              <button type="button" class="secundario" (click)="editar(registro)">Editar</button>
-              <button type="button" class="perigo-suave" (click)="excluir(registro.id)">Excluir</button>
+              <button *ngIf="endpoint === 'matriculas-disciplinas'" type="button" class="secundario" (click)="visualizarMatricula(registro)">Visualizar</button>
+              <button *ngIf="endpoint === 'matriculas-disciplinas'" type="button" class="secundario" (click)="verDesempenho(registro)">Ver Desempenho</button>
+              <button *ngIf="endpoint !== 'matriculas-disciplinas' || !registro.dataConsolidacao" type="button" class="secundario" (click)="editar(registro)">Editar</button>
+              <button *ngIf="endpoint !== 'planos-ensino' && endpoint !== 'matriculas-disciplinas'" type="button" class="perigo-suave" (click)="excluir(registro.id)">Excluir</button>
+              <button *ngIf="endpoint === 'matriculas-disciplinas' && !registro.dataConsolidacao && registro.status !== 'CANCELADO'" type="button" class="perigo-suave" (click)="excluir(registro.id)">Cancelar Matrícula</button>
             </div>
           </td>
         </tr>
@@ -230,6 +247,31 @@
   <div class="vazio" *ngIf="endpoint === 'disciplinas' && registros.length && !registrosFiltrados().length">
     <h2>Nenhuma disciplina encontrada</h2>
     <p>Ajuste os filtros para localizar disciplinas do catalogo.</p>
+  </div>
+
+  <div class="modal-fundo" *ngIf="endpoint === 'matriculas-disciplinas' && matriculaVisualizada">
+    <section class="modal-grande">
+      <header class="modal-cabecalho">
+        <div><h2>Detalhes da Matrícula</h2><p>{{ matriculaVisualizada.aluno?.nome }} — {{ rotuloOpcao(matriculaVisualizada.ofertaDisciplina) }}</p></div>
+        <button type="button" class="secundario" (click)="fecharMatricula()">Fechar</button>
+      </header>
+      <div class="grade-detalhes">
+        <article><strong>Situação da Matrícula</strong><span>{{ valor(matriculaVisualizada, 'status') }}</span></article>
+        <article><strong>Resultado Acadêmico</strong><span>{{ matriculaVisualizada.resultadoAcademico }}</span></article>
+        <article><strong>Data da Matrícula</strong><span>{{ matriculaVisualizada.dataMatricula | date:'dd/MM/yyyy' }}</span></article>
+        <article><strong>Observações</strong><span>{{ matriculaVisualizada.observacoes || '-' }}</span></article>
+      </div>
+      <div *ngIf="desempenhoMatricula" class="card-bloco">
+        <h2>Desempenho Acadêmico</h2>
+        <p><strong>Média Final:</strong> {{ desempenhoMatricula.mediaFinal || '-' }}</p>
+        <p><strong>Frequência:</strong> {{ desempenhoMatricula.frequenciaFinal === '' ? '-' : desempenhoMatricula.frequenciaFinal + '%' }}</p>
+        <p><strong>Situação:</strong> {{ desempenhoMatricula.situacao }}</p>
+        <h3>Avaliações</h3>
+        <ul><li *ngFor="let avaliacao of desempenhoMatricula.avaliacoes">{{ avaliacao.nome }}: {{ avaliacao.nota ?? '-' }}</li></ul>
+        <h3>Histórico da Disciplina</h3>
+        <p>{{ desempenhoMatricula.historico?.situacao || 'EM_ANDAMENTO' }} — {{ desempenhoMatricula.historico?.periodo || 'Período não informado' }}</p>
+      </div>
+    </section>
   </div>
 
   <div class="modal-fundo" *ngIf="endpoint === 'modulos' && moduloGerenciado">

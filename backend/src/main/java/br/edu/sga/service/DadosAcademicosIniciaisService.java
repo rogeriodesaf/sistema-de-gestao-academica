@@ -2,16 +2,19 @@ package br.edu.sga.service;
 
 import br.edu.sga.entity.*;
 import br.edu.sga.enums.*;
+import br.edu.sga.exception.ApiException;
 import br.edu.sga.security.SenhaService;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 
 @ApplicationScoped
 public class DadosAcademicosIniciaisService {
@@ -21,6 +24,12 @@ public class DadosAcademicosIniciaisService {
     @ConfigProperty(name = "sga.upload.dir")
     String uploadDir;
 
+    @ConfigProperty(name = "sga.seed.homologacao.enabled", defaultValue = "false")
+    boolean seedHomologacaoEnabled;
+
+    @Inject
+    AcademicoService academicoService;
+
     @Transactional
     void criarDadosAcademicos(@Observes StartupEvent evento) {
         limparReferenciasDeArquivosAusentes();
@@ -28,6 +37,7 @@ public class DadosAcademicosIniciaisService {
         Curso existente = Curso.find("nome", "Curso de Teologia").firstResult();
         if (existente != null) {
             garantirGradePlaceholder(existente);
+            garantirProfessorHomologacao(existente);
             return;
         }
 
@@ -77,8 +87,9 @@ public class DadosAcademicosIniciaisService {
         turma.persist();
 
         AnoLetivo ano = new AnoLetivo();
-        ano.turma = turma;
         ano.ano = 2026;
+        ano.dataInicio = LocalDate.of(2026, 1, 1);
+        ano.dataFim = LocalDate.of(2026, 12, 31);
         ano.status = StatusAnoLetivo.EM_ANDAMENTO;
         ano.persist();
 
@@ -101,6 +112,250 @@ public class DadosAcademicosIniciaisService {
         matricula.ofertaDisciplina = ofertaHermeneutica;
         matricula.status = StatusMatriculaDisciplina.ATIVA;
         matricula.persist();
+
+        garantirProfessorHomologacao(curso);
+    }
+
+    private void garantirProfessorHomologacao(Curso curso) {
+        if (!seedHomologacaoEnabled) {
+            return;
+        }
+
+        Professor professor = professorHomologacao();
+        professor.email = "professor@seminario.local";
+        professor.formacao = professor.formacao == null ? "Teologia" : professor.formacao;
+        professor.ativo = true;
+
+        Modulo modulo = moduloHomologacao(curso);
+        Disciplina disciplina = disciplinaHomologacao(curso, modulo, professor);
+        Turma turma = turmaHomologacao(curso, disciplina, professor);
+        AnoLetivo ano = anoLetivoHomologacao(turma);
+        PeriodoLetivo periodo = periodoLetivoHomologacao(ano);
+        OfertaDisciplina oferta = ofertaHomologacao(turma, ano, periodo, curso, modulo, disciplina, professor);
+
+        turma.anoLetivo = ano;
+        turma.periodoLetivo = periodo;
+
+        for (Aluno aluno : alunosHomologacao(curso)) {
+            matricularAlunoHomologacao(aluno, curso, periodo, oferta);
+        }
+    }
+
+    private Professor professorHomologacao() {
+        Usuario usuario = usuarioHomologacao();
+        Professor professor = Professor.find("usuario = ?1", usuario).firstResult();
+        if (professor == null) {
+            professor = Professor.find("nome", "Professor Exemplo").firstResult();
+        }
+        if (professor == null) {
+            professor = new Professor();
+            professor.nome = "Professor Exemplo";
+            professor.persist();
+        }
+        professor.usuario = usuario;
+        return professor;
+    }
+
+    private Usuario usuarioHomologacao() {
+        Usuario usuario = Usuario.find("email", "professor@seminario.local").firstResult();
+        if (usuario == null) {
+            usuario = new Usuario();
+            usuario.email = "professor@seminario.local";
+        }
+        usuario.nome = "Professor Exemplo";
+        usuario.senhaHash = senhaService.criptografar("Professor@123");
+        usuario.perfil = Perfil.PROFESSOR;
+        usuario.ativo = true;
+        if (!usuario.isPersistent()) {
+            usuario.persist();
+        }
+        return usuario;
+    }
+
+    private Modulo moduloHomologacao(Curso curso) {
+        Modulo modulo = Modulo.find("curso = ?1 and ordem = ?2", curso, 1).firstResult();
+        if (modulo == null) {
+            modulo = new Modulo();
+            modulo.curso = curso;
+            modulo.ordem = 1;
+        }
+        modulo.nome = "Modulo 1";
+        modulo.descricao = "Hermenêutica, Homilética e Apologética.";
+        modulo.status = StatusModulo.ABERTO;
+        modulo.ativo = true;
+        if (!modulo.isPersistent()) {
+            modulo.persist();
+        }
+        return modulo;
+    }
+
+    private Disciplina disciplinaHomologacao(Curso curso, Modulo modulo, Professor professor) {
+        Disciplina disciplina = Disciplina.find("codigo", "HER-101").firstResult();
+        if (disciplina == null) {
+            disciplina = Disciplina.find("nome in ?1", List.of("Hermenêutica I", "Hermenêutica")).firstResult();
+        }
+        if (disciplina == null) {
+            disciplina = new Disciplina();
+            disciplina.codigo = "HER-101";
+        }
+        disciplina.curso = curso;
+        disciplina.modulo = modulo;
+        disciplina.professorResponsavel = professor;
+        disciplina.nome = "Hermenêutica I";
+        disciplina.cargaHoraria = disciplina.cargaHoraria == null ? 40 : disciplina.cargaHoraria;
+        disciplina.creditos = disciplina.creditos == null ? 2 : disciplina.creditos;
+        disciplina.ementaResumo = disciplina.ementaResumo == null ? "Introdução aos princípios de interpretação bíblica." : disciplina.ementaResumo;
+        disciplina.ativo = true;
+        if (!disciplina.isPersistent()) {
+            disciplina.persist();
+        }
+        return disciplina;
+    }
+
+    private Turma turmaHomologacao(Curso curso, Disciplina disciplina, Professor professor) {
+        Turma turma = Turma.find("nome", "Hermenêutica I - Noite - 2026").firstResult();
+        if (turma == null) {
+            turma = new Turma();
+            turma.nome = "Hermenêutica I - Noite - 2026";
+        }
+        turma.curso = curso;
+        turma.disciplina = disciplina;
+        turma.professor = professor;
+        turma.anoPeriodo = "2026";
+        turma.turno = "Noite";
+        turma.horario = "Segunda-feira, 19h";
+        turma.sala = "Sala 1";
+        turma.quantidadeMaximaAlunos = turma.quantidadeMaximaAlunos == null ? 30 : turma.quantidadeMaximaAlunos;
+        turma.status = StatusTurma.EM_ANDAMENTO;
+        if (!turma.isPersistent()) {
+            turma.persist();
+        }
+        return turma;
+    }
+
+    private AnoLetivo anoLetivoHomologacao(Turma turma) {
+        AnoLetivo ano = AnoLetivo.find("ano = ?1 and legado = false", 2026).firstResult();
+        if (ano == null) {
+            ano = new AnoLetivo();
+            ano.ano = 2026;
+        }
+        ano.status = StatusAnoLetivo.EM_ANDAMENTO;
+        ano.dataInicio = ano.dataInicio == null ? LocalDate.of(2026, 1, 1) : ano.dataInicio;
+        ano.dataFim = ano.dataFim == null ? LocalDate.of(2026, 12, 31) : ano.dataFim;
+        if (!ano.isPersistent()) {
+            ano.persist();
+        }
+        return ano;
+    }
+
+    private PeriodoLetivo periodoLetivoHomologacao(AnoLetivo ano) {
+        PeriodoLetivo periodo = PeriodoLetivo.find("anoLetivo = ?1 and nome = ?2", ano, "Modulo 1 - 2026").firstResult();
+        if (periodo == null) {
+            periodo = new PeriodoLetivo();
+            periodo.anoLetivo = ano;
+            periodo.nome = "Modulo 1 - 2026";
+        }
+        periodo.ordem = 1;
+        periodo.tipo = TipoPeriodoLetivo.MODULO;
+        periodo.status = StatusPeriodoLetivo.ABERTO;
+        periodo.dataInicio = periodo.dataInicio == null ? LocalDate.of(2026, 1, 5) : periodo.dataInicio;
+        periodo.dataFim = periodo.dataFim == null ? LocalDate.of(2026, 4, 30) : periodo.dataFim;
+        if (!periodo.isPersistent()) {
+            periodo.persist();
+        }
+        return periodo;
+    }
+
+    private OfertaDisciplina ofertaHomologacao(Turma turma, AnoLetivo ano, PeriodoLetivo periodo, Curso curso,
+                                               Modulo modulo, Disciplina disciplina, Professor professor) {
+        OfertaDisciplina oferta = OfertaDisciplina.find("turma = ?1 and disciplina = ?2 and periodoLetivo = ?3", turma, disciplina, periodo).firstResult();
+        boolean novaOferta = oferta == null;
+        if (oferta == null) {
+            oferta = new OfertaDisciplina();
+            oferta.turma = turma;
+            oferta.disciplina = disciplina;
+            oferta.periodoLetivo = periodo;
+        }
+        oferta.anoLetivo = ano;
+        oferta.curso = curso;
+        oferta.modulo = modulo;
+        oferta.professor = professor;
+        oferta.vagas = oferta.vagas == null ? 30 : oferta.vagas;
+        oferta.horario = "Segunda-feira, 19h";
+        oferta.sala = "Sala 1";
+        oferta.cargaHorariaPrevista = disciplina.cargaHoraria;
+        oferta.cargaHorariaMinistrada = oferta.cargaHorariaMinistrada == null ? 0 : oferta.cargaHorariaMinistrada;
+        oferta.dataInicio = oferta.dataInicio == null ? LocalDate.of(2026, 1, 5) : oferta.dataInicio;
+        oferta.dataFim = oferta.dataFim == null ? LocalDate.of(2026, 4, 30) : oferta.dataFim;
+        if (novaOferta || oferta.status == null) {
+            oferta.status = StatusOfertaDisciplina.EM_ANDAMENTO;
+        }
+        if (!oferta.isPersistent()) {
+            oferta.persist();
+        }
+        return oferta;
+    }
+
+    private List<Aluno> alunosHomologacao(Curso curso) {
+        return List.of(
+                alunoHomologacao(curso, "Aluno Hermenêutica 01", "aluno.hermeneutica01@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 02", "aluno.hermeneutica02@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 03", "aluno.hermeneutica03@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 04", "aluno.hermeneutica04@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 05", "aluno.hermeneutica05@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 06", "aluno.hermeneutica06@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 07", "aluno.hermeneutica07@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 08", "aluno.hermeneutica08@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 09", "aluno.hermeneutica09@seminario.local"),
+                alunoHomologacao(curso, "Aluno Hermenêutica 10", "aluno.hermeneutica10@seminario.local")
+        );
+    }
+
+    private Aluno alunoHomologacao(Curso curso, String nome, String email) {
+        Aluno aluno = Aluno.find("email", email).firstResult();
+        if (aluno == null) {
+            aluno = new Aluno();
+            aluno.email = email;
+        }
+        aluno.nome = nome;
+        aluno.curso = curso;
+        aluno.status = StatusAluno.ATIVO;
+        aluno.dataIngresso = aluno.dataIngresso == null ? LocalDate.of(2026, 1, 5) : aluno.dataIngresso;
+        aluno.observacoes = aluno.observacoes == null ? "Aluno de homologação para testes da area do professor." : aluno.observacoes;
+        if (!aluno.isPersistent()) {
+            aluno.persist();
+        }
+        return aluno;
+    }
+
+    private void matricularAlunoHomologacao(Aluno aluno, Curso curso, PeriodoLetivo periodo, OfertaDisciplina oferta) {
+        MatriculaDisciplina matricula = MatriculaDisciplina.find("aluno = ?1 and ofertaDisciplina = ?2", aluno, oferta).firstResult();
+        if (matricula == null) {
+            matricula = MatriculaDisciplina.find(
+                    "aluno = ?1 and ofertaDisciplina.disciplina = ?2 and status not in ?3",
+                    aluno, oferta.disciplina,
+                    List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO)).firstResult();
+        }
+        if (matricula == null) {
+            matricula = new MatriculaDisciplina();
+            matricula.aluno = aluno;
+            matricula.ofertaDisciplina = oferta;
+            matricula.curso = curso;
+            matricula.periodoLetivo = periodo;
+            matricula.dataMatricula = LocalDate.of(2026, 1, 5);
+            matricula.status = StatusMatriculaDisciplina.MATRICULADO;
+            try {
+                academicoService.matricularEmDisciplina(matricula);
+            } catch (ApiException erro) {
+                if (erro.status != Response.Status.CONFLICT) throw erro;
+            }
+            return;
+        }
+        matricula.curso = curso;
+        matricula.periodoLetivo = periodo;
+        if (matricula.status == StatusMatriculaDisciplina.CANCELADO || matricula.status == StatusMatriculaDisciplina.TRANCADO) {
+            matricula.status = StatusMatriculaDisciplina.MATRICULADO;
+        }
     }
 
     private void garantirGradePlaceholder(Curso curso) {
@@ -182,7 +437,7 @@ public class DadosAcademicosIniciaisService {
         oferta.horario = horario;
         oferta.sala = sala;
         oferta.cargaHorariaPrevista = disciplina.cargaHoraria;
-        oferta.status = StatusOfertaDisciplina.ABERTA;
+        oferta.status = StatusOfertaDisciplina.EM_ANDAMENTO;
         oferta.persist();
         return oferta;
     }

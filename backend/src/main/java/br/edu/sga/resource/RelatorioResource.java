@@ -62,7 +62,9 @@ public class RelatorioResource {
     public Object resultados() {
         return Map.of(
                 "aprovados", HistoricoEscolar.count("situacao", StatusHistorico.APROVADO),
-                "reprovados", HistoricoEscolar.count("situacao", StatusHistorico.REPROVADO),
+                "reprovados", HistoricoEscolar.count("situacao in ?1", java.util.List.of(
+                        StatusHistorico.REPROVADO, StatusHistorico.REPROVADO_POR_NOTA,
+                        StatusHistorico.REPROVADO_POR_FREQUENCIA)),
                 "pendentes", HistoricoEscolar.count("situacao", StatusHistorico.PENDENTE)
         );
     }

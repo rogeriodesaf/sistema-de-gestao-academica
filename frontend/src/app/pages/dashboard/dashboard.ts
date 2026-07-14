@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, signal } from '@angular/core';
+import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 
@@ -14,17 +15,20 @@ export class DashboardPage implements OnInit {
   carregando = signal(true);
   erro = signal('');
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private changeDetector: ChangeDetectorRef) {}
 
   ngOnInit() {
-    this.api.dashboard().subscribe({
+    this.api.dashboard().pipe(
+      finalize(() => {
+        this.carregando.set(false);
+        this.changeDetector.detectChanges();
+      })
+    ).subscribe({
       next: dados => {
         this.dados.set(dados || {});
-        this.carregando.set(false);
       },
       error: err => {
         this.erro.set(err?.error?.mensagem || 'Nao foi possivel carregar o dashboard. Entre novamente e tente outra vez.');
-        this.carregando.set(false);
       }
     });
   }

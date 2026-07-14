@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-login',
@@ -17,16 +18,24 @@ export class LoginPage {
   erro = '';
   carregando = false;
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private changeDetector: ChangeDetectorRef, public tema: ThemeService) {}
 
   entrar() {
+    if (this.carregando) return;
+
     this.erro = '';
     this.carregando = true;
-    this.auth.login(this.email, this.senha).subscribe({
-      next: () => this.router.navigateByUrl('/dashboard'),
+    this.auth.login(this.email, this.senha).pipe(
+      finalize(() => {
+        this.carregando = false;
+        this.changeDetector.detectChanges();
+      })
+    ).subscribe({
+      next: sessao => {
+        window.location.replace(this.auth.rotaInicial(sessao.perfil));
+      },
       error: err => {
         this.erro = err?.error?.mensagem || 'Nao foi possivel entrar';
-        this.carregando = false;
       }
     });
   }

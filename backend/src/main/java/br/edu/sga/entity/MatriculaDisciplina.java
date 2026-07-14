@@ -9,8 +9,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "matriculas_disciplinas")
@@ -33,11 +35,15 @@ public class MatriculaDisciplina extends PanacheEntity {
     public LocalDate dataMatricula = LocalDate.now();
     @NotNull
     @Enumerated(EnumType.STRING)
-    public StatusMatriculaDisciplina status = StatusMatriculaDisciplina.MATRICULADO;
+    public StatusMatriculaDisciplina status = StatusMatriculaDisciplina.ATIVA;
+    @Transient
+    public String resultadoAcademico = "EM_ANDAMENTO";
     @Column(name = "nota_final")
     public java.math.BigDecimal notaFinal;
     @Column(name = "frequencia_final")
     public java.math.BigDecimal frequenciaFinal;
     @Column(length = 2000)
     public String observacoes;
+    @Column(name = "data_consolidacao")
+    public LocalDateTime dataConsolidacao;
 }

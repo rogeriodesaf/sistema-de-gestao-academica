@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 
@@ -28,7 +28,8 @@ export class PlanejamentoAcademicoPage implements OnInit {
   editandoId?: number;
   formulario: Record<string, any> = this.formularioVazio();
 
-  constructor(private api: ApiService, private router: Router, private route: ActivatedRoute) {}
+  constructor(private api: ApiService, private router: Router, private route: ActivatedRoute,
+              private cd: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.carregarTudo();
@@ -45,7 +46,10 @@ export class PlanejamentoAcademicoPage implements OnInit {
       cursos: this.api.listar('cursos'),
       anosLetivos: this.api.listar('anos-letivos'),
       periodosLetivos: this.api.listar('periodos-letivos')
-    }).subscribe({
+    }).pipe(finalize(() => {
+      this.carregando = false;
+      this.cd.detectChanges();
+    })).subscribe({
       next: dados => {
         this.ofertas = dados.ofertas || [];
         this.disciplinas = dados.disciplinas || [];
@@ -56,11 +60,9 @@ export class PlanejamentoAcademicoPage implements OnInit {
         this.anosLetivos = dados.anosLetivos || [];
         this.periodosLetivos = dados.periodosLetivos || [];
         this.aplicarEdicaoDaUrl();
-        this.carregando = false;
       },
       error: err => {
         this.mensagem = err?.error?.mensagem || 'Nao foi possivel carregar o planejamento academico.';
-        this.carregando = false;
       }
     });
   }
@@ -155,6 +157,13 @@ export class PlanejamentoAcademicoPage implements OnInit {
     return this.modulos.find(item => item.id === id);
   }
 
+  modulosDoAno() {
+    const anoId = Number(this.formulario['anoLetivo.id']);
+    const anuais = this.modulos.filter(modulo => modulo.anoLetivo?.id === anoId);
+    if (anuais.length) return anuais;
+    return this.modulos.filter(modulo => !modulo.anoLetivo?.id);
+  }
+
   moduloOriginal(disciplina = this.disciplinaSelecionada()) {
     return disciplina?.moduloOriginal || disciplina?.modulo;
   }
@@ -201,14 +210,11 @@ export class PlanejamentoAcademicoPage implements OnInit {
   }
 
   private montarTurma() {
-    const periodoId = this.periodoTecnicoId();
     return {
       id: this.formulario['turma.id'] ? Number(this.formulario['turma.id']) : undefined,
       nome: this.formulario['nomeTurma'],
       disciplina: { id: Number(this.formulario['disciplina.id']) },
       professor: { id: Number(this.formulario['professor.id']) },
-      anoLetivo: { id: Number(this.formulario['anoLetivo.id']) },
-      periodoLetivo: periodoId ? { id: periodoId } : undefined,
       curso: this.formulario['curso.id'] ? { id: Number(this.formulario['curso.id']) } : undefined,
       turno: '',
       horario: this.formulario['horario'],
@@ -221,11 +227,11 @@ export class PlanejamentoAcademicoPage implements OnInit {
   }
 
   private montarOferta(turma: any) {
-    const periodoId = this.periodoTecnicoId();
+    const periodoId = Number(this.formulario['periodoLetivo.id'] || 0);
     return {
       turma: { id: turma.id },
       anoLetivo: { id: Number(this.formulario['anoLetivo.id']) },
-      periodoLetivo: { id: periodoId },
+      periodoLetivo: periodoId ? { id: periodoId } : undefined,
       curso: this.formulario['curso.id'] ? { id: Number(this.formulario['curso.id']) } : undefined,
       modulo: { id: Number(this.formulario['modulo.id']) },
       disciplina: { id: Number(this.formulario['disciplina.id']) },
@@ -241,9 +247,7 @@ export class PlanejamentoAcademicoPage implements OnInit {
   }
 
   private validarFormulario() {
-    this.selecionarPeriodoTecnico();
     if (!this.formulario['anoLetivo.id']) return 'Ano letivo obrigatorio.';
-    if (!this.periodoTecnicoId()) return 'Nao foi possivel definir o periodo tecnico interno para esta oferta. Verifique o cadastro do ano letivo.';
     if (!this.formulario['disciplina.id']) return 'Disciplina obrigatoria.';
     if (!this.formulario['modulo.id']) return 'Modulo de oferta obrigatorio.';
     if (!this.formulario['professor.id']) return 'Professor obrigatorio.';
@@ -270,7 +274,7 @@ export class PlanejamentoAcademicoPage implements OnInit {
   }
 
   private periodoTecnicoId() {
-    return Number(this.formulario['periodoLetivo.id'] || this.periodoTecnicoCompativel()?.id || 0);
+    return Number(this.formulario['periodoLetivo.id'] || 0);
   }
 
   private periodoTecnicoCompativel() {

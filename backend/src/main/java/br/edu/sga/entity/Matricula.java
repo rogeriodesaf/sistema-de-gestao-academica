@@ -28,6 +28,8 @@ public class Matricula extends PanacheEntity {
     public Disciplina disciplina;
     @Column(name = "data_matricula")
     public LocalDate dataMatricula = LocalDate.now();
+    @Column(name = "data_conclusao")
+    public LocalDate dataConclusao;
     @Enumerated(EnumType.STRING)
     public StatusMatricula status = StatusMatricula.ATIVA;
 }

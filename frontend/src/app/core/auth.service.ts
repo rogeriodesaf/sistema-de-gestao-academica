@@ -23,11 +23,23 @@ export class AuthService {
     return !!this.usuario()?.token;
   }
 
+  token(): string | null {
+    return this.usuario()?.token || null;
+  }
+
+  rotaInicial(perfil = this.usuario()?.perfil): string {
+    const perfilNormalizado = this.normalizarPerfil(perfil);
+    if (perfilNormalizado === 'PROFESSOR') return '/area-professor';
+    if (perfilNormalizado === 'ALUNO') return '/area-aluno';
+    return '/dashboard';
+  }
+
   login(email: string, senha: string) {
     return this.http.post<UsuarioSessao>(`${this.api}/auth/login`, { email, senha }).pipe(
       tap(sessao => {
-        localStorage.setItem(this.chave, JSON.stringify(sessao));
-        this.usuario.set(sessao);
+        const sessaoNormalizada = this.normalizarSessao(sessao);
+        localStorage.setItem(this.chave, JSON.stringify(sessaoNormalizada));
+        this.usuario.set(sessaoNormalizada);
       })
     );
   }
@@ -40,6 +52,14 @@ export class AuthService {
 
   private lerSessao(): UsuarioSessao | null {
     const valor = localStorage.getItem(this.chave);
-    return valor ? JSON.parse(valor) : null;
+    return valor ? this.normalizarSessao(JSON.parse(valor)) : null;
+  }
+
+  private normalizarSessao(sessao: UsuarioSessao): UsuarioSessao {
+    return { ...sessao, perfil: this.normalizarPerfil(sessao.perfil) };
+  }
+
+  private normalizarPerfil(perfil?: string): string {
+    return (perfil || '').trim().toUpperCase();
   }
 }

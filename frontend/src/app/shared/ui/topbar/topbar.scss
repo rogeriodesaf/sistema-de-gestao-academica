@@ -6,8 +6,8 @@
   gap: 16px;
   margin-bottom: 24px;
   padding: 0 20px;
-  background: #fff;
-  border: 1px solid #dfe7ef;
+  background: var(--fundo-header);
+  border: 1px solid var(--borda);
   border-radius: 8px;
   box-shadow: 0 12px 30px rgba(16, 47, 74, .06);
 }
@@ -23,9 +23,11 @@
 }
 
 .botao-sair {
-  background: #eef5fb;
-  color: #16334d;
+  background: var(--azul-100);
+  color: var(--azul-900);
 }
+
+.botao-tema { background: var(--fundo-input); color: var(--texto-principal); border: 1px solid var(--borda); }
 
 .botao-menu,
 .marca-mobile {
@@ -64,9 +66,16 @@
   }
 
   .marca-mobile {
-    display: block;
-    color: #102f4a;
-    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--texto-principal);
+  }
+
+  .marca-mobile img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
   }
 
   .usuario-topbar {
@@ -89,6 +98,8 @@
   .botao-sair {
     padding: 9px 11px;
   }
+
+  .botao-tema { padding: 9px 10px; }
 }
 
 @media (max-width: 560px) {
@@ -99,6 +110,9 @@
   .usuario-topbar span {
     display: none;
   }
+
+  .marca-mobile strong,
+  .botao-tema { font-size: .78rem; }
 
   .botao-sair {
     padding: 9px 10px;

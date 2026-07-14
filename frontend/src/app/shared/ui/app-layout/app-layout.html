@@ -1,20 +1,21 @@
-<div class="shell" [class.menu-aberto]="menuAberto">
-  <app-sidebar class="sidebar-desktop" [grupos]="menuGrupos" />
+<div class="shell" [class.menu-aberto]="menuAberto" [class.sem-menu]="!usuario">
+  <app-sidebar *ngIf="usuario" class="sidebar-desktop" [grupos]="menuGrupos" />
 
   <button
     type="button"
     class="menu-overlay"
     aria-label="Fechar menu"
-    *ngIf="menuAberto"
+    *ngIf="usuario && menuAberto"
     (click)="fecharMenu()"
   ></button>
 
-  <div class="menu-mobile" [class.aberto]="menuAberto" role="dialog" aria-label="Menu principal">
+  <div *ngIf="usuario" class="menu-mobile" [class.aberto]="menuAberto" role="dialog" aria-label="Menu principal">
     <app-sidebar [grupos]="menuGrupos" [mobile]="true" (navegar)="fecharMenu()" />
   </div>
 
   <main class="conteudo">
-    <app-topbar [usuario]="usuario" (abrirMenu)="abrirMenu()" (sair)="emitirSair()" />
-    <ng-content />
+    <app-topbar *ngIf="usuario" [usuario]="usuario" (abrirMenu)="abrirMenu()" (sair)="emitirSair()" />
+    <router-outlet />
+    <footer class="rodape">© {{ anoAtual }} Rogério de Sá - Engenharia de Softwares</footer>
   </main>
 </div>

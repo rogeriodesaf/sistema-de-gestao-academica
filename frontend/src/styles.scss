@@ -18,13 +18,56 @@
   --vermelho: #b42318;
   --vermelho-50: #fff1f0;
   --sombra: 0 16px 40px rgba(16, 47, 74, .08);
+  --fundo-app: var(--cinza-100);
+  --fundo-card: var(--branco);
+  --fundo-header: var(--branco);
+  --fundo-input: var(--branco);
+  --texto-principal: var(--cinza-950);
+  --texto-secundario: var(--cinza-700);
+  --borda: var(--cinza-200);
+  --sucesso-fundo: #dcfce7;
+  --sucesso-texto: #166534;
+  --aviso-fundo: #fef3c7;
+  --aviso-texto: #92400e;
+  --erro-fundo: var(--vermelho-50);
+  --erro-texto: var(--vermelho);
+}
+
+:root[data-theme="escuro"] {
+  --azul-900: #e1f1ff;
+  --azul-800: #c7e4fb;
+  --azul-600: #66b5ef;
+  --azul-100: #18384f;
+  --cinza-950: #eef5fa;
+  --cinza-700: #b7c6d2;
+  --cinza-500: #91a6b6;
+  --cinza-200: #344b5d;
+  --cinza-100: #0d1821;
+  --cinza-50: #162631;
+  --branco: #1a2a36;
+  --vermelho: #ff9b94;
+  --vermelho-50: #442329;
+  --sombra: 0 16px 40px rgba(0, 0, 0, .28);
+  --fundo-app: #0d1821;
+  --fundo-card: #1a2a36;
+  --fundo-header: #14232e;
+  --fundo-input: #12212c;
+  --texto-principal: #eef5fa;
+  --texto-secundario: #b7c6d2;
+  --borda: #344b5d;
+  --sucesso-fundo: #173c2c;
+  --sucesso-texto: #8ce3ad;
+  --aviso-fundo: #493817;
+  --aviso-texto: #f4cf76;
+  --erro-fundo: #442329;
+  --erro-texto: #ff9b94;
 }
 
 body {
   margin: 0;
   font-family: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
-  color: var(--cinza-950);
-  background: var(--cinza-100);
+  color: var(--texto-principal);
+  background: var(--fundo-app);
 }
 
 .painel {
@@ -57,8 +100,8 @@ p {
 }
 
 .card-bloco {
-  background: var(--branco);
-  border: 1px solid var(--cinza-200);
+  background: var(--fundo-card);
+  border: 1px solid var(--borda);
   border-radius: 8px;
   padding: 22px;
   box-shadow: var(--sombra);
@@ -182,10 +225,15 @@ textarea {
   border-radius: 6px;
   padding: 11px 12px;
   font: inherit;
-  color: var(--cinza-950);
-  background: var(--branco);
+  color: var(--texto-principal);
+  background: var(--fundo-input);
   outline: none;
   transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+option {
+  color: var(--texto-principal);
+  background: var(--fundo-input);
 }
 
 input:focus,
@@ -253,11 +301,11 @@ button.perigo-suave {
 }
 
 .mensagem {
-  border: 1px solid #b7e3c1;
+  border: 1px solid var(--sucesso-texto);
   border-radius: 8px;
   padding: 12px 14px;
-  background: #f0fff4;
-  color: #166534;
+  background: var(--sucesso-fundo);
+  color: var(--sucesso-texto);
   font-weight: 700;
 }
 
@@ -288,7 +336,7 @@ th {
 }
 
 tbody tr:nth-child(even) {
-  background: #fbfdff;
+  background: var(--cinza-50);
 }
 
 tbody tr:hover {
@@ -652,13 +700,13 @@ tbody tr:hover {
 }
 
 .badge-status.status-ABERTA {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--sucesso-fundo);
+  color: var(--sucesso-texto);
 }
 
 .badge-status.status-EM_ANDAMENTO {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--aviso-fundo);
+  color: var(--aviso-texto);
 }
 
 .badge-status.status-PLANEJADA {
@@ -800,6 +848,58 @@ tbody tr:hover {
   background: var(--azul-600);
 }
 
+.login {
+  position: relative;
+}
+
+.login .alternar-tema {
+  position: fixed;
+  z-index: 2;
+  top: 16px;
+  right: 16px;
+  border: 1px solid var(--borda);
+  background: var(--fundo-card);
+  color: var(--texto-principal);
+}
+
+:root[data-theme="escuro"] {
+  .login,
+  .login section,
+  app-area-aluno .portal,
+  app-area-aluno .bloco,
+  app-area-aluno .resumo article,
+  app-area-aluno .disciplina-card,
+  app-area-aluno .historico-disciplina,
+  app-area-aluno .historico-resumo article {
+    color: var(--texto-principal);
+    background: var(--fundo-card);
+    border-color: var(--borda);
+  }
+
+  .login p,
+  app-area-aluno p,
+  app-area-aluno small,
+  app-area-aluno span,
+  app-area-aluno dt {
+    color: var(--texto-secundario);
+  }
+
+  .situacao-frequencia,
+  .situacao.aprovado,
+  .status-chamada.preenchida,
+  .pdf-status span {
+    background: var(--sucesso-fundo);
+    color: var(--sucesso-texto);
+  }
+
+  .situacao-frequencia.limite,
+  .situacao,
+  .status-chamada {
+    background: var(--aviso-fundo);
+    color: var(--aviso-texto);
+  }
+}
+
 @media (max-width: 1100px) {
   label {
     grid-column: span 6;
@@ -825,5 +925,113 @@ tbody tr:hover {
 
   h1 {
     font-size: 1.55rem;
+  }
+
+  .card-cabecalho,
+  .modal-cabecalho,
+  .oferta-card-topo {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tabela.card-bloco {
+    overflow: visible;
+  }
+
+  .tabela.card-bloco > table {
+    min-width: 0;
+  }
+
+  .tabela.card-bloco > table > thead {
+    display: none;
+  }
+
+  .tabela.card-bloco > table > tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .tabela.card-bloco > table > tbody > tr {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    background: var(--fundo-card);
+  }
+
+  .tabela.card-bloco > table > tbody > tr > td[data-label] {
+    display: grid;
+    grid-template-columns: minmax(110px, .7fr) 1fr;
+    gap: 10px;
+    min-width: 0;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .tabela.card-bloco > table > tbody > tr > td[data-label]:last-child {
+    border-bottom: 0;
+  }
+
+  td[data-label]::before {
+    content: attr(data-label);
+    color: var(--texto-secundario);
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+
+  .modal-fundo {
+    padding: 10px;
+  }
+
+  .modal-grande {
+    max-height: calc(100vh - 20px);
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login {
+    width: 100%;
+    min-width: 0;
+    padding: 14px;
+    overflow-x: hidden;
+  }
+
+  .login section {
+    width: 100%;
+    max-width: 420px;
+    min-width: 0;
+    padding: 20px;
+  }
+
+  .login form,
+  .login label,
+  .login input {
+    min-width: 0;
+  }
+
+  .painel {
+    gap: 14px;
+  }
+
+  .card-bloco {
+    padding: 14px;
+  }
+
+  .tabela.card-bloco > table > tbody > tr > td[data-label] {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .grupo-acoes button,
+  .modal-acoes button,
+  .paginacao button {
+    width: 100%;
+  }
+
+  .login .alternar-tema {
+    top: 10px;
+    right: 10px;
   }
 }

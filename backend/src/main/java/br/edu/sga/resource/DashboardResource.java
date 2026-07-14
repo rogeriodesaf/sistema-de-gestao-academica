@@ -34,7 +34,8 @@ public class DashboardResource {
         dados.put("periodoAtual", PeriodoLetivo.count("status", StatusPeriodoLetivo.EM_ANDAMENTO));
         dados.put("turmasAtivas", Turma.count("status in ?1", java.util.List.of(StatusTurma.ABERTA, StatusTurma.EM_ANDAMENTO)));
         dados.put("disciplinasAbertas", OfertaDisciplina.count("status", StatusOfertaDisciplina.ABERTA));
-        dados.put("disciplinasEncerradas", OfertaDisciplina.count("status", StatusOfertaDisciplina.ENCERRADA));
+        dados.put("disciplinasEncerradas", OfertaDisciplina.count("status in ?1",
+                java.util.List.of(StatusOfertaDisciplina.ENCERRADA, StatusOfertaDisciplina.CONCLUIDA)));
         dados.put("ofertasAbertas", OfertaDisciplina.count("status", StatusOfertaDisciplina.ABERTA));
         dados.put("matriculasEmDisciplinas", matriculasAtivasEmOfertas);
         dados.put("matriculasAtivasPeriodoAtual", MatriculaDisciplina.count("status in ?1", java.util.List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO)));

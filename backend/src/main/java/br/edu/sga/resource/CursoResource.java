@@ -2,8 +2,10 @@ package br.edu.sga.resource;
 
 import br.edu.sga.entity.Curso;
 import br.edu.sga.service.ArquivoPdfService;
+import br.edu.sga.service.IntegralizacaoCursoService;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -12,6 +14,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -23,9 +26,21 @@ import java.io.File;
 public class CursoResource extends CadastroResource.Crud<Curso> {
     @Inject
     ArquivoPdfService arquivoPdfService;
+    @Inject
+    IntegralizacaoCursoService integralizacaoCursoService;
 
     public CursoResource() {
         super(Curso.class);
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Transactional
+    @Override
+    public Curso atualizar(@PathParam("id") Long id, @Valid Curso curso) {
+        Curso salvo = super.atualizar(id, curso);
+        integralizacaoCursoService.recalcularCurso(salvo);
+        return salvo;
     }
 
     @POST
@@ -34,6 +49,7 @@ public class CursoResource extends CadastroResource.Crud<Curso> {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Curso enviarGrade(@PathParam("id") Long id, @RestForm("arquivo") FileUpload arquivo) {
+        exigirGestaoAcademica();
         Curso curso = Curso.findById(id);
         if (curso == null) throw new NotFoundException();
         arquivoPdfService.remover(curso.gradePdfCaminho);
@@ -75,6 +91,7 @@ public class CursoResource extends CadastroResource.Crud<Curso> {
     @Path("/{id}/grade-pdf")
     @Transactional
     public void removerGrade(@PathParam("id") Long id) {
+        exigirGestaoAcademica();
         Curso curso = Curso.findById(id);
         if (curso == null) throw new NotFoundException();
         arquivoPdfService.remover(curso.gradePdfCaminho);

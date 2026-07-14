@@ -1,8 +1,9 @@
 <main class="login">
+  <button type="button" class="alternar-tema" (click)="tema.alternar()">Modo {{ tema.tema === 'claro' ? 'escuro' : 'claro' }}</button>
   <section>
     <div class="marca">
-      <strong>SGA</strong>
-      <span>Sistema de Gestao Academica</span>
+      <img src="/logo-seminario.webp" alt="Seminário Teológico Congregacional de João Pessoa" (error)="$any($event.target).style.display='none'">
+      <strong>Sistema de Gestão Acadêmica</strong>
     </div>
     <form (ngSubmit)="entrar()">
       <label>

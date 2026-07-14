@@ -33,16 +33,24 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:8088}
       SGA_UPLOAD_DIR: ${SGA_UPLOAD_DIR:-/app/uploads}
+      SGA_SEED_HOMOLOGACAO: ${SGA_SEED_HOMOLOGACAO:-true}
     ports:
       - "8080:8080"
     volumes:
       - backend_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/q/openapi >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   frontend:
     build: ./frontend
     container_name: sga-frontend
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "8088:80"
 

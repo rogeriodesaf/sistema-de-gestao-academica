@@ -7,5 +7,7 @@ public enum StatusMatriculaDisciplina {
     CANCELADO,
     CONCLUIDA,
     CONCLUIDO,
-    REPROVADA
+    REPROVADA,
+    REPROVADO_POR_NOTA,
+    REPROVADO_POR_FREQUENCIA
 }

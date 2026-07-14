@@ -1,9 +1,1 @@
-<ng-container *ngIf="auth.logado(); else areaPublica">
-  <app-layout [menuGrupos]="menuGrupos" [usuario]="auth.usuario()" (sair)="auth.sair()">
-    <router-outlet />
-  </app-layout>
-</ng-container>
-
-<ng-template #areaPublica>
-  <router-outlet />
-</ng-template>
+<app-layout [menuGrupos]="menuGrupos" [usuario]="auth.usuario()" (sair)="auth.sair()" />

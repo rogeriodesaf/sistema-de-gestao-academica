@@ -12,7 +12,7 @@ import java.util.Set;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class FiltroJwt implements ContainerRequestFilter {
-    private static final Set<String> PUBLICOS = Set.of("api/auth/login", "api/status", "q/openapi", "q/swagger-ui");
+    private static final Set<String> PUBLICOS = Set.of("api/auth/login", "api/status", "api/publico/historicos", "q/openapi", "q/swagger-ui");
 
     @Inject
     JwtService jwtService;
@@ -23,13 +23,19 @@ public class FiltroJwt implements ContainerRequestFilter {
         if (caminho.startsWith("/")) {
             caminho = caminho.substring(1);
         }
-        if (PUBLICOS.stream().anyMatch(caminho::startsWith) || "OPTIONS".equals(contexto.getMethod())) {
-            return;
+        for (String publico : PUBLICOS) {
+            if (caminho.startsWith(publico)) return;
         }
+        if ("OPTIONS".equals(contexto.getMethod())) return;
         String authorization = contexto.getHeaderString("Authorization");
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             throw new br.edu.sga.exception.ApiException(jakarta.ws.rs.core.Response.Status.UNAUTHORIZED, "Token ausente");
         }
-        jwtService.validar(authorization.substring("Bearer ".length())).forEach(contexto::setProperty);
+        var dados = jwtService.validar(authorization.substring("Bearer ".length()));
+        dados.forEach(contexto::setProperty);
+        if ("ALUNO".equals(String.valueOf(dados.get("perfil"))) && !caminho.startsWith("api/aluno")) {
+            throw new br.edu.sga.exception.ApiException(jakarta.ws.rs.core.Response.Status.FORBIDDEN,
+                    "Perfil de aluno restrito ao portal academico");
+        }
     }
 }

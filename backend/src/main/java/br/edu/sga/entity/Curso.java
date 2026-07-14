@@ -17,6 +17,9 @@ public class Curso extends PanacheEntity {
     @Min(1)
     @Column(name = "carga_horaria_total")
     public Integer cargaHorariaTotal;
+    @Min(0)
+    @Column(name = "creditos_totais")
+    public Integer creditosTotais;
     @Column(name = "grade_pdf_caminho")
     public String gradePdfCaminho;
     @Column(name = "grade_pdf_nome")

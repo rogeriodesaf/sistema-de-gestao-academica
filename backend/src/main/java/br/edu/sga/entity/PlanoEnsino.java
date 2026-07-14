@@ -1,11 +1,13 @@
 package br.edu.sga.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,22 +15,27 @@ import java.time.LocalDateTime;
 public class PlanoEnsino extends PanacheEntity {
     @ManyToOne
     @JoinColumn(name = "oferta_disciplina_id")
+    @JsonIgnore
     public OfertaDisciplina ofertaDisciplina;
     @ManyToOne
     @JoinColumn(name = "disciplina_id")
+    @NotNull
     public Disciplina disciplina;
     @ManyToOne
     @JoinColumn(name = "turma_id")
+    @JsonIgnore
     public Turma turma;
     @Column(length = 4000)
     public String objetivos;
     @Column(length = 4000)
+    @JsonIgnore
     public String ementa;
     @Column(name = "conteudo_programatico", length = 4000)
     public String conteudoProgramatico;
     @Column(length = 4000)
     public String metodologia;
     @Column(name = "criterios_avaliacao", length = 4000)
+    @JsonIgnore
     public String criteriosAvaliacao;
     @Column(name = "bibliografia_basica", length = 4000)
     public String bibliografiaBasica;

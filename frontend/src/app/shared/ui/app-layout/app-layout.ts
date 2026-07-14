@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Inject, Input, OnDestroy, Output } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
 import { MenuGrupo, SidebarComponent } from '../sidebar/sidebar';
 import { TopbarComponent } from '../topbar/topbar';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, TopbarComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, TopbarComponent],
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.scss'
 })
@@ -17,6 +18,7 @@ export class AppLayoutComponent implements OnDestroy {
   @Output() sair = new EventEmitter<void>();
 
   menuAberto = false;
+  readonly anoAtual = new Date().getFullYear();
 
   constructor(@Inject(DOCUMENT) private document: Document) {}
 

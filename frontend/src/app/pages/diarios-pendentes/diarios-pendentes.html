@@ -1,0 +1,20 @@
+<section class="painel diarios">
+  <div class="card-bloco"><h1>Diarios pendentes</h1><p>Confira os diarios encerrados antes da homologacao.</p></div>
+  <p class="mensagem" [class.erro]="tipoMensagem === 'erro'" *ngIf="mensagem">{{ mensagem }}</p>
+  <div class="card-bloco" *ngIf="!diario">
+    <p class="vazio" *ngIf="carregando">Carregando diarios...</p>
+    <p class="vazio" *ngIf="!carregando && !diarios.length">Nenhum diario aguardando homologacao.</p>
+    <div class="tabela" *ngIf="diarios.length"><table><thead><tr><th>Disciplina</th><th>Turma/oferta</th><th>Professor</th><th>Periodo</th><th>Modulo</th><th>Alunos</th><th>Encerramento</th><th>Situacao</th><th></th></tr></thead><tbody>
+      <tr *ngFor="let item of diarios"><td>{{ item.disciplina }}</td><td>{{ item.turma }}</td><td>{{ item.professor || '-' }}</td><td>{{ item.periodo || '-' }}</td><td>{{ item.modulo || '-' }}</td><td>{{ item.alunos }}</td><td>{{ item.encerradoEm | date:'dd/MM/yyyy HH:mm' }}</td><td><span class="pill">{{ item.status }}</span></td><td><button type="button" (click)="visualizar(item)">Visualizar diario</button></td></tr>
+    </tbody></table></div>
+  </div>
+
+  <ng-container *ngIf="diario">
+    <div class="card-bloco cabecalho-diario"><div><button type="button" class="secundario" (click)="diario = undefined">Voltar</button><h2>{{ diario.oferta.disciplina }}</h2><p>{{ diario.oferta.turma }} · {{ diario.oferta.professor }}</p></div><span class="pill">{{ diario.oferta.status }}</span></div>
+    <div class="card-bloco pendencias" *ngIf="diario.pendencias.length"><h2>Pendencias</h2><ul><li *ngFor="let item of diario.pendencias">{{ item }}</li></ul></div>
+    <div class="card-bloco"><h2>Aulas e chamadas</h2><div class="tabela"><table><thead><tr><th>Data</th><th>Conteudo</th><th>Carga</th><th>Chamada</th></tr></thead><tbody><tr *ngFor="let aula of diario.aulas"><td>{{ aula.data | date:'dd/MM/yyyy' }}</td><td>{{ aula.conteudo }}</td><td>{{ aula.cargaHoraria }}h</td><td>{{ aula.chamadaPreenchida ? 'Preenchida' : 'Pendente' }}</td></tr></tbody></table></div></div>
+    <div class="card-bloco"><h2>Avaliacoes</h2><div class="tabela"><table><thead><tr><th>Avaliacao</th><th>Nota maxima</th><th>Peso</th><th>Notas</th></tr></thead><tbody><tr *ngFor="let avaliacao of diario.avaliacoes"><td>{{ avaliacao.nome }}</td><td>{{ avaliacao.notaMaxima }}</td><td>{{ avaliacao.peso }}</td><td>{{ avaliacao.notasLancadas }}/{{ avaliacao.alunos }}</td></tr></tbody></table></div></div>
+    <div class="card-bloco"><h2>Resultado geral</h2><div class="tabela"><table><thead><tr><th>Aluno</th><th>Notas</th><th>Media</th><th>Frequencia</th><th>Situacao preliminar</th></tr></thead><tbody><tr *ngFor="let resultado of diario.resultados"><td>{{ resultado.aluno }}</td><td><span *ngFor="let nota of resultado.notas; let ultima = last">{{ nota.avaliacao }}: {{ nota.nota ?? '-' }}<ng-container *ngIf="!ultima"> Â· </ng-container></span></td><td>{{ resultado.media ?? '-' }}</td><td>{{ resultado.frequencia == null ? '-' : resultado.frequencia + '%' }}</td><td>{{ resultado.situacaoPreliminar }}</td></tr></tbody></table></div></div>
+    <div class="card-bloco acoes"><label>Motivo para reabrir<textarea [(ngModel)]="motivo" name="motivo" placeholder="Obrigatorio para reabrir"></textarea></label><div><button type="button" class="secundario" (click)="reabrir()" [disabled]="processando">Reabrir para correcao</button><button type="button" (click)="homologar()" [disabled]="processando || diario.pendencias.length">Homologar</button></div></div>
+  </ng-container>
+</section>

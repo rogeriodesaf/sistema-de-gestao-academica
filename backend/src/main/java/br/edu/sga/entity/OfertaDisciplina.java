@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ofertas_disciplinas")
@@ -25,7 +26,6 @@ public class OfertaDisciplina extends PanacheEntity {
     public AnoLetivo anoLetivo;
     @ManyToOne
     @JoinColumn(name = "periodo_letivo_id")
-    @NotNull
     public PeriodoLetivo periodoLetivo;
     @ManyToOne
     @JoinColumn(name = "curso_id")
@@ -54,4 +54,21 @@ public class OfertaDisciplina extends PanacheEntity {
     @NotNull
     @Enumerated(EnumType.STRING)
     public StatusOfertaDisciplina status = StatusOfertaDisciplina.ABERTA;
+    @Column(name = "data_encerramento")
+    public LocalDateTime dataEncerramento;
+    @ManyToOne
+    @JoinColumn(name = "encerrado_por_professor_id")
+    public Professor encerradoPor;
+    @Column(name = "data_homologacao")
+    public LocalDateTime dataHomologacao;
+    @ManyToOne
+    @JoinColumn(name = "homologado_por_usuario_id")
+    public Usuario homologadoPor;
+    @Column(name = "data_reabertura")
+    public LocalDateTime dataReabertura;
+    @ManyToOne
+    @JoinColumn(name = "reaberto_por_usuario_id")
+    public Usuario reabertoPor;
+    @Column(name = "motivo_reabertura", length = 2000)
+    public String motivoReabertura;
 }

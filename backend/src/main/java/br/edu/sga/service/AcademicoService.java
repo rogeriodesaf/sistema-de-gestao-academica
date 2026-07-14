@@ -4,6 +4,7 @@ import br.edu.sga.entity.*;
 import br.edu.sga.enums.*;
 import br.edu.sga.exception.ApiException;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @ApplicationScoped
 public class AcademicoService {
+    @Inject FrequenciaAcademicaService frequenciaAcademicaService;
     @Transactional
     public MatriculaDisciplina matricularEmDisciplina(MatriculaDisciplina matricula) {
         if (matricula.aluno == null || matricula.ofertaDisciplina == null) {
@@ -71,6 +73,7 @@ public class AcademicoService {
         if (nota.ofertaDisciplina != null && nota.ofertaDisciplina.id != null) {
             OfertaDisciplina oferta = OfertaDisciplina.findById(nota.ofertaDisciplina.id);
             if (oferta != null) {
+                exigirOfertaEmAndamento(oferta);
                 nota.ofertaDisciplina = oferta;
                 nota.turma = oferta.turma;
                 nota.disciplina = oferta.disciplina;
@@ -100,13 +103,14 @@ public class AcademicoService {
         if (aula == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aula nao encontrada");
         }
+        exigirOfertaEmAndamento(aula.ofertaDisciplina);
         frequencia.aula = aula;
         validarProfessorVinculado(perfil, usuarioId, aula.ofertaDisciplina, aula.disciplina, aula.turma);
         if (frequencia.id == null) {
             frequencia.persist();
         }
         if (frequencia.aula.ofertaDisciplina != null) {
-            atualizarFrequenciaHistorico(frequencia.aluno, frequencia.aula.ofertaDisciplina);
+            frequenciaAcademicaService.recalcularOferta(frequencia.aula.ofertaDisciplina);
         } else {
             atualizarFrequenciaHistorico(frequencia.aluno, frequencia.aula.disciplina, frequencia.aula.turma);
         }
@@ -147,11 +151,18 @@ public class AcademicoService {
         return logado != null && vinculado != null && logado.id != null && logado.id.equals(vinculado.id);
     }
 
+    private void exigirOfertaEmAndamento(OfertaDisciplina oferta) {
+        if (oferta != null && oferta.status != StatusOfertaDisciplina.EM_ANDAMENTO) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "O diario esta bloqueado para edicao enquanto nao estiver EM_ANDAMENTO");
+        }
+    }
+
     public List<String> pendenciasEncerramento(Long turmaId, Long disciplinaId) {
         Turma turma = Turma.findById(turmaId);
         Disciplina disciplina = Disciplina.findById(disciplinaId);
         List<String> pendencias = new ArrayList<>();
-        if (PlanoEnsino.count("turma = ?1 and disciplina = ?2", turma, disciplina) == 0) {
+        if (PlanoEnsino.count("disciplina", disciplina) == 0) {
             pendencias.add("Plano de ensino nao cadastrado");
         }
         if (AulaMinistrada.count("turma = ?1 and disciplina = ?2", turma, disciplina) == 0) {
@@ -269,12 +280,4 @@ public class AcademicoService {
         }
     }
 
-    private void atualizarFrequenciaHistorico(Aluno aluno, OfertaDisciplina oferta) {
-        long total = Frequencia.count("aluno = ?1 and aula.ofertaDisciplina = ?2", aluno, oferta);
-        long presentes = Frequencia.count("aluno = ?1 and aula.ofertaDisciplina = ?2 and presente = true", aluno, oferta);
-        HistoricoEscolar historico = HistoricoEscolar.find("aluno = ?1 and ofertaDisciplina = ?2", aluno, oferta).firstResult();
-        if (historico != null && total > 0) {
-            historico.frequenciaFinal = BigDecimal.valueOf(presentes * 100.0 / total).setScale(2, RoundingMode.HALF_UP);
-        }
-    }
 }

@@ -1,0 +1,423 @@
+<section class="painel area-professor">
+  <div class="card-bloco">
+    <h1>Area do professor</h1>
+    <p>Selecione a disciplina para ver os alunos matriculados.</p>
+  </div>
+
+  <p class="mensagem" [class.erro]="tipoMensagem === 'erro'" *ngIf="mensagem">{{ mensagem }}</p>
+
+  <div class="card-bloco seletor-oferta">
+    <label>
+      Disciplina
+      <select name="ofertaSelecionada" [ngModel]="ofertaSelecionadaId" (ngModelChange)="selecionarOferta($event)">
+        <option [ngValue]="undefined">Selecione uma disciplina</option>
+        <option *ngFor="let oferta of ofertas" [ngValue]="oferta.id">
+          {{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}
+        </option>
+      </select>
+    </label>
+
+    <button type="button" (click)="carregarAlunos()" [disabled]="!ofertaSelecionadaId || carregandoAlunos">
+      {{ carregandoAlunos ? 'Carregando...' : 'Ver alunos' }}
+    </button>
+  </div>
+
+  <div class="vazio" *ngIf="carregandoOfertas">
+    <h2>Carregando disciplinas</h2>
+    <p>Aguarde enquanto buscamos as disciplinas vinculadas ao professor.</p>
+  </div>
+
+  <div class="vazio" *ngIf="!carregandoOfertas && !ofertas.length">
+    <h2>Nenhuma disciplina vinculada ao professor.</h2>
+    <p>Quando houver uma disciplina vinculada, ela aparecera aqui.</p>
+  </div>
+
+  <section class="card-bloco diario-bloco" *ngIf="ofertaSelecionada">
+    <div class="card-cabecalho">
+      <div>
+        <h2>{{ ofertaSelecionada.disciplina?.nome || 'Disciplina selecionada' }}</h2>
+        <p>{{ ofertaSelecionada.turma?.nome || 'Turma nao informada' }}</p>
+      </div>
+      <div class="acoes-tabela">
+        <span class="status-oferta">{{ ofertaSelecionada.status }}</span>
+        <button type="button" *ngIf="ofertaSelecionada.status === 'EM_ANDAMENTO'"
+                (click)="encerrarDiario()" [disabled]="encerrandoDiario">
+          {{ encerrandoDiario ? 'Encerrando...' : 'Encerrar diario' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="aviso-bloqueio" *ngIf="diarioBloqueado">
+      O diario esta disponivel somente para consulta enquanto estiver {{ ofertaSelecionada.status }}.
+    </div>
+    <div class="aviso-reabertura" *ngIf="ofertaSelecionada.motivoReabertura && ofertaSelecionada.status === 'EM_ANDAMENTO'">
+      <strong>Motivo da reabertura:</strong> {{ ofertaSelecionada.motivoReabertura }}
+    </div>
+    <div class="pendencias-diario" *ngIf="pendenciasEncerramento.length">
+      <strong>Pendencias para encerrar:</strong>
+      <ul><li *ngFor="let pendencia of pendenciasEncerramento">{{ pendencia }}</li></ul>
+    </div>
+
+    <div class="vazio" *ngIf="carregandoAlunos">
+      <h2>Carregando alunos</h2>
+      <p>Buscando alunos matriculados nesta disciplina.</p>
+    </div>
+
+    <div class="vazio" *ngIf="!carregandoAlunos && alunosCarregados && !alunos.length">
+      <h2>Nenhum aluno matriculado</h2>
+      <p>Esta disciplina ainda nao possui alunos matriculados.</p>
+    </div>
+
+    <div class="tabela-responsiva" *ngIf="!carregandoAlunos && alunos.length">
+      <table>
+        <thead>
+          <tr>
+            <th>Aluno</th>
+            <th>Email</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let matricula of alunos">
+            <td><strong>{{ matricula.aluno?.nome || 'Aluno sem nome' }}</strong></td>
+            <td>{{ matricula.aluno?.email || '-' }}</td>
+            <td>{{ matricula.status || 'MATRICULADO' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="bloco-professor avaliacoes-disciplina">
+      <div class="titulo-bloco">
+        <div>
+          <h2>Avaliacoes da disciplina</h2>
+          <p>Defina as avaliacoes, notas maximas e pesos da disciplina selecionada.</p>
+        </div>
+      </div>
+
+      <div class="formulario-avaliacao" *ngIf="!diarioBloqueado">
+        <label>
+          Nome
+          <input type="text" name="nomeAvaliacao" [(ngModel)]="novaAvaliacao.nome" placeholder="Ex.: Avaliacao 1">
+        </label>
+        <label>
+          Ordem
+          <input type="number" name="ordemAvaliacao" [(ngModel)]="novaAvaliacao.ordem" min="1">
+        </label>
+        <label>
+          Data
+          <input type="date" name="dataAvaliacao" [(ngModel)]="novaAvaliacao.data">
+        </label>
+        <label>
+          Nota maxima
+          <input type="number" name="notaMaxima" [(ngModel)]="novaAvaliacao.notaMaxima" min="0.01" step="0.01">
+        </label>
+        <label>
+          Peso
+          <input type="number" name="pesoAvaliacao" [(ngModel)]="novaAvaliacao.peso" min="0.01" step="0.01">
+        </label>
+        <label class="campo-longo">
+          Descricao (opcional)
+          <textarea name="descricaoAvaliacao" [(ngModel)]="novaAvaliacao.descricao"></textarea>
+        </label>
+        <div class="acoes-form">
+          <button type="button" class="secundario" *ngIf="novaAvaliacao.id" (click)="cancelarEdicaoAvaliacao()">Cancelar</button>
+          <button type="button" (click)="salvarAvaliacao()" [disabled]="salvandoAvaliacao">
+            {{ salvandoAvaliacao ? 'Salvando...' : (novaAvaliacao.id ? 'Atualizar avaliacao' : 'Criar avaliacao') }}
+          </button>
+        </div>
+      </div>
+
+      <div class="vazio" *ngIf="!avaliacoes.length">
+        <h2>Nenhuma avaliacao configurada</h2>
+        <p>Crie a primeira avaliacao para liberar o lancamento de notas.</p>
+      </div>
+
+      <div class="tabela-responsiva" *ngIf="avaliacoes.length">
+        <table class="tabela-avaliacoes">
+          <thead>
+            <tr><th>Ordem</th><th>Nome</th><th>Data</th><th>Nota maxima</th><th>Peso</th><th>PDFs</th><th>Acoes</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let avaliacao of avaliacoes">
+              <td>{{ avaliacao.ordem }}</td>
+              <td><strong>{{ avaliacao.nome }}</strong><span *ngIf="avaliacao.descricao">{{ avaliacao.descricao }}</span></td>
+              <td>{{ avaliacao.data ? (avaliacao.data | date:'dd/MM/yyyy':'UTC') : '-' }}</td>
+              <td>{{ avaliacao.notaMaxima }}</td>
+              <td>{{ avaliacao.peso }}</td>
+              <td>{{ arquivosDaAvaliacao(avaliacao.id).length }}</td>
+              <td class="acoes-tabela">
+                <button type="button" (click)="abrirNotas(avaliacao)">{{ diarioBloqueado ? 'Ver notas' : 'Lancar notas' }}</button>
+                <button type="button" class="secundario" *ngIf="!diarioBloqueado" (click)="editarAvaliacao(avaliacao)">Editar</button>
+                <button type="button" class="perigo-suave" *ngIf="!diarioBloqueado" (click)="excluirAvaliacao(avaliacao)">Excluir</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bloco-professor" *ngIf="avaliacaoSelecionada">
+      <div class="titulo-bloco">
+        <div>
+          <h2>Notas - {{ avaliacaoSelecionada.nome }}</h2>
+          <p>Valor maximo: {{ avaliacaoSelecionada.notaMaxima }}</p>
+        </div>
+      </div>
+      <div class="vazio" *ngIf="carregandoNotas"><h2>Carregando notas</h2></div>
+      <div class="tabela-responsiva" *ngIf="!carregandoNotas && notasAvaliacao.length">
+        <table class="tabela-notas">
+          <thead><tr><th>Aluno</th><th>Nota</th><th>Situacao</th><th>Observacao</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let item of notasAvaliacao">
+              <td><strong>{{ item.aluno?.nome }}</strong><span>{{ item.aluno?.email }}</span></td>
+              <td><input type="number" [(ngModel)]="item.nota" [name]="'nota-' + item.matriculaId" min="0" [max]="avaliacaoSelecionada.notaMaxima" step="0.01" [disabled]="diarioBloqueado"></td>
+              <td>{{ item.salva ? 'Lancada' : 'Pendente' }}</td>
+              <td><input type="text" [(ngModel)]="item.observacao" [name]="'obs-nota-' + item.matriculaId" placeholder="Opcional" [disabled]="diarioBloqueado"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="acoes-form" *ngIf="!diarioBloqueado">
+          <button type="button" (click)="salvarNotas()" [disabled]="salvandoNotas">
+            {{ salvandoNotas ? 'Salvando...' : 'Salvar notas' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="bloco-professor" *ngIf="alunosCarregados && resultados.length">
+      <div class="titulo-bloco">
+        <div>
+          <h2>Resumo de frequencia</h2>
+          <p>Historico atualizado automaticamente a cada chamada.</p>
+        </div>
+      </div>
+      <div class="tabela-responsiva">
+        <table class="tabela-frequencia">
+          <thead>
+            <tr><th>Aluno</th><th>Aulas</th><th>Presencas</th><th>Faltas</th><th>Justificadas</th><th>Frequencia</th><th>Faltas %</th><th>Situacao</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let resultado of resultados">
+              <td><strong>{{ resultado.aluno?.nome }}</strong></td>
+              <td>{{ resultado.frequencia?.aulasMinistradas || 0 }}</td>
+              <td>{{ resultado.frequencia?.presencas || 0 }}</td>
+              <td>{{ resultado.frequencia?.faltas || 0 }}</td>
+              <td>{{ resultado.frequencia?.faltasJustificadas || 0 }}</td>
+              <td>{{ resultado.frequencia?.percentualPresenca != null ? (resultado.frequencia.percentualPresenca + '%') : '-' }}</td>
+              <td>{{ resultado.frequencia?.percentualFaltas != null ? (resultado.frequencia.percentualFaltas + '%') : '-' }}</td>
+              <td>
+                <span class="situacao-frequencia"
+                      [class.limite]="resultado.frequencia?.situacao === 'LIMITE'"
+                      [class.reprovado]="resultado.frequencia?.situacao === 'REPROVADO_POR_FALTA'">
+                  {{ situacaoFrequenciaTexto(resultado.frequencia?.situacao) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bloco-professor" *ngIf="alunosCarregados && !diarioBloqueado">
+      <div class="titulo-bloco">
+        <div>
+          <h2>Registrar nova aula</h2>
+          <p>Informe o que foi ministrado antes de realizar a chamada.</p>
+        </div>
+      </div>
+
+      <div class="formulario-aula">
+        <label>
+          Data da aula
+          <input type="date" name="dataAula" [(ngModel)]="novaAula.dataAula" required>
+        </label>
+        <label>
+          Carga horaria
+          <input type="number" name="cargaHorariaAula" [(ngModel)]="novaAula.cargaHorariaAula" min="1" required>
+        </label>
+        <label class="campo-longo">
+          Conteudo ministrado
+          <textarea name="conteudoMinistrado" [(ngModel)]="novaAula.conteudoMinistrado" required></textarea>
+        </label>
+        <label class="campo-longo">
+          Observacoes (opcional)
+          <textarea name="observacoesAula" [(ngModel)]="novaAula.observacoes"></textarea>
+        </label>
+        <div class="acoes-form">
+          <button type="button" (click)="registrarAula()" [disabled]="salvandoAula || !alunos.length">
+            {{ salvandoAula ? 'Salvando...' : 'Registrar aula' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="bloco-professor" *ngIf="alunosCarregados">
+      <div class="titulo-bloco">
+        <div>
+          <h2>Aulas registradas</h2>
+          <p>Abra uma aula para preencher ou editar a chamada.</p>
+        </div>
+      </div>
+
+      <div class="vazio" *ngIf="!aulas.length">
+        <h2>Nenhuma aula registrada</h2>
+        <p>Registre a primeira aula desta disciplina.</p>
+      </div>
+
+      <div class="tabela-responsiva" *ngIf="aulas.length">
+        <table class="tabela-aulas">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Conteudo</th>
+              <th>Carga horaria</th>
+              <th>Chamada</th>
+              <th>Arquivos</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let aula of aulas" class="linha-clicavel" (click)="abrirChamada(aula)">
+              <td>{{ aula.dataAula | date:'dd/MM/yyyy':'UTC' }}</td>
+              <td>{{ aula.conteudoMinistrado }}</td>
+              <td>{{ aula.cargaHorariaAula }}</td>
+              <td>
+                <span class="status-chamada" [class.preenchida]="aula.chamadaPreenchida">
+                  {{ aula.chamadaPreenchida ? 'Chamada preenchida' : 'Chamada pendente' }}
+                </span>
+              </td>
+              <td>{{ arquivosDaAula(aula.id).length }}</td>
+              <td><button type="button" class="secundario" (click)="$event.stopPropagation(); abrirChamada(aula)">Abrir</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bloco-professor" *ngIf="aulaSelecionada">
+      <div class="titulo-bloco chamada-cabecalho">
+        <div>
+          <h2>Chamada de {{ aulaSelecionada.dataAula | date:'dd/MM/yyyy':'UTC' }}</h2>
+          <p>{{ aulaSelecionada.conteudoMinistrado }}</p>
+          <p><strong>Carga horaria:</strong> {{ aulaSelecionada.cargaHorariaAula }}</p>
+          <p *ngIf="aulaSelecionada.observacoes"><strong>Observacoes:</strong> {{ aulaSelecionada.observacoes }}</p>
+          <p *ngIf="arquivosDaAula(aulaSelecionada.id).length">
+            <strong>Arquivos:</strong> {{ arquivosDaAula(aulaSelecionada.id).length }} PDF(s)
+          </p>
+        </div>
+        <div class="acoes-tabela">
+          <button type="button" class="secundario" (click)="voltarParaAulas()">Voltar para lista de aulas</button>
+          <button type="button" class="secundario" *ngIf="!diarioBloqueado" (click)="marcarTodosPresentes()" [disabled]="!chamada.length">
+            Marcar todos como presentes
+          </button>
+        </div>
+      </div>
+
+      <div class="vazio" *ngIf="carregandoChamada">
+        <h2>Carregando chamada</h2>
+        <p>Buscando as matriculas desta aula.</p>
+      </div>
+
+      <div class="tabela-responsiva" *ngIf="!carregandoChamada && chamada.length">
+        <table class="tabela-chamada">
+          <thead>
+            <tr>
+              <th>Aluno</th>
+              <th>Presenca</th>
+              <th>Observacao individual</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of chamada">
+              <td data-label="Aluno">
+                <strong>{{ item.aluno?.nome || 'Aluno sem nome' }}</strong>
+                <span>{{ item.aluno?.email || '-' }}</span>
+              </td>
+              <td data-label="Presença">
+                <select [(ngModel)]="item.status" [name]="'status-' + item.matriculaId" [disabled]="diarioBloqueado">
+                  <option value="PRESENTE">Presente</option>
+                  <option value="AUSENTE">Ausente</option>
+                  <option value="JUSTIFICADO">Justificado</option>
+                </select>
+              </td>
+              <td data-label="Observação">
+                <input type="text" [(ngModel)]="item.observacao" [name]="'observacao-' + item.matriculaId"
+                       placeholder="Opcional" [disabled]="diarioBloqueado">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="acoes-form" *ngIf="!diarioBloqueado">
+          <button type="button" (click)="salvarChamada()" [disabled]="salvandoChamada">
+            {{ salvandoChamada ? 'Salvando chamada...' : 'Salvar chamada' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="bloco-professor" *ngIf="alunosCarregados">
+      <div class="titulo-bloco">
+        <div><h2>Notas e medias</h2><p>Media ponderada calculada pelo sistema.</p></div>
+      </div>
+      <div class="vazio" *ngIf="!avaliacoes.length"><h2>Configure as avaliacoes para visualizar as medias.</h2></div>
+      <div class="tabela-responsiva" *ngIf="avaliacoes.length && resultados.length">
+        <table class="tabela-resultados">
+          <thead>
+            <tr><th>Aluno</th><th *ngFor="let avaliacao of avaliacoes">{{ avaliacao.nome }}</th><th>Media</th><th>Situacao</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let resultado of resultados">
+              <td><strong>{{ resultado.aluno?.nome }}</strong></td>
+              <td *ngFor="let avaliacao of avaliacoes">{{ notaResultado(resultado, avaliacao.id) ?? '-' }}</td>
+              <td><strong>{{ resultado.media ?? '-' }}</strong></td>
+              <td><span class="situacao" [class.aprovado]="resultado.situacao === 'APROVADO'" [class.reprovado]="resultado.situacao === 'REPROVADO' || resultado.situacao === 'REPROVADO_POR_FALTA'">{{ resultado.situacao }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bloco-professor" *ngIf="alunosCarregados">
+      <div class="titulo-bloco"><div><h2>Arquivos PDF</h2><p>Anexe materiais da disciplina, aula ou avaliacao.</p></div></div>
+      <div class="formulario-arquivo" *ngIf="!diarioBloqueado">
+        <label>
+          Titulo
+          <input type="text" name="tituloArquivo" [(ngModel)]="novoArquivo.titulo">
+        </label>
+        <label>
+          Vinculo
+          <select name="tipoVinculo" [(ngModel)]="novoArquivo.tipoVinculo" (ngModelChange)="novoArquivo.referenciaId = undefined">
+            <option value="DISCIPLINA">Disciplina</option><option value="AULA">Aula</option><option value="AVALIACAO">Avaliacao</option>
+          </select>
+        </label>
+        <label *ngIf="novoArquivo.tipoVinculo === 'AULA'">
+          Aula
+          <select name="aulaArquivo" [(ngModel)]="novoArquivo.referenciaId">
+            <option [ngValue]="undefined">Selecione</option>
+            <option *ngFor="let aula of aulas" [ngValue]="aula.id">{{ aula.dataAula | date:'dd/MM/yyyy':'UTC' }} - {{ aula.conteudoMinistrado }}</option>
+          </select>
+        </label>
+        <label *ngIf="novoArquivo.tipoVinculo === 'AVALIACAO'">
+          Avaliacao
+          <select name="avaliacaoArquivo" [(ngModel)]="novoArquivo.referenciaId">
+            <option [ngValue]="undefined">Selecione</option><option *ngFor="let avaliacao of avaliacoes" [ngValue]="avaliacao.id">{{ avaliacao.nome }}</option>
+          </select>
+        </label>
+        <label class="campo-longo campo-arquivo">
+          Arquivo PDF
+          <input type="file" accept="application/pdf,.pdf" (change)="selecionarPdf($event)">
+          <span *ngIf="arquivoSelecionado">{{ arquivoSelecionado.name }}</span>
+        </label>
+        <div class="acoes-form"><button type="button" (click)="enviarPdf()" [disabled]="enviandoArquivo">{{ enviandoArquivo ? 'Enviando...' : 'Enviar PDF' }}</button></div>
+      </div>
+      <div class="vazio" *ngIf="!arquivos.length"><h2>Nenhum PDF enviado</h2></div>
+      <div class="lista-arquivos" *ngIf="arquivos.length">
+        <article *ngFor="let arquivo of arquivos">
+          <div><strong>{{ arquivo.titulo }}</strong><span>{{ arquivo.nomeOriginal }} - {{ tipoVinculoTexto(arquivo.tipoVinculo) }}</span></div>
+          <div class="acoes-tabela"><button type="button" class="secundario" (click)="abrirPdf(arquivo)">Abrir</button><button type="button" class="perigo-suave" *ngIf="!diarioBloqueado" (click)="removerPdf(arquivo)">Remover</button></div>
+        </article>
+      </div>
+    </section>
+  </section>
+</section>

@@ -20,22 +20,20 @@
   border-bottom: 1px solid rgba(255, 255, 255, .12);
 }
 
-.brand-selo {
-  width: 46px;
-  height: 46px;
-  display: grid;
-  place-items: center;
+.brand-logo {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  object-fit: contain;
   border-radius: 8px;
   background: #ffffff;
-  color: #102f4a;
-  font-weight: 800;
-  letter-spacing: .02em;
+  padding: 4px;
 }
 
 .brand strong {
   display: block;
-  font-size: 1.45rem;
-  line-height: 1;
+  font-size: 1rem;
+  line-height: 1.15;
 }
 
 .brand span {

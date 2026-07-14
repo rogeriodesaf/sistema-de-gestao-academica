@@ -1,0 +1,25 @@
+<section class="painel">
+  <div class="card-bloco"><h1>Consulta de Aulas</h1><p>Consulte as aulas e chamadas registradas pelos professores.</p></div>
+  <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
+  <ng-container *ngIf="!detalhe">
+    <div class="filtros card-bloco">
+      <label><span>Ano Letivo</span><select [(ngModel)]="filtros.anoLetivoId"><option value="">Todos os anos</option><option *ngFor="let item of opcoes('anoLetivoId', 'anoLetivo')" [value]="item.id">{{ item.nome }}</option></select></label>
+      <label><span>Módulo da oferta</span><select [(ngModel)]="filtros.moduloId"><option value="">Todos os módulos</option><option *ngFor="let item of opcoes('moduloId', 'modulo')" [value]="item.id">{{ item.nome }}</option></select></label>
+      <label><span>Oferta da Disciplina</span><select [(ngModel)]="filtros.ofertaId"><option value="">Todas as ofertas</option><option *ngFor="let item of opcoes('ofertaId', 'oferta')" [value]="item.id">{{ item.nome }}</option></select></label>
+      <label>Professor<select [(ngModel)]="filtros.professorId"><option value="">Todos</option><option *ngFor="let item of opcoes('professorId', 'professor')" [value]="item.id">{{ item.nome }}</option></select></label>
+      <label>Disciplina<select [(ngModel)]="filtros.disciplinaId"><option value="">Todas</option><option *ngFor="let item of opcoes('disciplinaId', 'disciplina')" [value]="item.id">{{ item.nome }}</option></select></label>
+      <label>Período inicial<input type="date" [(ngModel)]="filtros.inicio"></label><label>Período final<input type="date" [(ngModel)]="filtros.fim"></label>
+      <button type="button" (click)="limpar()">Limpar filtros</button>
+    </div>
+    <p class="vazio" *ngIf="carregando">Carregando aulas...</p>
+    <div class="tabela card-bloco" *ngIf="!carregando && aulasFiltradas().length"><table><thead><tr><th>Data da aula</th><th>Disciplina</th><th>Professor</th><th>Oferta</th><th>Conteúdo ministrado</th><th>Carga horária da aula</th><th>Alunos</th><th>Presenças</th><th>Faltas</th><th>Situação do Diário</th><th>Ações</th></tr></thead><tbody>
+      <tr *ngFor="let aula of aulasFiltradas()"><td>{{ aula.data | date:'dd/MM/yyyy' }}</td><td>{{ aula.disciplina }}</td><td>{{ aula.professor || '-' }}</td><td>{{ aula.oferta || '-' }}</td><td>{{ aula.conteudo }}</td><td>{{ aula.cargaHoraria }}h</td><td>{{ aula.alunos }}</td><td>{{ aula.presencas }}</td><td>{{ aula.faltas }}</td><td>{{ aula.situacaoDiario }}</td><td><button type="button" (click)="visualizar(aula)">Visualizar</button></td></tr>
+    </tbody></table></div><p class="vazio" *ngIf="!carregando && !aulasFiltradas().length">Nenhuma aula encontrada.</p>
+  </ng-container>
+  <ng-container *ngIf="detalhe">
+    <div class="card-bloco"><button type="button" class="secundario" (click)="detalhe = undefined">Voltar</button><h2>{{ detalhe.aula.disciplina }} — {{ detalhe.aula.data | date:'dd/MM/yyyy' }}</h2><p><strong>Conteúdo ministrado:</strong> {{ detalhe.aula.conteudo }}</p><p><strong>Carga horária da aula:</strong> {{ detalhe.aula.cargaHoraria }}h</p><p><strong>Chamada registrada:</strong> {{ detalhe.chamadaRegistrada ? 'Sim' : 'Não' }}</p><p><strong>Observações:</strong> {{ detalhe.observacoes || '-' }}</p></div>
+    <div class="tabela card-bloco"><h2>Alunos presentes</h2><table><thead><tr><th>Aluno</th><th>Situação</th><th>Observações</th></tr></thead><tbody><tr *ngFor="let item of detalhe.presentes"><td>{{ item.aluno }}</td><td>{{ item.situacao }}</td><td>{{ item.observacao || '-' }}</td></tr></tbody></table><p *ngIf="!detalhe.presentes.length">Nenhum aluno presente.</p></div>
+    <div class="tabela card-bloco"><h2>Alunos ausentes</h2><table><thead><tr><th>Aluno</th><th>Situação</th><th>Observações</th></tr></thead><tbody><tr *ngFor="let item of detalhe.ausentes"><td>{{ item.aluno }}</td><td>{{ item.situacao }}</td><td>{{ item.observacao || '-' }}</td></tr></tbody></table><p *ngIf="!detalhe.ausentes.length">Nenhum aluno ausente.</p></div>
+    <div class="card-bloco"><h2>PDFs vinculados</h2><button *ngFor="let arquivo of detalhe.arquivos" type="button" class="secundario" (click)="abrirPdf(arquivo)">{{ arquivo.titulo }} — {{ arquivo.nome }}</button><p *ngIf="!detalhe.arquivos.length">Nenhum PDF vinculado.</p></div>
+  </ng-container>
+</section>

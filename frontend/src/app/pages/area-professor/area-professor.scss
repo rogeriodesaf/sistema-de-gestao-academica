@@ -1,0 +1,451 @@
+.area-professor {
+  display: grid;
+  gap: 18px;
+}
+
+.seletor-oferta {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.2fr) minmax(320px, 2fr);
+  gap: 18px;
+  align-items: end;
+}
+
+.seletor-oferta label,
+.aula-frequencia {
+  display: grid;
+  gap: 6px;
+}
+
+.seletor-oferta dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.seletor-oferta dt {
+  color: var(--cinza-500);
+  font-size: .76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.seletor-oferta dd {
+  margin: 2px 0 0;
+  color: var(--cinza-950);
+  font-weight: 700;
+}
+
+.formulario-professor {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+
+.formulario-professor .card-cabecalho,
+.formulario-professor .acoes-form,
+.formulario-professor .campo-longo {
+  grid-column: 1 / -1;
+}
+
+.formulario-professor label:not(.campo-longo) {
+  grid-column: span 3;
+}
+
+.diario-bloco {
+  display: grid;
+  gap: 16px;
+}
+
+.mensagem.erro {
+  border-color: #fecaca;
+  background: var(--vermelho-50);
+  color: var(--vermelho);
+}
+
+.bloco-professor {
+  display: grid;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--cinza-200);
+}
+
+.titulo-bloco,
+.chamada-cabecalho {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.titulo-bloco h2 {
+  margin: 0 0 4px;
+  color: var(--azul-900);
+  font-size: 1.15rem;
+}
+
+.formulario-aula {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, .5fr);
+  gap: 14px;
+}
+
+.formulario-avaliacao,
+.formulario-arquivo {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 14px;
+}
+
+.formulario-avaliacao label,
+.formulario-arquivo label {
+  grid-column: auto;
+}
+
+.formulario-avaliacao .campo-longo,
+.formulario-arquivo .campo-longo,
+.formulario-avaliacao .acoes-form,
+.formulario-arquivo .acoes-form {
+  grid-column: 1 / -1;
+}
+
+.formulario-avaliacao textarea {
+  min-height: 78px;
+}
+
+.linha-clicavel {
+  cursor: pointer;
+}
+
+.acoes-tabela {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.acoes-tabela button {
+  padding: 8px 10px;
+  font-size: .84rem;
+}
+
+.tabela-avaliacoes,
+.tabela-notas,
+.tabela-resultados,
+.tabela-frequencia {
+  min-width: 860px;
+}
+
+.situacao-frequencia {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: .78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.situacao-frequencia.limite {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.situacao-frequencia.reprovado {
+  background: var(--vermelho-50);
+  color: var(--vermelho);
+}
+
+.tabela-avaliacoes td:nth-child(2) strong,
+.tabela-avaliacoes td:nth-child(2) span,
+.tabela-notas td:first-child strong,
+.tabela-notas td:first-child span {
+  display: block;
+}
+
+.tabela-avaliacoes td:nth-child(2) span,
+.tabela-notas td:first-child span {
+  margin-top: 3px;
+  color: var(--cinza-500);
+  font-size: .85rem;
+}
+
+.situacao {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.situacao.aprovado {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.situacao.reprovado {
+  background: var(--vermelho-50);
+  color: var(--vermelho);
+}
+
+.campo-arquivo span {
+  color: var(--cinza-700);
+  font-weight: 500;
+}
+
+.lista-arquivos {
+  display: grid;
+  gap: 8px;
+}
+
+.lista-arquivos article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--cinza-200);
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--cinza-50);
+}
+
+.lista-arquivos article strong,
+.lista-arquivos article span {
+  display: block;
+}
+
+.lista-arquivos article span {
+  margin-top: 3px;
+  color: var(--cinza-700);
+  font-size: .86rem;
+}
+
+.formulario-aula label {
+  grid-column: auto;
+}
+
+.formulario-aula .campo-longo,
+.formulario-aula .acoes-form {
+  grid-column: 1 / -1;
+}
+
+.formulario-aula textarea {
+  min-height: 84px;
+}
+
+.tabela-aulas {
+  min-width: 720px;
+}
+
+.tabela-chamada {
+  min-width: 760px;
+}
+
+.tabela-chamada td:first-child {
+  display: table-cell;
+}
+
+.tabela-chamada td:first-child strong,
+.tabela-chamada td:first-child span {
+  display: block;
+}
+
+.tabela-chamada td:first-child span {
+  margin-top: 3px;
+}
+
+.status-chamada {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.status-chamada.preenchida {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.diario-bloco .card-cabecalho {
+  align-items: end;
+}
+
+.status-oferta {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--azul-100);
+  color: var(--azul-800);
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.aviso-bloqueio,
+.aviso-reabertura,
+.pendencias-diario {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.aviso-reabertura { background: #eff6ff; color: #1e40af; }
+.pendencias-diario { background: var(--vermelho-50); color: var(--vermelho); }
+.pendencias-diario ul { margin: 8px 0 0; padding-left: 20px; }
+
+.aula-frequencia {
+  min-width: min(420px, 100%);
+}
+
+.tabela-responsiva {
+  overflow-x: auto;
+}
+
+.tabela-responsiva table {
+  min-width: 760px;
+}
+
+.tabela-responsiva td:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 220px;
+}
+
+.tabela-responsiva td:first-child span {
+  color: var(--cinza-500);
+  font-size: .85rem;
+}
+
+.tabela-responsiva input[type="number"] {
+  width: 86px;
+}
+
+.toggle-presenca {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.toggle-presenca input {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 980px) {
+  .seletor-oferta {
+    grid-template-columns: 1fr;
+  }
+
+  .seletor-oferta dl {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .formulario-professor label:not(.campo-longo) {
+    grid-column: span 6;
+  }
+
+  .formulario-avaliacao,
+  .formulario-arquivo {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .seletor-oferta dl {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario-professor label:not(.campo-longo) {
+    grid-column: 1 / -1;
+  }
+
+  .formulario-aula {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario-avaliacao,
+  .formulario-arquivo {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario-aula label,
+  .formulario-aula .campo-longo,
+  .formulario-aula .acoes-form {
+    grid-column: 1;
+  }
+
+  .formulario-avaliacao label,
+  .formulario-arquivo label,
+  .formulario-avaliacao .campo-longo,
+  .formulario-arquivo .campo-longo,
+  .formulario-avaliacao .acoes-form,
+  .formulario-arquivo .acoes-form {
+    grid-column: 1;
+  }
+
+  .lista-arquivos article {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .titulo-bloco,
+  .chamada-cabecalho {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tabela-chamada {
+    min-width: 0;
+  }
+
+  .tabela-chamada thead {
+    display: none;
+  }
+
+  .tabela-chamada tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .tabela-chamada tr {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    background: var(--fundo-card);
+  }
+
+  .tabela-chamada td,
+  .tabela-chamada td:first-child {
+    display: grid;
+    grid-template-columns: minmax(105px, .65fr) 1fr;
+    gap: 8px;
+    min-width: 0;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .tabela-chamada td:last-child {
+    border-bottom: 0;
+  }
+
+  .tabela-chamada td::before {
+    content: attr(data-label);
+    color: var(--texto-secundario);
+    font-size: .76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .tabela-chamada input,
+  .tabela-chamada select,
+  .chamada-cabecalho button {
+    width: 100%;
+  }
+}

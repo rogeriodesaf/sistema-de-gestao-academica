@@ -19,7 +19,8 @@ public class MatrizCurricularResource {
         Curso curso = Curso.findById(cursoId);
         if (curso == null) throw new NotFoundException();
 
-        List<Modulo> modulos = Modulo.list("curso.id = ?1 order by ordem", cursoId);
+        List<Modulo> modulos = Modulo.list(
+                "curso.id = ?1 and anoLetivo is null order by ordem", cursoId);
         List<Map<String, Object>> modulosResposta = modulos.stream().map(modulo -> {
             List<Disciplina> disciplinas = Disciplina.list(
                     "(moduloOriginal.id = ?1 or (moduloOriginal is null and modulo.id = ?1)) order by nome", modulo.id);
@@ -44,12 +45,14 @@ public class MatrizCurricularResource {
             return dadosModulo;
         }).toList();
 
-        int cargaTotal = modulosResposta.stream()
+        int cargaCalculada = modulosResposta.stream()
                 .mapToInt(modulo -> ((Number) modulo.get("cargaHorariaTotal")).intValue())
                 .sum();
-        int creditosTotal = modulosResposta.stream()
+        int creditosCalculados = modulosResposta.stream()
                 .mapToInt(modulo -> ((Number) modulo.get("creditosTotal")).intValue())
                 .sum();
+        int cargaTotal = curso.cargaHorariaTotal == null ? cargaCalculada : curso.cargaHorariaTotal;
+        int creditosTotal = curso.creditosTotais == null ? creditosCalculados : curso.creditosTotais;
 
         Map<String, Object> resposta = new LinkedHashMap<>();
         resposta.put("curso", curso);

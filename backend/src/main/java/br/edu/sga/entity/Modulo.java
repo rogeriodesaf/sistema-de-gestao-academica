@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "modulos")
@@ -23,8 +24,14 @@ public class Modulo extends PanacheEntity {
     public Integer ordem;
     @ManyToOne
     @JoinColumn(name = "curso_id")
-    @NotNull
     public Curso curso;
+    @ManyToOne
+    @JoinColumn(name = "ano_letivo_id")
+    public AnoLetivo anoLetivo;
+    @Column(name = "data_inicio")
+    public LocalDate dataInicio;
+    @Column(name = "data_fim")
+    public LocalDate dataFim;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     public StatusModulo status = StatusModulo.ABERTO;

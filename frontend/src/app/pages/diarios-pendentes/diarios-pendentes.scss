@@ -1,0 +1,16 @@
+:host { display: block; }
+.diarios { display: grid; gap: 1rem; }
+h2 { margin: 0 0 .8rem; color: var(--azul-900); }
+.tabela { overflow-x: auto; }
+table { width: 100%; min-width: 760px; border-collapse: collapse; }
+th, td { padding: .75rem; border-bottom: 1px solid var(--cinza-200); text-align: left; font-size: .86rem; }
+th { background: var(--cinza-50); color: var(--cinza-700); }
+.pill { display: inline-flex; border-radius: 999px; padding: .3rem .55rem; background: #fef3c7; color: #92400e; font-size: .75rem; font-weight: 800; }
+.cabecalho-diario { display: flex; justify-content: space-between; align-items: center; }
+.cabecalho-diario button { margin-bottom: .8rem; }
+.pendencias { background: var(--vermelho-50); color: var(--vermelho); }
+.pendencias ul { margin-bottom: 0; }
+.acoes { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 1rem; }
+.acoes label { grid-column: auto; }
+.acoes div { display: flex; gap: .6rem; }
+@media (max-width: 720px) { .acoes { grid-template-columns: 1fr; } .cabecalho-diario { align-items: stretch; flex-direction: column; } }

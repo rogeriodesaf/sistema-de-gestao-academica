@@ -23,7 +23,7 @@
       <h3>1. Ano letivo</h3>
       <label>
         Ano letivo
-        <select name="anoLetivo" [(ngModel)]="formulario['anoLetivo.id']" (ngModelChange)="formulario['periodoLetivo.id'] = ''; selecionarPeriodoTecnico()">
+        <select name="anoLetivo" [(ngModel)]="formulario['anoLetivo.id']" (ngModelChange)="formulario['periodoLetivo.id'] = ''; formulario['modulo.id'] = ''">
           <option value="">Selecione</option>
           <option *ngFor="let ano of anosLetivos" [ngValue]="ano.id">{{ rotulo(ano) }}</option>
         </select>
@@ -54,7 +54,7 @@
         Modulo de oferta
         <select name="modulo" [(ngModel)]="formulario['modulo.id']">
           <option value="">Selecione</option>
-          <option *ngFor="let modulo of modulos" [ngValue]="modulo.id">{{ rotulo(modulo) }}</option>
+          <option *ngFor="let modulo of modulosDoAno()" [ngValue]="modulo.id">{{ rotulo(modulo) }}</option>
         </select>
       </label>
       <p class="aviso-planejamento" *ngIf="remanejamentoFormulario()">

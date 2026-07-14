@@ -27,8 +27,12 @@ export class CadastroPage implements OnInit {
   ofertasSelecionadas: Record<number, boolean> = {};
   disciplinasModulo: Record<number, Record<number, boolean>> = {};
   mensagem = '';
+  buscaHistorico = '';
   carregando = false;
   registroEditandoId?: number;
+  ementaPlanoPendente?: File;
+  matriculaVisualizada?: any;
+  desempenhoMatricula?: any;
   filtros = {
     busca: '',
     cursoId: '',
@@ -84,9 +88,9 @@ export class CadastroPage implements OnInit {
     conteudoProgramatico: 'Conteudo programatico',
     criteriosAvaliacao: 'Criterios de avaliacao',
     dataAula: 'Data da aula',
-    dataFim: 'Data final',
+    dataFim: 'Data de término',
     dataIngresso: 'Data de ingresso',
-    dataInicio: 'Data inicial',
+    dataInicio: 'Data de início',
     dataMatricula: 'Data da matricula',
     dataNascimento: 'Data de nascimento',
     dataTermino: 'Data de termino',
@@ -128,6 +132,9 @@ export class CadastroPage implements OnInit {
     this.route.data.subscribe(data => {
       this.titulo = data['titulo'];
       this.endpoint = data['endpoint'];
+      if (this.endpoint === 'historicos') this.titulo = 'Historico escolar';
+      if (this.endpoint === 'planos-ensino') this.titulo = 'Plano de Ensino';
+      if (this.endpoint === 'matriculas-disciplinas') this.titulo = 'Matrículas em Disciplinas';
       this.campos = data['campos'];
       this.cancelarEdicao();
       this.aplicarEstadoDaUrl();
@@ -170,14 +177,19 @@ export class CadastroPage implements OnInit {
       this.salvarMatriculasSelecionadas();
       return;
     }
+    if (this.endpoint === 'anos-letivos' && !this.validarAnoLetivo()) return;
     const dados = this.montarObjeto();
     this.carregando = true;
     const requisicao = this.registroEditandoId
       ? this.api.atualizar(this.endpoint, this.registroEditandoId, dados)
       : this.api.salvar(this.endpoint, dados);
     requisicao.subscribe({
-      next: () => {
+      next: (registro: any) => {
         this.mensagem = this.registroEditandoId ? 'Registro atualizado com sucesso' : 'Registro salvo com sucesso';
+        if (this.endpoint === 'planos-ensino' && this.ementaPlanoPendente) {
+          this.enviarEmentaAposSalvar(registro);
+          return;
+        }
         this.cancelarEdicao();
         this.carregar();
         this.carregando = false;
@@ -205,15 +217,19 @@ export class CadastroPage implements OnInit {
   }
 
   cancelarEdicao() {
-    this.formulario = {};
+    this.formulario = this.endpoint === 'matriculas-disciplinas'
+      ? { status: 'ATIVA', dataMatricula: new Date().toISOString().slice(0, 10) }
+      : {};
     this.registroEditandoId = undefined;
+    this.ementaPlanoPendente = undefined;
   }
 
   excluir(id: number) {
-    if (!confirm('Deseja excluir este registro?')) return;
+    const cancelamento = this.endpoint === 'matriculas-disciplinas';
+    if (!confirm(cancelamento ? 'Deseja cancelar esta matrícula?' : 'Deseja excluir este registro?')) return;
     this.api.excluir(this.endpoint, id).subscribe({
       next: () => {
-        this.mensagem = 'Registro excluido com sucesso';
+        this.mensagem = cancelamento ? 'Matrícula cancelada com sucesso' : 'Registro excluido com sucesso';
         this.carregar();
       },
       error: err => {
@@ -223,6 +239,12 @@ export class CadastroPage implements OnInit {
   }
 
   chaves(registro: any) {
+    if (this.endpoint === 'planos-ensino') {
+      return ['codigoDisciplina', 'nomeDisciplina', 'ementaPdf', 'ultimaAtualizacao', 'situacaoPlano'];
+    }
+    if (this.endpoint === 'anos-letivos') {
+      return ['ano', 'dataInicio', 'dataFim', 'status'];
+    }
     if (this.endpoint === 'disciplinas') {
       return ['nome', 'codigo', 'curso', 'modulo', 'professorResponsavel', 'ativo', 'ementaStatus'];
     }
@@ -235,6 +257,13 @@ export class CadastroPage implements OnInit {
     if (this.endpoint === 'ofertas-disciplinas' || this.endpoint === 'montagem-periodo') {
       return ['disciplina', 'professor', 'moduloOriginalOferta', 'modulo', 'turma', 'vagas', 'horario', 'sala', 'status'];
     }
+    if (this.endpoint === 'matriculas-disciplinas') {
+      return ['aluno', 'curso', 'periodoLetivo', 'moduloOferta', 'ofertaDisciplina', 'dataMatricula', 'status', 'resultadoAcademico', 'observacoes'];
+    }
+    if (this.endpoint === 'historicos') {
+      return ['aluno', 'curso', 'disciplina', 'codigo', 'modulo', 'periodoCursado', 'cargaHoraria',
+        'creditos', 'notaFinal', 'frequenciaFinal', 'situacao', 'professor'];
+    }
     return Object.keys(registro).filter(chave => {
       const normalizada = chave.toLowerCase();
       return chave !== 'id'
@@ -246,6 +275,31 @@ export class CadastroPage implements OnInit {
   }
 
   label(campo: string) {
+    if (this.endpoint === 'matriculas-disciplinas') {
+      const labelsMatricula: Record<string, string> = {
+        aluno: 'Aluno', curso: 'Curso', periodoLetivo: 'Período Letivo', moduloOferta: 'Módulo',
+        ofertaDisciplina: 'Oferta da Disciplina', dataMatricula: 'Data da Matrícula',
+        status: 'Situação da Matrícula', resultadoAcademico: 'Resultado Acadêmico', observacoes: 'Observações'
+      };
+      if (labelsMatricula[campo]) return labelsMatricula[campo];
+    }
+    if (this.endpoint === 'planos-ensino') {
+      const labelsPlano: Record<string, string> = {
+        'disciplina.id': 'Disciplina',
+        objetivos: 'Objetivos',
+        conteudoProgramatico: 'Conteúdo programático',
+        metodologia: 'Metodologia oficial',
+        bibliografiaBasica: 'Bibliografia básica',
+        bibliografiaComplementar: 'Bibliografia complementar',
+        observacoes: 'Observações da disciplina',
+        codigoDisciplina: 'Código da disciplina',
+        nomeDisciplina: 'Disciplina',
+        ementaPdf: 'Ementa oficial em PDF',
+        ultimaAtualizacao: 'Última atualização',
+        situacaoPlano: 'Situação'
+      };
+      if (labelsPlano[campo]) return labelsPlano[campo];
+    }
     return this.labels[campo] || campo.replace('.id', '').replace(/([A-Z])/g, ' $1').trim();
   }
 
@@ -262,45 +316,52 @@ export class CadastroPage implements OnInit {
       'anos-letivos': 'Organize os anos letivos utilizados no planejamento academico.',
       'periodos-letivos': 'Cadastro tecnico mantido para compatibilidade interna das ofertas.',
       'ofertas-disciplinas': 'Planeje a oferta real das disciplinas, com modulo de oferta, professor, turma, horarios, salas e vagas.',
-      'matriculas-disciplinas': 'Matricule alunos nas disciplinas ofertadas por modulo.',
-      'planos-ensino': 'Registre planos de ensino e materiais oficiais das disciplinas.',
+      'matriculas-disciplinas': 'Matricule alunos nas disciplinas ofertadas por módulo.',
+      'planos-ensino': 'Cadastre e mantenha o plano institucional das disciplinas.',
       aulas: 'Controle aulas ministradas, conteudo e carga horaria.',
       frequencias: 'Registre presencas, justificativas e observacoes.',
       notas: 'Lance notas e acompanhe resultados academicos.',
-      historicos: 'Consulte e mantenha historicos escolares consolidados.'
+      historicos: 'Consulte os resultados consolidados automaticamente pela homologacao.'
     };
     return textos[this.endpoint] || 'Cadastro, consulta e manutencao dos registros academicos.';
   }
 
   tituloFormulario() {
-    if (this.endpoint === 'matriculas-disciplinas') return 'Matricula em disciplinas';
+    if (this.endpoint === 'matriculas-disciplinas') return 'Matrícula em Disciplina';
+    if (this.endpoint === 'planos-ensino') {
+      return this.registroEditandoId ? 'Edição de Plano de Ensino' : 'Cadastro de Plano de Ensino';
+    }
     if (this.registroEditandoId) return `Edicao de ${this.titulo.replaceAll('-', ' ')}`;
     return `Cadastro de ${this.titulo.replaceAll('-', ' ')}`;
+  }
+
+  somenteConsulta() {
+    return this.endpoint === 'historicos';
   }
 
   textoPdf(registro: any) {
     if (this.temPdf(registro)) return this.nomePdf(registro);
     if (this.endpoint === 'cursos') return 'Nenhuma grade curricular enviada';
     if (this.endpoint === 'disciplinas') return 'Nenhuma ementa enviada';
-    return 'Nenhum plano de ensino enviado';
+    return 'Nenhuma ementa oficial enviada';
   }
 
   labelPdf() {
     if (this.endpoint === 'cursos') return 'Grade curricular';
     if (this.endpoint === 'disciplinas') return 'Ementa';
-    return 'Plano de ensino';
+    return 'Ementa oficial em PDF';
   }
 
   textoPdfEnviado() {
     if (this.endpoint === 'cursos') return 'Grade curricular enviada';
     if (this.endpoint === 'disciplinas') return 'Ementa enviada';
-    return 'Plano de ensino enviado';
+    return 'Ementa oficial enviada';
   }
 
   textoUploadPdf() {
     if (this.endpoint === 'cursos') return 'Enviar Grade Curricular';
     if (this.endpoint === 'disciplinas') return 'Enviar Ementa';
-    return 'Enviar Plano de Ensino';
+    return 'Enviar ou substituir ementa';
   }
 
   isSelect(campo: string) {
@@ -313,7 +374,7 @@ export class CadastroPage implements OnInit {
 
   tipoCampo(campo: string) {
     if (campo.toLowerCase().includes('data')) return 'date';
-    if (['ano', 'ordem', 'vagas', 'creditos', 'cargaHoraria', 'cargaHorariaTotal', 'cargaHorariaPrevista', 'cargaHorariaMinistrada', 'cargaHorariaAula', 'quantidadeMaximaAlunos', 'nota1', 'nota2', 'trabalho', 'avaliacaoFinal', 'notaFinal', 'frequenciaFinal'].includes(campo)) return 'number';
+    if (['ano', 'ordem', 'vagas', 'creditos', 'creditosTotais', 'cargaHoraria', 'cargaHorariaTotal', 'cargaHorariaPrevista', 'cargaHorariaMinistrada', 'cargaHorariaAula', 'quantidadeMaximaAlunos', 'nota1', 'nota2', 'trabalho', 'avaliacaoFinal', 'notaFinal', 'frequenciaFinal'].includes(campo)) return 'number';
     return 'text';
   }
 
@@ -331,6 +392,12 @@ export class CadastroPage implements OnInit {
   rotuloOpcao(opcao: any) {
     if (opcao === null || opcao === undefined) return '';
     if (typeof opcao !== 'object') return String(opcao);
+    if (opcao.disciplina && (opcao.modulo || opcao.anoLetivo || opcao.horario)) {
+      const modulo = opcao.modulo?.nome || 'Sem módulo';
+      const ano = opcao.anoLetivo?.ano || opcao.periodoLetivo?.anoLetivo?.ano || '';
+      const horario = opcao.horario ? ` — ${opcao.horario}` : '';
+      return `${opcao.disciplina.nome} — ${modulo}${ano ? '/' + ano : ''}${horario}`;
+    }
     const partes = [
       opcao.nome,
       opcao.codigo,
@@ -344,11 +411,27 @@ export class CadastroPage implements OnInit {
   }
 
   valor(registro: any, chave: string) {
+    if (this.endpoint === 'planos-ensino') {
+      if (chave === 'codigoDisciplina') return registro.disciplina?.codigo || '-';
+      if (chave === 'nomeDisciplina') return registro.disciplina?.nome || '-';
+      if (chave === 'ementaPdf') return registro.planoPdfNome ? 'PDF enviado' : 'Sem PDF';
+      if (chave === 'ultimaAtualizacao') return registro.ultimaAtualizacao ? new Date(registro.ultimaAtualizacao).toLocaleString('pt-BR') : '-';
+      if (chave === 'situacaoPlano') return registro.disciplina?.ativo ? 'ATIVO' : 'INATIVO';
+    }
+    if (this.endpoint === 'anos-letivos' && ['dataInicio', 'dataFim'].includes(chave) && registro[chave]) {
+      return registro[chave].split('-').reverse().join('/');
+    }
     if (this.endpoint === 'disciplinas' && chave === 'ativo') return registro.ativo ? 'Ativa' : 'Inativa';
     if (this.endpoint === 'disciplinas' && chave === 'ementaStatus') return registro.ementaPdfNome ? 'Ementa enviada' : 'Sem ementa';
     if (this.endpoint === 'modulos' && chave === 'disciplinasVinculadas') return this.quantidadeDisciplinasModulo(registro);
     if ((this.endpoint === 'ofertas-disciplinas' || this.endpoint === 'montagem-periodo') && chave === 'moduloOriginalOferta') {
       return registro.disciplina?.moduloOriginal?.nome || registro.disciplina?.modulo?.nome || 'Sem modulo original';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'moduloOferta') {
+      return registro.ofertaDisciplina?.modulo?.nome || 'Sem módulo';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'status') {
+      return registro.status === 'TRANCADO' ? 'TRANCADA' : registro.status === 'CANCELADO' ? 'CANCELADA' : registro.status;
     }
     const valor = registro[chave];
     if (valor && typeof valor === 'object') return this.rotuloOpcao(valor);
@@ -413,7 +496,7 @@ export class CadastroPage implements OnInit {
   }
 
   mostrarMatriculaGuiada() {
-    return this.endpoint === 'matriculas-disciplinas' && this.opcoes['aluno.id']?.length;
+    return this.endpoint === 'matriculas-disciplinas' && !this.registroEditandoId && this.opcoes['aluno.id']?.length;
   }
 
   camposFormulario() {
@@ -472,6 +555,11 @@ export class CadastroPage implements OnInit {
   }
 
   registrosFiltrados() {
+    if (this.endpoint === 'historicos') {
+      const busca = this.normalizarBusca(this.buscaHistorico);
+      return this.registros.filter(registro => !busca
+        || this.normalizarBusca(`${registro.aluno} ${registro.disciplina} ${registro.codigo}`).includes(busca));
+    }
     if (this.endpoint !== 'disciplinas') return this.registros;
     const busca = this.normalizarBusca(this.filtros.busca);
     return this.registros.filter(registro => {
@@ -640,7 +728,9 @@ export class CadastroPage implements OnInit {
       this.api.salvar(this.endpoint, {
         aluno: { id: this.alunoSelecionado },
         ofertaDisciplina: { id: ofertaId },
-        status: 'ATIVA'
+        dataMatricula: this.formulario['dataMatricula'] || undefined,
+        status: 'ATIVA',
+        observacoes: this.formulario['observacoes'] || undefined
       }).subscribe({
         next: () => {
           concluidas++;
@@ -692,11 +782,18 @@ export class CadastroPage implements OnInit {
   }
 
   private opcoesStatus() {
+    if (this.endpoint === 'anos-letivos') {
+      return ['PLANEJADO', 'EM_ANDAMENTO', 'ENCERRADO'].map(valor => ({ id: valor, nome: valor }));
+    }
     if (this.endpoint === 'modulos') {
       return ['ABERTO', 'FECHADO', 'INATIVO'].map(valor => ({ id: valor, nome: valor }));
     }
     if (this.endpoint === 'matriculas-disciplinas') {
-      return ['ATIVA', 'CONCLUIDA', 'CANCELADA', 'REPROVADA', 'TRANCADA'].map(valor => ({ id: valor, nome: valor }));
+      return [
+        { id: 'ATIVA', nome: 'ATIVA' },
+        { id: 'TRANCADO', nome: 'TRANCADA' },
+        { id: 'CANCELADO', nome: 'CANCELADA' }
+      ];
     }
     if (this.endpoint === 'ofertas-disciplinas' || this.endpoint === 'montagem-periodo') {
       return ['PLANEJADA', 'ABERTA', 'EM_ANDAMENTO', 'ENCERRADA', 'CANCELADA'].map(valor => ({ id: valor, nome: valor }));
@@ -707,7 +804,7 @@ export class CadastroPage implements OnInit {
   private acaoPdf() {
     if (this.endpoint === 'cursos') return 'grade-pdf';
     if (this.endpoint === 'disciplinas') return 'ementa-pdf';
-    return 'plano-pdf';
+    return 'ementa-pdf';
   }
 
   private abrirArquivoPdf(endpoint: string, id: number, acao: string, nome: string) {
@@ -753,13 +850,79 @@ export class CadastroPage implements OnInit {
     if (concluidas !== total) return;
     this.carregando = false;
     this.ofertasSelecionadas = {};
-    this.mensagem = falhas.length ? falhas.join('; ') : 'Matriculas realizadas com sucesso';
+    this.mensagem = falhas.length ? falhas.join('; ') : 'Matrículas realizadas com sucesso';
     this.carregar();
+  }
+
+  visualizarMatricula(registro: any) {
+    this.matriculaVisualizada = registro;
+    this.desempenhoMatricula = undefined;
+  }
+
+  verDesempenho(registro: any) {
+    this.matriculaVisualizada = registro;
+    this.api.buscarAcao('matriculas-disciplinas', registro.id, 'desempenho').subscribe({
+      next: desempenho => this.desempenhoMatricula = desempenho,
+      error: err => this.mensagem = err?.error?.mensagem || 'Não foi possível carregar o desempenho'
+    });
+  }
+
+  fecharMatricula() {
+    this.matriculaVisualizada = undefined;
+    this.desempenhoMatricula = undefined;
+  }
+
+  selecionarEmentaPlano(event: Event) {
+    const arquivo = (event.target as HTMLInputElement).files?.[0];
+    if (!arquivo) return;
+    if (arquivo.type !== 'application/pdf' || !arquivo.name.toLowerCase().endsWith('.pdf')) {
+      this.mensagem = 'Selecione um arquivo PDF';
+      return;
+    }
+    this.ementaPlanoPendente = arquivo;
+  }
+
+  private enviarEmentaAposSalvar(registro: any) {
+    const arquivo = this.ementaPlanoPendente!;
+    this.api.enviarArquivo('planos-ensino', registro.id, 'ementa-pdf', arquivo).subscribe({
+      next: () => {
+        this.mensagem = 'Plano de Ensino e ementa salvos com sucesso';
+        this.cancelarEdicao();
+        this.carregar();
+        this.carregando = false;
+      },
+      error: err => {
+        this.mensagem = err?.error?.mensagem || 'Plano salvo, mas não foi possível enviar a ementa';
+        this.cancelarEdicao();
+        this.carregar();
+        this.carregando = false;
+      }
+    });
   }
 
   private periodoTecnicoCompativel() {
     const anoId = Number(this.formulario['anoLetivo.id']);
     return (this.opcoes['periodoLetivo.id'] || []).find(periodo => periodo.anoLetivo?.id === anoId)
       || (this.opcoes['periodoLetivo.id'] || [])[0];
+  }
+
+  private validarAnoLetivo() {
+    const ano = Number(this.formulario['ano']);
+    const inicio = this.formulario['dataInicio'];
+    const fim = this.formulario['dataFim'];
+    const status = this.formulario['status'];
+    if (!ano || !inicio || !fim || !status) {
+      this.mensagem = 'Informe ano, data de início, data de término e situação';
+      return false;
+    }
+    if (inicio > fim) {
+      this.mensagem = 'A data de início deve ser anterior à data de término';
+      return false;
+    }
+    if (this.registros.some(registro => Number(registro.ano) === ano && registro.id !== this.registroEditandoId)) {
+      this.mensagem = 'Já existe um Ano Letivo cadastrado para este ano';
+      return false;
+    }
+    return true;
   }
 }
