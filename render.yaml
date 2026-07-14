@@ -2,7 +2,7 @@ services:
   - type: web
     name: sga-backend
     runtime: docker
-    plan: free
+    plan: starter
     region: virginia
     branch: main
     autoDeployTrigger: commit
@@ -46,20 +46,21 @@ services:
 
   - type: web
     name: sga-frontend
-    runtime: docker
-    plan: free
-    region: virginia
+    runtime: static
     branch: main
     autoDeployTrigger: commit
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: ./frontend
-    healthCheckPath: /
-    envVars:
-      - key: BACKEND_URL
-        fromService:
-          type: web
-          name: sga-backend
-          envVarKey: RENDER_EXTERNAL_URL
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist/frontend/browser
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://sga-backend-7y3i.onrender.com/api/*
+      - type: rewrite
+        source: /q/*
+        destination: https://sga-backend-7y3i.onrender.com/q/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
 
 databases:
   - name: sga-postgres
