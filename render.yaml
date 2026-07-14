@@ -1,0 +1,70 @@
+services:
+  - type: web
+    name: sga-backend
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    autoDeployTrigger: commit
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /q/openapi
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: sga-postgres
+          property: host
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        fromDatabase:
+          name: sga-postgres
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: sga-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: sga-postgres
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CORS_ORIGINS
+        fromService:
+          type: web
+          name: sga-frontend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: SGA_UPLOAD_DIR
+        value: /tmp/sga-uploads
+      - key: SGA_SEED_HOMOLOGACAO
+        value: "false"
+
+  - type: web
+    name: sga-frontend
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    autoDeployTrigger: commit
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    healthCheckPath: /
+    envVars:
+      - key: BACKEND_URL
+        fromService:
+          type: web
+          name: sga-backend
+          envVarKey: RENDER_EXTERNAL_URL
+
+databases:
+  - name: sga-postgres
+    plan: free
+    region: virginia
+    databaseName: sga
+    user: sga
+    postgresMajorVersion: "16"
