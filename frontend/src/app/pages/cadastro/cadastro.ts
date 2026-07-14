@@ -812,13 +812,22 @@ export class CadastroPage implements OnInit {
   }
 
   private abrirArquivoPdf(endpoint: string, id: number, acao: string, nome: string) {
+    const novaJanela = window.open('about:blank', '_blank');
+    if (novaJanela) novaJanela.opener = null;
     this.api.baixarArquivo(endpoint, id, acao).subscribe({
       next: arquivo => {
         const url = URL.createObjectURL(new Blob([arquivo], { type: 'application/pdf' }));
-        window.open(url, '_blank', 'noopener');
+        if (novaJanela && !novaJanela.closed) {
+          novaJanela.location.href = url;
+        } else {
+          window.location.assign(url);
+        }
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       },
-      error: err => this.mensagem = err?.error?.mensagem || `Nao foi possivel abrir ${nome}`
+      error: err => {
+        novaJanela?.close();
+        this.mensagem = err?.error?.mensagem || `Nao foi possivel abrir ${nome}`;
+      }
     });
   }
 
