@@ -1,8 +1,11 @@
 package br.edu.sga.entity;
 
+import br.edu.sga.enums.TipoComponenteCurricular;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -33,6 +36,9 @@ public class Disciplina extends PanacheEntity {
     public Integer cargaHoraria;
     @Min(0)
     public Integer creditos;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_componente", nullable = false)
+    public TipoComponenteCurricular tipoComponente = TipoComponenteCurricular.OBRIGATORIA;
     @Column(length = 4000)
     public String ementa;
     @Column(name = "ementa_resumo", length = 4000)

@@ -34,16 +34,18 @@ public class DadosAcademicosIniciaisService {
     void criarDadosAcademicos(@Observes StartupEvent evento) {
         limparReferenciasDeArquivosAusentes();
 
-        Curso existente = Curso.find("nome", "Curso de Teologia").firstResult();
+        Curso existente = Curso.find("lower(nome) = ?1 or lower(nome) = ?2",
+                "curso de teologia", "teologia ministerial").firstResult();
         if (existente != null) {
+            garantirGradeMinisterial(existente);
             garantirGradePlaceholder(existente);
             garantirProfessorHomologacao(existente);
             return;
         }
 
         Curso curso = new Curso();
-        curso.nome = "Curso de Teologia";
-        curso.descricao = "Curso base para testes do fluxo academico do seminario.";
+        curso.nome = "Teologia Ministerial";
+        curso.descricao = "Curso de Teologia Ministerial do Seminário Teológico Congregacional de João Pessoa.";
         curso.ativo = true;
         anexarGradePlaceholder(curso);
         curso.persist();
@@ -114,7 +116,191 @@ public class DadosAcademicosIniciaisService {
         matricula.persist();
 
         garantirProfessorHomologacao(curso);
+        garantirGradeMinisterial(curso);
     }
+
+    private void garantirGradeMinisterial(Curso curso) {
+        curso.nome = "Teologia Ministerial";
+        curso.descricao = "Curso de Teologia Ministerial do Seminário Teológico Congregacional de João Pessoa.";
+        curso.cargaHorariaTotal = 3240;
+        curso.creditosTotais = 180;
+        curso.ativo = true;
+
+        List<ComponenteGrade> componentes = List.of(
+                componente(1, "Metodologia da Pesquisa e do Trabalho Científico", 4),
+                componente(1, "Português Instrumental I", 2),
+                componente(1, "Introdução a Teologia", 2),
+                componente(1, "Introdução Filosofia", 2),
+                componente(1, "História da Igreja I: Idade Antiga", 2),
+                componente(1, "Ética Cristã", 2),
+                componente(1, "Estágio I", 1),
+
+                componente(2, "Português Instrumental II", 2),
+                componente(2, "Teologia Sistemática I: Bibliologia e Teontologia", 4),
+                componente(2, "Hermenêutica I", 2),
+                componente(2, "História da Igreja II: Idade Medieval", 2),
+                componente(2, "Introdução à Psicologia", 2),
+                componente(2, "Introdução à Sociologia", 2),
+                componente(2, "Evangelismo e Missões", 2),
+                componente(2, "Estágio II", 1),
+
+                componente(3, "Teologia Sistemática II: Antropologia e Angeologia", 4),
+                componente(3, "Hermenêutica II", 2),
+                componente(3, "Antigo Testamento: Pentateuco", 4),
+                componente(3, "Cosmovisão Cristã", 2),
+                componente(3, "História da Igreja III: Idade Moderna", 2),
+                componente(3, "Missiologia Kalleyana", 2),
+                componente(3, "Estágio III", 1),
+
+                componente(4, "Teologia Sistemática II: Hamartiologia e Soteriologia", 4),
+                componente(4, "Antigo Testamento: Históricos", 2),
+                componente(4, "História da Igreja IV: Idade Contemporânea", 2),
+                componente(4, "Homilética I", 2),
+                optativa(4, "Música Cristã - Optativa", 2),
+                componente(4, "Apologética I", 2),
+                componente(4, "Estágio IV", 1),
+
+                componente(5, "Teologia Sistemática IV: Cristologia e Pneumatologia", 4),
+                componente(5, "Homilética II", 2),
+                componente(5, "Apologética II", 2),
+                componente(5, "Teologia Patrística", 2),
+                componente(5, "Evangelhos Sinóticos", 2),
+                componente(5, "Antigo Testamento: Sapienciais", 4),
+                componente(5, "Estágio V", 1),
+                complementar(5, "Práticas Ministeriais I", 1),
+
+                componente(6, "Teologia Sistemática V: Eclesiologia", 4),
+                componente(6, "Teologia Escolástica", 4),
+                componente(6, "Teologia Pastoral", 2),
+                componente(6, "Igreja e Sociedade", 2),
+                componente(6, "Análise no Evangelho de João", 2),
+                componente(6, "Antigo Testamento: Profetas", 2),
+                componente(6, "Estágio VI", 1),
+                complementar(6, "Práticas Ministeriais II", 1),
+
+                componente(7, "Teologia Sistemática VI: Escatologia", 4),
+                componente(7, "Atos dos Apóstolos", 2),
+                componente(7, "Teologia da Reforma", 2),
+                componente(7, "Teologia Bíblica do Antigo Testamento", 2),
+                componente(7, "Aconselhamento Bíblico", 2),
+                optativa(7, "Religiões Comparadas - Optativa", 2),
+                componente(7, "Estágio VII", 1),
+                complementar(7, "Práticas Ministeriais III", 1),
+
+                componente(8, "Teologia Contemporânea", 2),
+                componente(8, "Cartas Paulinas", 2),
+                componente(8, "Hebraico Instrumental I", 2),
+                componente(8, "Cartas Gerais", 2),
+                optativa(8, "Discipulado - Optativa", 2),
+                optativa(8, "Bem-estar e Saúde - Optativa", 2),
+                componente(8, "Estágio VIII", 1),
+                complementar(8, "Práticas Ministeriais IV", 1),
+
+                componente(9, "Hebraico Instrumental II", 2),
+                componente(9, "História do Protestantismo Brasileiro", 2),
+                componente(9, "Análise em Apocalipse", 4),
+                componente(9, "Análise em Romanos", 2),
+                componente(9, "Plantação e revitalização de Igrejas", 2),
+                optativa(9, "Tecnologia, Mídias Digitais e Ministério - Optativa", 2),
+                componente(9, "Estágio IX", 1),
+
+                componente(10, "Grego Instrumental I", 2),
+                componente(10, "Análise em Hebreus", 2),
+                componente(10, "Análise em Efésios", 2),
+                componente(10, "Gestão Eclesiástica", 2),
+                componente(10, "História do Congregacionalismo", 2),
+                componente(10, "Culto e Liturgia", 2),
+                componente(10, "Estágio X", 1),
+
+                componente(11, "Grego Instrumental II", 2),
+                componente(11, "Teologia Bíblica Novo Testamento", 2),
+                componente(11, "Monografia I", 4),
+                componente(11, "Eclesiologia Congregacional", 2),
+                optativa(11, "Cristianismo e Política - Optativa", 2),
+                componente(11, "Fundamentos Pedagógicos", 2),
+                componente(11, "Estágio XI", 1),
+
+                componente(12, "Manuscritologia Bíblica", 2),
+                componente(12, "Monografia II", 4),
+                optativa(12, "Missões Urbanas - Optativa", 2),
+                componente(12, "Liderança Cristã", 2),
+                optativa(12, "Cristianismo e Arte - Optativa", 2),
+                componente(12, "Direitos Humanos", 2),
+                componente(12, "Estágio XII", 1)
+        );
+
+        Modulo[] modulos = new Modulo[13];
+        for (int ordem = 1; ordem <= 12; ordem++) {
+            modulos[ordem] = garantirModuloMatriz(curso, ordem);
+        }
+        int[] ordemNoModulo = new int[13];
+        for (ComponenteGrade componente : componentes) {
+            int ordem = ++ordemNoModulo[componente.modulo()];
+            garantirDisciplinaMatriz(curso, modulos[componente.modulo()], componente, ordem);
+        }
+    }
+
+    private Modulo garantirModuloMatriz(Curso curso, int ordem) {
+        Modulo modulo = Modulo.find("curso = ?1 and ordem = ?2 and anoLetivo is null", curso, ordem).firstResult();
+        if (modulo == null) {
+            modulo = new Modulo();
+            modulo.curso = curso;
+            modulo.ordem = ordem;
+            modulo.persist();
+        }
+        modulo.nome = "Módulo " + ordem;
+        modulo.descricao = "Matriz curricular do curso de Teologia Ministerial.";
+        modulo.status = StatusModulo.ABERTO;
+        modulo.ativo = true;
+        return modulo;
+    }
+
+    private void garantirDisciplinaMatriz(Curso curso, Modulo modulo, ComponenteGrade componente, int ordem) {
+        String codigo = codigoPreservado(componente.nome());
+        if (codigo == null) codigo = "TM-%02d-%02d".formatted(componente.modulo(), ordem);
+        Disciplina disciplina = Disciplina.find("codigo", codigo).firstResult();
+        if (disciplina == null) {
+            disciplina = Disciplina.find("curso = ?1 and lower(nome) = lower(?2)", curso, componente.nome()).firstResult();
+        }
+        if (disciplina == null) {
+            disciplina = new Disciplina();
+            disciplina.codigo = codigo;
+            disciplina.persist();
+        }
+        disciplina.curso = curso;
+        disciplina.nome = componente.nome();
+        disciplina.moduloOriginal = modulo;
+        if (disciplina.modulo == null) disciplina.modulo = modulo;
+        disciplina.cargaHoraria = componente.creditos() * 18;
+        disciplina.creditos = componente.creditos();
+        disciplina.tipoComponente = componente.tipo();
+        disciplina.ementaResumo = disciplina.ementaResumo == null
+                ? "Ementa a ser cadastrada conforme o plano de ensino." : disciplina.ementaResumo;
+        disciplina.ativo = true;
+    }
+
+    private String codigoPreservado(String nome) {
+        return switch (nome) {
+            case "Hermenêutica I" -> "HER-101";
+            case "Homilética I" -> "HOM-101";
+            case "Apologética I" -> "APO-101";
+            default -> null;
+        };
+    }
+
+    private ComponenteGrade componente(int modulo, String nome, int creditos) {
+        return new ComponenteGrade(modulo, nome, creditos, TipoComponenteCurricular.OBRIGATORIA);
+    }
+
+    private ComponenteGrade optativa(int modulo, String nome, int creditos) {
+        return new ComponenteGrade(modulo, nome, creditos, TipoComponenteCurricular.OPTATIVA);
+    }
+
+    private ComponenteGrade complementar(int modulo, String nome, int creditos) {
+        return new ComponenteGrade(modulo, nome, creditos, TipoComponenteCurricular.COMPLEMENTAR);
+    }
+
+    private record ComponenteGrade(int modulo, String nome, int creditos, TipoComponenteCurricular tipo) {}
 
     private void garantirProfessorHomologacao(Curso curso) {
         if (!seedHomologacaoEnabled) {

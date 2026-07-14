@@ -75,6 +75,7 @@ public class MatrizCurricularResource {
         dados.put("professorResponsavel", disciplina.professorResponsavel);
         dados.put("cargaHoraria", disciplina.cargaHoraria);
         dados.put("creditos", disciplina.creditos);
+        dados.put("tipoComponente", disciplina.tipoComponente);
         dados.put("ementa", disciplina.ementa);
         dados.put("ementaResumo", disciplina.ementaResumo);
         dados.put("ementaPdfNome", disciplina.ementaPdfNome);

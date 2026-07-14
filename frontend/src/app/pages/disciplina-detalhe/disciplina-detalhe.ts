@@ -76,6 +76,10 @@ export class DisciplinaDetalhePage implements OnInit {
   }
 
   tipoDisciplina() {
+    const tipo = this.disciplina()?.tipoComponente;
+    if (tipo === 'OPTATIVA') return 'Optativa';
+    if (tipo === 'COMPLEMENTAR') return 'Complementar';
+    if (tipo === 'OBRIGATORIA') return 'Obrigatoria';
     return (this.disciplina()?.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('optativa')
       ? 'Optativa'
       : 'Obrigatoria';

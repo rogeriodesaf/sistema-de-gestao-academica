@@ -586,11 +586,15 @@ export class CadastroPage implements OnInit {
   }
 
   tipoDisciplina(registro: any) {
+    if (registro?.tipoComponente) return registro.tipoComponente;
     return this.normalizarBusca(registro?.nome || '').includes('optativa') ? 'OPTATIVA' : 'OBRIGATORIA';
   }
 
   labelTipoDisciplina(registro: any) {
-    return this.tipoDisciplina(registro) === 'OPTATIVA' ? 'Optativa' : 'Obrigatoria';
+    const tipo = this.tipoDisciplina(registro);
+    if (tipo === 'OPTATIVA') return 'Optativa';
+    if (tipo === 'COMPLEMENTAR') return 'Complementar';
+    return 'Obrigatoria';
   }
 
   limparFiltros() {
