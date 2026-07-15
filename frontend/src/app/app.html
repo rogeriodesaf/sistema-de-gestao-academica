@@ -1,1 +1,11 @@
 <app-layout [menuGrupos]="menuGrupos" [usuario]="auth.usuario()" (sair)="auth.sair()" />
+
+<aside *ngIf="atualizacaoApp.novaVersaoDisponivel()" class="aviso-atualizacao" role="status" aria-live="polite">
+  <div>
+    <strong>Nova versao disponivel</strong>
+    <span>Atualize para carregar a versao mais recente do SGA.</span>
+  </div>
+  <button type="button" [disabled]="atualizacaoApp.atualizando()" (click)="atualizacaoApp.atualizarAgora()">
+    {{ atualizacaoApp.atualizando() ? 'Atualizando...' : 'Atualizar agora' }}
+  </button>
+</aside>

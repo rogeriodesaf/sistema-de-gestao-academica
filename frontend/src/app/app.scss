@@ -1,3 +1,60 @@
 :host {
   display: block;
 }
+
+.aviso-atualizacao {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  width: min(520px, calc(100vw - 48px));
+  padding: 16px;
+  border: 1px solid var(--azul-600);
+  border-radius: 12px;
+  background: var(--fundo-card);
+  color: var(--texto-principal);
+  box-shadow: 0 18px 48px rgba(16, 47, 74, .24);
+}
+
+.aviso-atualizacao div {
+  display: grid;
+  gap: 4px;
+}
+
+.aviso-atualizacao span {
+  color: var(--texto-secundario);
+  font-size: .9rem;
+}
+
+.aviso-atualizacao button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--azul-600);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.aviso-atualizacao button:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+@media (max-width: 640px) {
+  .aviso-atualizacao {
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    grid-template-columns: 1fr;
+    width: calc(100vw - 24px);
+  }
+
+  .aviso-atualizacao button {
+    width: 100%;
+  }
+}

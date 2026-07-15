@@ -3,6 +3,7 @@ import { Component, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { AuthService } from './core/auth.service';
+import { AtualizacaoAppService } from './core/atualizacao-app.service';
 import { AppLayoutComponent } from './shared/ui/app-layout/app-layout';
 import { MenuGrupo } from './shared/ui/sidebar/sidebar';
 
@@ -56,7 +57,11 @@ export class App implements OnDestroy {
     itens: grupo.itens.filter(item => item.path !== '/diarios-pendentes')
   })).filter(grupo => grupo.itens.length);
 
-  constructor(public auth: AuthService, private router: Router) {
+  constructor(
+    public auth: AuthService,
+    public atualizacaoApp: AtualizacaoAppService,
+    private router: Router
+  ) {
     this.navegacaoSubscription = this.router.events
       .pipe(filter(evento => evento instanceof NavigationEnd))
       .subscribe(() => this.redirecionarPerfil());
