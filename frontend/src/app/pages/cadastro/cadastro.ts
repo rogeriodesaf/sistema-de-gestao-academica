@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 import { PdfCardComponent } from '../../shared/ui/pdf-card/pdf-card';
@@ -151,10 +152,17 @@ export class CadastroPage implements OnInit {
       return;
     }
     if (this.endpoint === 'matriz-curricular') {
-      this.api.obter('matriz-curricular').subscribe(dados => {
-        this.cursos = dados.cursos || [];
-        this.matriz = dados.matriz;
-        this.cursoSelecionado = this.matriz?.curso?.id || this.cursos[0]?.id;
+      this.carregando = true;
+      this.matriz = undefined;
+      this.api.obter('matriz-curricular').pipe(
+        finalize(() => this.carregando = false)
+      ).subscribe({
+        next: dados => {
+          this.cursos = dados.cursos || [];
+          this.matriz = dados.matriz;
+          this.cursoSelecionado = this.matriz?.curso?.id || this.cursos[0]?.id;
+        },
+        error: () => this.mensagem = 'Nao foi possivel carregar a matriz curricular.'
       });
       return;
     }
@@ -170,7 +178,14 @@ export class CadastroPage implements OnInit {
 
   carregarMatriz() {
     if (!this.cursoSelecionado) return;
-    this.api.buscar('matriz-curricular', this.cursoSelecionado).subscribe(matriz => this.matriz = matriz);
+    this.carregando = true;
+    this.matriz = undefined;
+    this.api.buscar('matriz-curricular', this.cursoSelecionado).pipe(
+      finalize(() => this.carregando = false)
+    ).subscribe({
+      next: matriz => this.matriz = matriz,
+      error: () => this.mensagem = 'Nao foi possivel carregar a matriz curricular.'
+    });
   }
 
   salvar() {

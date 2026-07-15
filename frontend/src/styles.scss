@@ -352,6 +352,28 @@ tbody tr:hover {
   max-width: 420px;
 }
 
+.carregamento-matriz {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--azul-600);
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: girar .7s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
 .matriz {
   display: grid;
   gap: 16px;
