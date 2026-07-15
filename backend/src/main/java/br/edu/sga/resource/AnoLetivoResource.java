@@ -1,9 +1,14 @@
 package br.edu.sga.resource;
 
 import br.edu.sga.entity.AnoLetivo;
+import br.edu.sga.entity.Modulo;
+import br.edu.sga.entity.OfertaDisciplina;
+import br.edu.sga.entity.PeriodoLetivo;
+import br.edu.sga.entity.Turma;
 import br.edu.sga.exception.ApiException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -48,6 +53,24 @@ public class AnoLetivoResource extends CadastroResource.Crud<AnoLetivo> {
         validar(anoLetivo, id);
         anoLetivo.legado = false;
         return super.atualizar(id, anoLetivo);
+    }
+
+    @Override
+    @DELETE
+    @Path("/{id}")
+    @Transactional
+    public void excluir(@PathParam("id") Long id) {
+        exigirGestaoAcademica();
+        buscar(id);
+        boolean possuiVinculos = Modulo.count("anoLetivo.id", id) > 0
+                || PeriodoLetivo.count("anoLetivo.id", id) > 0
+                || OfertaDisciplina.count("anoLetivo.id", id) > 0
+                || Turma.count("anoLetivo.id", id) > 0;
+        if (possuiVinculos) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Nao e possivel excluir este Ano Letivo porque existem modulos, periodos, turmas ou ofertas vinculados");
+        }
+        super.excluir(id);
     }
 
     private void validar(AnoLetivo anoLetivo, Long idAtual) {
