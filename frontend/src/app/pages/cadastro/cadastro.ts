@@ -50,6 +50,8 @@ export class CadastroPage implements OnInit {
   paginaAtual = 1;
   itensPorPagina = 10;
   tamanhosPagina = [10, 25, 50, 100];
+  paginaMatriz = 1;
+  readonly itensPorPaginaMatriz = 10;
 
   private selects: Record<string, string> = {
     aluno: 'alunos',
@@ -161,6 +163,7 @@ export class CadastroPage implements OnInit {
         next: dados => {
           this.cursos = dados.cursos || [];
           this.matriz = dados.matriz;
+          this.paginaMatriz = 1;
           this.cursoSelecionado = this.matriz?.curso?.id || this.cursos[0]?.id;
         },
         error: () => this.mensagem = 'Nao foi possivel carregar a matriz curricular.'
@@ -184,7 +187,10 @@ export class CadastroPage implements OnInit {
     this.api.buscarComFallback('matriz-curricular', this.cursoSelecionado).pipe(
       finalize(() => this.carregandoMatriz.set(false))
     ).subscribe({
-      next: matriz => this.matriz = matriz,
+      next: matriz => {
+        this.matriz = matriz;
+        this.paginaMatriz = 1;
+      },
       error: () => this.mensagem = 'Nao foi possivel carregar a matriz curricular.'
     });
   }
@@ -667,6 +673,36 @@ export class CadastroPage implements OnInit {
   mudarPagina(delta: number) {
     this.paginaAtual = Math.min(Math.max(this.paginaAtual + delta, 1), this.totalPaginas());
     this.atualizarEstadoNaUrl();
+  }
+
+  modulosMatrizPaginados() {
+    if (!this.matriz?.modulos) return [];
+    const inicio = (this.paginaMatriz - 1) * this.itensPorPaginaMatriz;
+    const fim = inicio + this.itensPorPaginaMatriz;
+    let indice = 0;
+
+    return this.matriz.modulos.flatMap((modulo: any) => {
+      const disciplinas = (modulo.disciplinas || []).filter(() => {
+        const incluir = indice >= inicio && indice < fim;
+        indice++;
+        return incluir;
+      });
+      return disciplinas.length ? [{ ...modulo, disciplinas }] : [];
+    });
+  }
+
+  totalDisciplinasMatriz() {
+    return (this.matriz?.modulos || []).reduce(
+      (total: number, modulo: any) => total + (modulo.disciplinas?.length || 0), 0);
+  }
+
+  totalPaginasMatriz() {
+    return Math.max(Math.ceil(this.totalDisciplinasMatriz() / this.itensPorPaginaMatriz), 1);
+  }
+
+  mudarPaginaMatriz(delta: number) {
+    this.paginaMatriz = Math.min(Math.max(this.paginaMatriz + delta, 1), this.totalPaginasMatriz());
+    document.querySelector('.consulta')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   mudarTamanhoPagina() {

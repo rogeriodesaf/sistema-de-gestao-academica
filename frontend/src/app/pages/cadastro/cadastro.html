@@ -24,7 +24,7 @@
         </div>
       </header>
 
-      <article *ngFor="let modulo of matriz.modulos">
+      <article *ngFor="let modulo of modulosMatrizPaginados()">
         <div class="matriz-modulo">
           <div>
             <h3>{{ modulo.nome }}</h3>
@@ -60,6 +60,12 @@
           </tbody>
         </table>
       </article>
+
+      <div class="paginacao paginacao-matriz" *ngIf="totalPaginasMatriz() > 1">
+        <button type="button" class="secundario" [disabled]="paginaMatriz === 1" (click)="mudarPaginaMatriz(-1)">Anterior</button>
+        <span>Pagina {{ paginaMatriz }} de {{ totalPaginasMatriz() }} - {{ totalDisciplinasMatriz() }} disciplinas</span>
+        <button type="button" class="secundario" [disabled]="paginaMatriz === totalPaginasMatriz()" (click)="mudarPaginaMatriz(1)">Proxima</button>
+      </div>
     </div>
   </div>
 
