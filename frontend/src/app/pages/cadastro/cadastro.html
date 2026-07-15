@@ -15,7 +15,7 @@
           <h2>{{ matriz.curso?.nome }}</h2>
           <span>{{ matriz.cargaHorariaTotal }} horas - {{ matriz.creditosTotal }} creditos</span>
           <p class="nota-matriz">A matriz curricular exibe o modulo original da grade. Quando houver remanejamento, o modulo atual aparece sinalizado na disciplina.</p>
-          <button *ngIf="matriz.curso?.gradePdfNome" type="button" class="secundario" (click)="abrirPdfCurso(matriz.curso)">Abrir PDF</button>
+          <a *ngIf="matriz.curso?.gradePdfNome" class="secundario" [href]="urlAberturaGrade(matriz.curso)" target="_blank" rel="noopener">Abrir PDF</a>
         </div>
       </header>
 
@@ -217,6 +217,7 @@
               [enviadoTexto]="textoPdfEnviado()"
               [vazioTexto]="textoPdf(registro)"
               [uploadTexto]="textoUploadPdf()"
+              [abrirUrl]="endpoint === 'cursos' ? urlAberturaGrade(registro) : ''"
               (abrir)="abrirPdf(registro)"
               (baixar)="baixarPdf(registro)"
               (remover)="removerPdf(registro)"

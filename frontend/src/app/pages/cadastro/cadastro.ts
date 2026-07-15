@@ -494,6 +494,12 @@ export class CadastroPage implements OnInit {
     this.abrirArquivoPdf('cursos', curso.id, 'grade-pdf', curso.gradePdfNome || 'grade-curricular.pdf');
   }
 
+  urlAberturaGrade(curso: any) {
+    return this.gradePlaceholder(curso)
+      ? this.gradeCurricularPublica
+      : `/api/publico/cursos/${curso.id}/grade-pdf`;
+  }
+
   abrirPdfDisciplina(disciplina: any) {
     this.abrirArquivoPdf('disciplinas', disciplina.id, 'ementa-pdf', disciplina.ementaPdfNome || 'ementa.pdf');
   }

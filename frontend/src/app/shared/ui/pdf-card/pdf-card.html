@@ -9,7 +9,8 @@
   </div>
 
   <div class="pdf-acoes" *ngIf="temArquivo; else envioInicial">
-    <button type="button" class="acao-primaria" (click)="abrir.emit()">Abrir</button>
+    <a *ngIf="abrirUrl; else botaoAbrir" class="acao-primaria" [href]="abrirUrl" target="_blank" rel="noopener">Abrir</a>
+    <ng-template #botaoAbrir><button type="button" class="acao-primaria" (click)="abrir.emit()">Abrir</button></ng-template>
     <button type="button" class="acao-secundaria" (click)="baixar.emit()">Baixar</button>
     <div class="menu-pdf">
       <button type="button" class="acao-menu" aria-label="Mais acoes do PDF" (click)="menuAberto = !menuAberto">...</button>

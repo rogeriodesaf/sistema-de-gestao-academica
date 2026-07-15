@@ -14,6 +14,7 @@ export class PdfCardComponent {
   @Input() enviadoTexto = 'Documento enviado';
   @Input() vazioTexto = 'Nenhum PDF enviado';
   @Input() uploadTexto = 'Enviar PDF';
+  @Input() abrirUrl = '';
 
   @Output() abrir = new EventEmitter<void>();
   @Output() baixar = new EventEmitter<void>();

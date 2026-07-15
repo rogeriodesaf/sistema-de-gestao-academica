@@ -53,6 +53,7 @@
 }
 
 button,
+.pdf-acoes a,
 .botao-upload,
 .menu-lista label {
   border: 0;
@@ -61,6 +62,7 @@ button,
   cursor: pointer;
   font: inherit;
   font-weight: 700;
+  text-decoration: none;
 }
 
 .acao-primaria,

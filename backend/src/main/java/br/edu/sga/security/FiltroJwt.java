@@ -12,7 +12,8 @@ import java.util.Set;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class FiltroJwt implements ContainerRequestFilter {
-    private static final Set<String> PUBLICOS = Set.of("api/auth/login", "api/status", "api/publico/historicos", "q/openapi", "q/swagger-ui");
+    private static final Set<String> PUBLICOS = Set.of("api/auth/login", "api/status", "api/publico/historicos",
+            "api/publico/cursos", "q/openapi", "q/swagger-ui");
 
     @Inject
     JwtService jwtService;
