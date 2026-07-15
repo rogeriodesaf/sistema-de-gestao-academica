@@ -847,7 +847,13 @@ export class CadastroPage implements OnInit {
   }
 
   private abrirGradeCurricularPublica() {
-    window.location.assign(this.gradeCurricularPublica);
+    const link = document.createElement('a');
+    link.href = this.gradeCurricularPublica;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 
   private gradePlaceholder(curso: any) {
