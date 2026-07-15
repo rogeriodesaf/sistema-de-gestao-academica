@@ -128,9 +128,14 @@
 
   <div class="filtros card-bloco" *ngIf="endpoint === 'historicos'">
     <label>
-      Pesquisar aluno
-      <input type="search" name="buscaHistorico" [(ngModel)]="buscaHistorico" placeholder="Nome do aluno">
+      Aluno
+      <input type="search" name="buscaHistorico" [(ngModel)]="buscaHistorico"
+             list="alunos-com-historico" autocomplete="off" placeholder="Digite o nome ou as letras iniciais">
+      <datalist id="alunos-com-historico">
+        <option *ngFor="let aluno of alunosComHistorico()" [value]="aluno"></option>
+      </datalist>
     </label>
+    <button *ngIf="buscaHistorico" type="button" class="secundario" (click)="buscaHistorico = ''">Limpar</button>
   </div>
 
   <div class="filtros card-bloco" *ngIf="endpoint === 'disciplinas'">
@@ -339,6 +344,16 @@
   <div class="vazio" *ngIf="endpoint === 'disciplinas' && registros.length && !registrosFiltrados().length">
     <h2>Nenhuma disciplina encontrada</h2>
     <p>Ajuste os filtros para localizar disciplinas do catalogo.</p>
+  </div>
+
+  <div class="vazio" *ngIf="endpoint === 'historicos' && !registros.length">
+    <h2>Nenhum historico escolar registrado</h2>
+    <p>Os resultados aparecerao aqui depois que uma disciplina for homologada.</p>
+  </div>
+
+  <div class="vazio" *ngIf="endpoint === 'historicos' && registros.length && !registrosFiltrados().length">
+    <h2>Nenhum historico encontrado</h2>
+    <p>Nao ha registros para o aluno informado.</p>
   </div>
 
   <div class="modal-fundo" *ngIf="endpoint === 'matriculas-disciplinas' && matriculaVisualizada">

@@ -629,6 +629,13 @@ export class CadastroPage implements OnInit {
     });
   }
 
+  alunosComHistorico() {
+    return [...new Set(this.registros
+      .map(registro => registro.aluno)
+      .filter((aluno): aluno is string => !!aluno))]
+      .sort((a, b) => a.localeCompare(b));
+  }
+
   selecionarRegistro(registro: any) {
     if (this.endpoint === 'disciplinas') {
       this.atualizarEstadoNaUrl(false);
