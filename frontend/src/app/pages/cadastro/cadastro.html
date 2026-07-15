@@ -45,14 +45,14 @@
           </thead>
           <tbody>
             <tr *ngFor="let disciplina of modulo.disciplinas">
-              <td>
+              <td data-label="Disciplina">
                 <strong>{{ disciplina.nome }}</strong>
                 <small *ngIf="disciplina.remanejada" class="aviso-remanejo">Ofertada atualmente em {{ disciplina.moduloAtual?.nome || 'outro modulo' }}</small>
               </td>
-              <td>{{ disciplina.codigo }}</td>
-              <td>{{ disciplina.cargaHoraria }} h</td>
-              <td>{{ disciplina.creditos }}</td>
-              <td>
+              <td data-label="Codigo">{{ disciplina.codigo }}</td>
+              <td data-label="Carga horaria">{{ disciplina.cargaHoraria }} h</td>
+              <td data-label="Creditos">{{ disciplina.creditos }}</td>
+              <td data-label="Ementa">
                 <button *ngIf="disciplina.ementaPdfNome" type="button" class="secundario" (click)="abrirPdfDisciplina(disciplina)">Abrir PDF</button>
                 <span *ngIf="!disciplina.ementaPdfNome">{{ disciplina.ementaResumo }}</span>
               </td>

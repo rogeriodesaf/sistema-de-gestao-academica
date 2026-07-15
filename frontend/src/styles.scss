@@ -377,10 +377,12 @@ tbody tr:hover {
 .matriz {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .matriz > header,
 .matriz article {
+  min-width: 0;
   border: 1px solid var(--cinza-200);
   border-radius: 8px;
   padding: 16px;
@@ -954,6 +956,52 @@ tbody tr:hover {
   .oferta-card-topo {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .consulta,
+  .matriz,
+  .matriz article {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .matriz-modulo {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .matriz table {
+    display: block;
+    min-width: 0;
+  }
+
+  .matriz table thead {
+    display: none;
+  }
+
+  .matriz table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .matriz table tr {
+    display: grid;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+  }
+
+  .matriz table td {
+    display: grid;
+    grid-template-columns: minmax(105px, .7fr) minmax(0, 1fr);
+    gap: 10px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .matriz table td:last-child {
+    border-bottom: 0;
   }
 
   .tabela.card-bloco {
