@@ -24,6 +24,11 @@ export class CadastroPage implements OnInit {
   cursos: any[] = [];
   cursoSelecionado?: number;
   matriz?: any;
+  relatorioDesempenho?: any;
+  carregandoRelatorio = signal(false);
+  buscaRelatorio = '';
+  anoRelatorio: number | '' = '';
+  statusRelatorio = '';
   alunoSelecionado?: number;
   ofertasPorModulo: any[] = [];
   ofertasSelecionadas: Record<number, boolean> = {};
@@ -152,6 +157,13 @@ export class CadastroPage implements OnInit {
   carregar() {
     if (this.endpoint === 'relatorios') {
       this.registros = [];
+      this.carregandoRelatorio.set(true);
+      this.api.obter('relatorios/desempenho-ofertas').pipe(
+        finalize(() => this.carregandoRelatorio.set(false))
+      ).subscribe({
+        next: dados => this.relatorioDesempenho = dados,
+        error: () => this.mensagem = 'Nao foi possivel carregar o relatorio academico.'
+      });
       return;
     }
     if (this.endpoint === 'matriz-curricular') {
@@ -703,6 +715,69 @@ export class CadastroPage implements OnInit {
   mudarPaginaMatriz(delta: number) {
     this.paginaMatriz = Math.min(Math.max(this.paginaMatriz + delta, 1), this.totalPaginasMatriz());
     document.querySelector('.consulta')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  linhasRelatorioFiltradas() {
+    const busca = this.normalizarBusca(this.buscaRelatorio);
+    return (this.relatorioDesempenho?.ofertas || []).filter((linha: any) => {
+      const correspondeBusca = !busca || this.normalizarBusca(
+        `${linha.disciplina} ${linha.professor} ${linha.modulo}`
+      ).includes(busca);
+      const correspondeAno = !this.anoRelatorio || linha.ano === this.anoRelatorio;
+      const correspondeStatus = !this.statusRelatorio || linha.status === this.statusRelatorio;
+      return correspondeBusca && correspondeAno && correspondeStatus;
+    });
+  }
+
+  anosRelatorio() {
+    return [...new Set<number>((this.relatorioDesempenho?.ofertas || [])
+      .map((linha: any) => linha.ano)
+      .filter((ano: number | null) => ano != null))].sort((a, b) => b - a);
+  }
+
+  statusRelatorioDisponiveis() {
+    return [...new Set<string>((this.relatorioDesempenho?.ofertas || [])
+      .map((linha: any) => linha.status)
+      .filter(Boolean))].sort();
+  }
+
+  exportarRelatorio(formato: 'csv' | 'excel') {
+    const colunas = [
+      ['Ano', 'ano'], ['Modulo', 'modulo'], ['Disciplina', 'disciplina'], ['Professor', 'professor'],
+      ['Status', 'status'], ['Matriculados', 'matriculados'], ['Aprovados', 'aprovados'],
+      ['Reprovados', 'reprovados'], ['Em andamento', 'emAndamento'], ['Media das notas', 'mediaNotas'],
+      ['Frequencia media (%)', 'frequenciaMedia']
+    ];
+    const linhas = this.linhasRelatorioFiltradas();
+    const data = new Date().toISOString().slice(0, 10);
+
+    if (formato === 'csv') {
+      const escapar = (valor: any) => `"${String(valor ?? '').replaceAll('"', '""')}"`;
+      const conteudo = [
+        colunas.map(([titulo]) => escapar(titulo)).join(';'),
+        ...linhas.map((linha: any) => colunas.map(([, chave]) => escapar(linha[chave])).join(';'))
+      ].join('\r\n');
+      this.baixarArquivo(`\uFEFF${conteudo}`, `desempenho-academico-${data}.csv`, 'text/csv;charset=utf-8');
+      return;
+    }
+
+    const escaparHtml = (valor: any) => String(valor ?? '')
+      .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    const tabela = `<html><head><meta charset="utf-8"></head><body><table border="1"><thead><tr>${
+      colunas.map(([titulo]) => `<th>${escaparHtml(titulo)}</th>`).join('')
+    }</tr></thead><tbody>${linhas.map((linha: any) => `<tr>${
+      colunas.map(([, chave]) => `<td>${escaparHtml(linha[chave])}</td>`).join('')
+    }</tr>`).join('')}</tbody></table></body></html>`;
+    this.baixarArquivo(tabela, `desempenho-academico-${data}.xls`, 'application/vnd.ms-excel;charset=utf-8');
+  }
+
+  private baixarArquivo(conteudo: string, nome: string, tipo: string) {
+    const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nome;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   mudarTamanhoPagina() {

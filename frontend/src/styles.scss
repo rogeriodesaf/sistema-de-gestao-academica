@@ -482,6 +482,55 @@ tbody tr:hover {
   font-weight: 700;
 }
 
+.relatorio-academico {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.relatorio-resumo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.relatorio-resumo article {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--fundo-card);
+}
+
+.relatorio-resumo span {
+  color: var(--texto-secundario);
+  font-weight: 700;
+}
+
+.relatorio-resumo strong {
+  color: var(--azul-600);
+  font-size: 1.7rem;
+}
+
+.relatorio-filtros {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.relatorio-filtros label {
+  grid-column: span 4;
+}
+
+.relatorio-acoes {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .upload-pdf {
   grid-column: auto;
   display: inline-flex;
@@ -958,6 +1007,14 @@ tbody tr:hover {
     flex-direction: column;
   }
 
+  .relatorio-resumo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .relatorio-filtros label {
+    grid-column: 1 / -1;
+  }
+
   .consulta,
   .matriz,
   .matriz article {
@@ -1087,6 +1144,14 @@ tbody tr:hover {
 
   .card-bloco {
     padding: 14px;
+  }
+
+  .relatorio-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .relatorio-acoes button {
+    width: 100%;
   }
 
   .tabela.card-bloco > table > tbody > tr > td[data-label] {

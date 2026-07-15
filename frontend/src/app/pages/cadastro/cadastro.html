@@ -191,6 +191,85 @@
     </label>
   </div>
 
+  <section class="relatorio-academico" *ngIf="endpoint === 'relatorios'">
+    <div class="carregamento-matriz card-bloco" *ngIf="carregandoRelatorio()" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <strong>Carregando relatório acadêmico...</strong>
+    </div>
+
+    <ng-container *ngIf="!carregandoRelatorio() && relatorioDesempenho">
+      <div class="relatorio-resumo">
+        <article><span>Ofertas</span><strong>{{ relatorioDesempenho.resumo.ofertas }}</strong></article>
+        <article><span>Matriculados</span><strong>{{ relatorioDesempenho.resumo.matriculados }}</strong></article>
+        <article><span>Aprovados</span><strong>{{ relatorioDesempenho.resumo.aprovados }}</strong></article>
+        <article><span>Reprovados</span><strong>{{ relatorioDesempenho.resumo.reprovados }}</strong></article>
+      </div>
+
+      <div class="relatorio-filtros card-bloco">
+        <label>
+          Buscar
+          <input name="buscaRelatorio" [(ngModel)]="buscaRelatorio" placeholder="Disciplina, professor ou módulo">
+        </label>
+        <label>
+          Ano letivo
+          <select name="anoRelatorio" [(ngModel)]="anoRelatorio">
+            <option value="">Todos</option>
+            <option *ngFor="let ano of anosRelatorio()" [ngValue]="ano">{{ ano }}</option>
+          </select>
+        </label>
+        <label>
+          Situação da oferta
+          <select name="statusRelatorio" [(ngModel)]="statusRelatorio">
+            <option value="">Todas</option>
+            <option *ngFor="let status of statusRelatorioDisponiveis()" [value]="status">{{ status }}</option>
+          </select>
+        </label>
+        <div class="relatorio-acoes">
+          <button type="button" class="secundario" [disabled]="!linhasRelatorioFiltradas().length" (click)="exportarRelatorio('csv')">Baixar CSV</button>
+          <button type="button" [disabled]="!linhasRelatorioFiltradas().length" (click)="exportarRelatorio('excel')">Baixar Excel</button>
+        </div>
+      </div>
+
+      <div class="tabela card-bloco" *ngIf="linhasRelatorioFiltradas().length">
+        <div class="card-cabecalho">
+          <div>
+            <h2>Desempenho por oferta de disciplina</h2>
+            <p>{{ linhasRelatorioFiltradas().length }} oferta(s) encontrada(s).</p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Ano</th><th>Módulo</th><th>Disciplina</th><th>Professor</th><th>Situação</th>
+              <th>Matriculados</th><th>Aprovados</th><th>Reprovados</th><th>Em andamento</th>
+              <th>Média</th><th>Frequência média</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let linha of linhasRelatorioFiltradas()">
+              <td data-label="Ano">{{ linha.ano || '-' }}</td>
+              <td data-label="Módulo">{{ linha.modulo }}</td>
+              <td data-label="Disciplina">{{ linha.disciplina }}</td>
+              <td data-label="Professor">{{ linha.professor }}</td>
+              <td data-label="Situação">{{ linha.status }}</td>
+              <td data-label="Matriculados">{{ linha.matriculados }}</td>
+              <td data-label="Aprovados">{{ linha.aprovados }}</td>
+              <td data-label="Reprovados">{{ linha.reprovados }}</td>
+              <td data-label="Em andamento">{{ linha.emAndamento }}</td>
+              <td data-label="Média">{{ linha.mediaNotas ?? '-' }}</td>
+              <td data-label="Frequência média">{{ linha.frequenciaMedia == null ? '-' : linha.frequenciaMedia + '%' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vazio" *ngIf="!linhasRelatorioFiltradas().length">
+        <h2>Nenhum resultado encontrado</h2>
+        <p>Ajuste os filtros para consultar outras ofertas.</p>
+      </div>
+    </ng-container>
+  </section>
+
   <div class="vazio" *ngIf="!campos.length && endpoint !== 'relatorios' && endpoint !== 'matriz-curricular'">
     <h2>Area administrativa</h2>
     <p>Funcionalidade reservada para evolucao de usuarios, perfis e configuracoes.</p>
