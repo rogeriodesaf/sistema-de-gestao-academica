@@ -40,9 +40,13 @@ services:
           name: sga-frontend
           envVarKey: RENDER_EXTERNAL_URL
       - key: SGA_UPLOAD_DIR
-        value: /tmp/sga-uploads
+        value: /var/data/uploads
       - key: SGA_SEED_HOMOLOGACAO
         value: "false"
+    disk:
+      name: sga-uploads
+      mountPath: /var/data
+      sizeGB: 1
 
   - type: web
     name: sga-frontend

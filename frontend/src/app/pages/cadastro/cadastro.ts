@@ -471,7 +471,7 @@ export class CadastroPage implements OnInit {
   }
 
   abrirPdf(registro: any) {
-    if (this.endpoint === 'cursos') {
+    if (this.endpoint === 'cursos' && this.gradePlaceholder(registro)) {
       this.abrirGradeCurricularPublica();
       return;
     }
@@ -479,7 +479,7 @@ export class CadastroPage implements OnInit {
   }
 
   baixarPdf(registro: any) {
-    if (this.endpoint === 'cursos') {
+    if (this.endpoint === 'cursos' && this.gradePlaceholder(registro)) {
       this.baixarGradeCurricularPublica();
       return;
     }
@@ -487,7 +487,11 @@ export class CadastroPage implements OnInit {
   }
 
   abrirPdfCurso(curso: any) {
-    this.abrirGradeCurricularPublica();
+    if (this.gradePlaceholder(curso)) {
+      this.abrirGradeCurricularPublica();
+      return;
+    }
+    this.abrirArquivoPdf('cursos', curso.id, 'grade-pdf', curso.gradePdfNome || 'grade-curricular.pdf');
   }
 
   abrirPdfDisciplina(disciplina: any) {
@@ -500,7 +504,9 @@ export class CadastroPage implements OnInit {
   }
 
   nomePdf(registro: any) {
-    if (this.endpoint === 'cursos') return 'Grade Curricular STCJP 2026.pdf';
+    if (this.endpoint === 'cursos') {
+      return this.gradePlaceholder(registro) ? 'Grade Curricular STCJP 2026.pdf' : registro.gradePdfNome;
+    }
     return this.endpoint === 'disciplinas' ? registro.ementaPdfNome : registro.planoPdfNome;
   }
 
@@ -842,6 +848,10 @@ export class CadastroPage implements OnInit {
 
   private abrirGradeCurricularPublica() {
     window.location.assign(this.gradeCurricularPublica);
+  }
+
+  private gradePlaceholder(curso: any) {
+    return !curso?.gradePdfNome || curso.gradePdfNome.includes('placeholder');
   }
 
   private baixarGradeCurricularPublica() {
