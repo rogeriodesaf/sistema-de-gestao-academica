@@ -5,14 +5,14 @@
       <img src="/logo-seminario.webp" alt="Seminário Teológico Congregacional de João Pessoa" (error)="$any($event.target).style.display='none'">
       <strong>Sistema de Gestão Acadêmica</strong>
     </div>
-    <form (ngSubmit)="entrar()">
+    <form (ngSubmit)="entrar()" autocomplete="on">
       <label>
         E-mail
-        <input name="email" type="email" [(ngModel)]="email" required>
+        <input name="email" type="email" [(ngModel)]="email" autocomplete="username" required>
       </label>
       <label>
         Senha
-        <input name="senha" type="password" [(ngModel)]="senha" required>
+        <input name="senha" type="password" [(ngModel)]="senha" autocomplete="current-password" required>
       </label>
       <p class="erro" *ngIf="erro">{{ erro }}</p>
       <button type="submit" [disabled]="carregando">{{ carregando ? 'Entrando...' : 'Entrar' }}</button>

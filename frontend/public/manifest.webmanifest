@@ -1,0 +1,25 @@
+{
+  "name": "SGA - Seminário Teológico Congregacional de João Pessoa",
+  "short_name": "SGA STCJP",
+  "description": "Sistema de Gestão Acadêmica do Seminário Teológico Congregacional de João Pessoa",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#003f67",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -14,8 +14,8 @@ import { ThemeService } from '../../core/theme.service';
   styleUrl: './login.scss'
 })
 export class LoginPage {
-  email = 'admin@sga.local';
-  senha = 'admin123';
+  email = '';
+  senha = '';
   erro = '';
   carregando = false;
 
