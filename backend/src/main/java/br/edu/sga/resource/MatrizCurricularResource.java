@@ -8,6 +8,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,13 +22,26 @@ public class MatrizCurricularResource {
 
         List<Modulo> modulos = Modulo.list(
                 "curso.id = ?1 and anoLetivo is null order by ordem", cursoId);
+        List<Disciplina> disciplinas = Disciplina.find("""
+                select d from Disciplina d
+                left join fetch d.moduloOriginal
+                left join fetch d.modulo
+                where d.curso.id = ?1 and d.ativo = true
+                order by d.nome
+                """, cursoId).list();
+        Map<Long, List<Disciplina>> disciplinasPorModulo = new HashMap<>();
+        for (Disciplina disciplina : disciplinas) {
+            Modulo moduloOriginal = disciplina.moduloOriginal != null ? disciplina.moduloOriginal : disciplina.modulo;
+            if (moduloOriginal != null && moduloOriginal.id != null) {
+                disciplinasPorModulo.computeIfAbsent(moduloOriginal.id, id -> new java.util.ArrayList<>()).add(disciplina);
+            }
+        }
         List<Map<String, Object>> modulosResposta = modulos.stream().map(modulo -> {
-            List<Disciplina> disciplinas = Disciplina.list(
-                    "(moduloOriginal.id = ?1 or (moduloOriginal is null and modulo.id = ?1)) order by nome", modulo.id);
-            int cargaModulo = disciplinas.stream()
+            List<Disciplina> disciplinasModulo = disciplinasPorModulo.getOrDefault(modulo.id, List.of());
+            int cargaModulo = disciplinasModulo.stream()
                     .mapToInt(disciplina -> disciplina.cargaHoraria == null ? 0 : disciplina.cargaHoraria)
                     .sum();
-            int creditosModulo = disciplinas.stream()
+            int creditosModulo = disciplinasModulo.stream()
                     .mapToInt(disciplina -> disciplina.creditos == null ? 0 : disciplina.creditos)
                     .sum();
 
@@ -39,7 +53,7 @@ public class MatrizCurricularResource {
             dadosModulo.put("ordem", modulo.ordem);
             dadosModulo.put("cargaHorariaTotal", cargaModulo);
             dadosModulo.put("creditosTotal", creditosModulo);
-            dadosModulo.put("disciplinas", disciplinas.stream()
+            dadosModulo.put("disciplinas", disciplinasModulo.stream()
                     .map(disciplina -> dadosDisciplinaMatriz(disciplina, modulo))
                     .toList());
             return dadosModulo;
@@ -55,11 +69,19 @@ public class MatrizCurricularResource {
         int creditosTotal = curso.creditosTotais == null ? creditosCalculados : curso.creditosTotais;
 
         Map<String, Object> resposta = new LinkedHashMap<>();
-        resposta.put("curso", curso);
+        resposta.put("curso", dadosCurso(curso));
         resposta.put("cargaHorariaTotal", cargaTotal);
         resposta.put("creditosTotal", creditosTotal);
         resposta.put("modulos", modulosResposta);
         return resposta;
+    }
+
+    private Map<String, Object> dadosCurso(Curso curso) {
+        Map<String, Object> dados = new LinkedHashMap<>();
+        dados.put("id", curso.id);
+        dados.put("nome", curso.nome);
+        dados.put("gradePdfNome", curso.gradePdfNome);
+        return dados;
     }
 
     private Map<String, Object> dadosDisciplinaMatriz(Disciplina disciplina, Modulo moduloOriginalDaMatriz) {
@@ -67,20 +89,22 @@ public class MatrizCurricularResource {
         dados.put("id", disciplina.id);
         dados.put("nome", disciplina.nome);
         dados.put("codigo", disciplina.codigo);
-        dados.put("curso", disciplina.curso);
-        dados.put("moduloOriginal", disciplina.moduloOriginal != null ? disciplina.moduloOriginal : moduloOriginalDaMatriz);
-        dados.put("moduloAtual", disciplina.modulo);
+        dados.put("moduloAtual", resumoModulo(disciplina.modulo));
         dados.put("remanejada", disciplina.modulo != null && disciplina.modulo.id != null
                 && !disciplina.modulo.id.equals(moduloOriginalDaMatriz.id));
-        dados.put("professorResponsavel", disciplina.professorResponsavel);
         dados.put("cargaHoraria", disciplina.cargaHoraria);
         dados.put("creditos", disciplina.creditos);
         dados.put("tipoComponente", disciplina.tipoComponente);
-        dados.put("ementa", disciplina.ementa);
         dados.put("ementaResumo", disciplina.ementaResumo);
         dados.put("ementaPdfNome", disciplina.ementaPdfNome);
-        dados.put("bibliografia", disciplina.bibliografia);
-        dados.put("ativo", disciplina.ativo);
+        return dados;
+    }
+
+    private Map<String, Object> resumoModulo(Modulo modulo) {
+        if (modulo == null) return null;
+        Map<String, Object> dados = new LinkedHashMap<>();
+        dados.put("id", modulo.id);
+        dados.put("nome", modulo.nome);
         return dados;
     }
 }
