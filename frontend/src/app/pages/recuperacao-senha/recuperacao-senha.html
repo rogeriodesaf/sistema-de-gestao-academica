@@ -1,0 +1,43 @@
+<main class="login recuperacao-senha">
+  <button type="button" class="alternar-tema" (click)="tema.alternar()">Modo {{ tema.tema === 'claro' ? 'escuro' : 'claro' }}</button>
+  <section>
+    <div class="marca">
+      <img src="/logo-seminario.webp" alt="Seminário Teológico Congregacional de João Pessoa">
+      <strong>{{ redefinindo ? 'Redefinir senha' : 'Recuperar acesso' }}</strong>
+    </div>
+
+    <form *ngIf="!redefinindo" (ngSubmit)="enviarInstrucoes()">
+      <p>Informe o e-mail cadastrado para receber as instruções de redefinição.</p>
+      <label>
+        E-mail
+        <input name="email" type="email" [(ngModel)]="email" autocomplete="email" required>
+      </label>
+      <p class="sucesso" *ngIf="mensagem()">{{ mensagem() }}</p>
+      <button type="submit" [disabled]="carregando()">
+        {{ carregando() ? 'Enviando...' : 'Enviar instruções' }}
+      </button>
+      <a routerLink="/login">Voltar para o login</a>
+    </form>
+
+    <form *ngIf="redefinindo && !concluido()" (ngSubmit)="redefinirSenha()">
+      <label>
+        Nova senha
+        <input name="novaSenha" type="password" [(ngModel)]="novaSenha" autocomplete="new-password" minlength="8" required>
+      </label>
+      <label>
+        Confirmar nova senha
+        <input name="confirmacaoSenha" type="password" [(ngModel)]="confirmacaoSenha" autocomplete="new-password" minlength="8" required>
+      </label>
+      <p class="erro" *ngIf="erro()">{{ erro() }}</p>
+      <button type="submit" [disabled]="carregando() || !token">
+        {{ carregando() ? 'Redefinindo...' : 'Redefinir senha' }}
+      </button>
+      <a routerLink="/login">Voltar para o login</a>
+    </form>
+
+    <div class="resultado" *ngIf="redefinindo && concluido()">
+      <p class="sucesso">{{ mensagem() }}</p>
+      <a class="botao-link" routerLink="/login">Voltar para o login</a>
+    </div>
+  </section>
+</main>

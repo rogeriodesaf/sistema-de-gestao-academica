@@ -1,0 +1,28 @@
+@use '../login/login.scss';
+
+form > a,
+.resultado a {
+  color: #256fa8;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sucesso {
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--sucesso-fundo);
+  color: var(--sucesso-texto);
+}
+
+.resultado {
+  display: grid;
+  gap: 16px;
+}
+
+.botao-link {
+  border-radius: 6px;
+  padding: 12px;
+  background: #256fa8;
+  color: white !important;
+  text-decoration: none;
+}

@@ -16,6 +16,7 @@
       </label>
       <p class="erro" *ngIf="erro">{{ erro }}</p>
       <button type="submit" [disabled]="carregando">{{ carregando ? 'Entrando...' : 'Entrar' }}</button>
+      <a class="recuperar-senha" routerLink="/esqueci-senha">Esqueci minha senha</a>
     </form>
   </section>
 </main>

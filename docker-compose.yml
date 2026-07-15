@@ -34,6 +34,13 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:8088}
       SGA_UPLOAD_DIR: ${SGA_UPLOAD_DIR:-/app/uploads}
       SGA_SEED_HOMOLOGACAO: ${SGA_SEED_HOMOLOGACAO:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8088}
+      RESET_PASSWORD_EXPIRATION_MINUTES: ${RESET_PASSWORD_EXPIRATION_MINUTES:-30}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-naoresponda@seminario.local}
+      SMTP_MOCK: ${SMTP_MOCK:-true}
+      SGA_RESET_LOG_LINK: ${SGA_RESET_LOG_LINK:-true}
     ports:
       - "8080:8080"
     volumes:

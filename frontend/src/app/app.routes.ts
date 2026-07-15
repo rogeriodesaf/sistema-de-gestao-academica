@@ -8,6 +8,7 @@ import { CadastroPage } from './pages/cadastro/cadastro';
 import { DashboardPage } from './pages/dashboard/dashboard';
 import { DisciplinaDetalhePage } from './pages/disciplina-detalhe/disciplina-detalhe';
 import { LoginPage } from './pages/login/login';
+import { RecuperacaoSenhaPage } from './pages/recuperacao-senha/recuperacao-senha';
 import { ModuloDetalhePage } from './pages/modulo-detalhe/modulo-detalhe';
 import { OfertaDetalhePage } from './pages/oferta-detalhe/oferta-detalhe';
 import { PlanejamentoAcademicoPage } from './pages/planejamento-academico/planejamento-academico';
@@ -44,6 +45,8 @@ const perfisCoordenacao = ['ADMINISTRADOR', 'COORDENADOR'];
 
 export const routes: Routes = [
   { path: 'login', component: LoginPage },
+  { path: 'esqueci-senha', component: RecuperacaoSenhaPage },
+  { path: 'redefinir-senha', component: RecuperacaoSenhaPage },
   { path: 'dashboard', component: DashboardPage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'area-professor', component: AreaProfessorPage, canActivate: [authGuard], data: { perfis: perfisProfessor } },
   { path: 'area-aluno', component: AreaAlunoPage, canActivate: [authGuard], data: { perfis: perfisAluno } },
