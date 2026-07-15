@@ -841,7 +841,7 @@ export class CadastroPage implements OnInit {
   }
 
   private abrirGradeCurricularPublica() {
-    window.open(this.gradeCurricularPublica, '_blank', 'noopener');
+    window.location.assign(this.gradeCurricularPublica);
   }
 
   private baixarGradeCurricularPublica() {
