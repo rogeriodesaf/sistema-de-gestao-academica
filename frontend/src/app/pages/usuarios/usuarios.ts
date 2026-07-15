@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -45,7 +45,12 @@ export class UsuariosPage implements OnInit {
   formulario: UsuarioForm = this.formularioVazio();
   private acaoInicialAplicada = false;
 
-  constructor(private api: ApiService, private router: Router, private route: ActivatedRoute) {}
+  constructor(
+    private api: ApiService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private changeDetector: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.carregarPerfis();
@@ -88,7 +93,10 @@ export class UsuariosPage implements OnInit {
       : this.api.salvar('usuarios', { ...dados, senha: this.formulario.senha, confirmarSenha: this.formulario.confirmarSenha });
 
     requisicao.pipe(
-      finalize(() => this.carregando = false)
+      finalize(() => {
+        this.carregando = false;
+        this.changeDetector.detectChanges();
+      })
     ).subscribe({
       next: () => {
         this.mensagem = this.registroEditandoId ? 'Usuario atualizado com sucesso' : 'Usuario cadastrado com sucesso';
