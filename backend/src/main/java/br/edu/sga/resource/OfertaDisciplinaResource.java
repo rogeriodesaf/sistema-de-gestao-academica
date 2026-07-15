@@ -1,17 +1,25 @@
 package br.edu.sga.resource;
 
 import br.edu.sga.entity.AnoLetivo;
+import br.edu.sga.entity.ArquivoProfessor;
+import br.edu.sga.entity.AulaMinistrada;
+import br.edu.sga.entity.Avaliacao;
 import br.edu.sga.entity.Curso;
 import br.edu.sga.entity.Disciplina;
+import br.edu.sga.entity.HistoricoEscolar;
+import br.edu.sga.entity.MatriculaDisciplina;
 import br.edu.sga.entity.Modulo;
+import br.edu.sga.entity.Nota;
 import br.edu.sga.entity.OfertaDisciplina;
 import br.edu.sga.entity.PeriodoLetivo;
+import br.edu.sga.entity.PlanoEnsino;
 import br.edu.sga.entity.Professor;
 import br.edu.sga.entity.Turma;
 import br.edu.sga.enums.StatusOfertaDisciplina;
 import br.edu.sga.exception.ApiException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -55,6 +63,35 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
         oferta.id = id;
         OfertaDisciplina atualizada = getEntityManager().merge(oferta);
         return resumir(atualizada);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Transactional
+    @Override
+    public void excluir(@PathParam("id") Long id) {
+        exigirGestaoAcademica();
+        OfertaDisciplina oferta = buscar(id);
+        if (possuiRegistrosAcademicos(oferta)) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Esta oferta possui matriculas ou registros academicos e nao pode ser excluida. Cancele a oferta para preservar o historico.");
+        }
+        if (!List.of(StatusOfertaDisciplina.PLANEJADA, StatusOfertaDisciplina.ABERTA,
+                StatusOfertaDisciplina.CANCELADA).contains(oferta.status)) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Somente ofertas planejadas, abertas ou canceladas e sem registros academicos podem ser excluidas.");
+        }
+        getEntityManager().remove(oferta);
+    }
+
+    private boolean possuiRegistrosAcademicos(OfertaDisciplina oferta) {
+        return MatriculaDisciplina.count("ofertaDisciplina", oferta) > 0
+                || AulaMinistrada.count("ofertaDisciplina", oferta) > 0
+                || Avaliacao.count("ofertaDisciplina", oferta) > 0
+                || ArquivoProfessor.count("ofertaDisciplina", oferta) > 0
+                || HistoricoEscolar.count("ofertaDisciplina", oferta) > 0
+                || Nota.count("ofertaDisciplina", oferta) > 0
+                || PlanoEnsino.count("ofertaDisciplina", oferta) > 0;
     }
 
     private OfertaDisciplina resumir(OfertaDisciplina origem) {
