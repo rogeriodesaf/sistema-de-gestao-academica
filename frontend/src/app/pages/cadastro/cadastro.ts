@@ -151,10 +151,10 @@ export class CadastroPage implements OnInit {
       return;
     }
     if (this.endpoint === 'matriz-curricular') {
-      this.api.listar('cursos').subscribe(cursos => {
-        this.cursos = cursos;
-        this.cursoSelecionado = this.cursoSelecionado || cursos[0]?.id;
-        this.carregarMatriz();
+      this.api.obter('matriz-curricular').subscribe(dados => {
+        this.cursos = dados.cursos || [];
+        this.matriz = dados.matriz;
+        this.cursoSelecionado = this.matriz?.curso?.id || this.cursos[0]?.id;
       });
       return;
     }

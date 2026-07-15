@@ -7,19 +7,32 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import java.util.LinkedHashMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @Path("/api/matriz-curricular")
 public class MatrizCurricularResource {
     @GET
+    public Map<String, Object> inicial() {
+        List<Curso> cursos = Curso.list("order by nome");
+        Map<String, Object> resposta = new LinkedHashMap<>();
+        resposta.put("cursos", cursos.stream().map(this::dadosCurso).toList());
+        resposta.put("matriz", cursos.isEmpty() ? null : montarMatriz(cursos.getFirst()));
+        return resposta;
+    }
+
+    @GET
     @Path("/{cursoId}")
     public Map<String, Object> porCurso(@PathParam("cursoId") Long cursoId) {
         Curso curso = Curso.findById(cursoId);
         if (curso == null) throw new NotFoundException();
+        return montarMatriz(curso);
+    }
 
+    private Map<String, Object> montarMatriz(Curso curso) {
+        Long cursoId = curso.id;
         List<Modulo> modulos = Modulo.list(
                 "curso.id = ?1 and anoLetivo is null order by ordem", cursoId);
         List<Disciplina> disciplinas = Disciplina.find("""

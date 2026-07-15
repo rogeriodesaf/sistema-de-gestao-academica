@@ -12,6 +12,10 @@ export class ApiService {
     return this.http.get<any[]>(`${this.api}/${endpoint}?tamanho=500`, this.opcoesAutenticadas());
   }
 
+  obter(endpoint: string) {
+    return this.http.get<any>(`${this.api}/${endpoint}`, this.opcoesAutenticadas());
+  }
+
   salvar(endpoint: string, dados: any) {
     return this.http.post(`${this.api}/${endpoint}`, dados, this.opcoesAutenticadas());
   }
