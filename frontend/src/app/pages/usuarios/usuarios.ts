@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 
@@ -86,16 +87,18 @@ export class UsuariosPage implements OnInit {
       ? this.api.atualizar('usuarios', this.registroEditandoId, dados)
       : this.api.salvar('usuarios', { ...dados, senha: this.formulario.senha, confirmarSenha: this.formulario.confirmarSenha });
 
-    requisicao.subscribe({
+    requisicao.pipe(
+      finalize(() => this.carregando = false)
+    ).subscribe({
       next: () => {
         this.mensagem = this.registroEditandoId ? 'Usuario atualizado com sucesso' : 'Usuario cadastrado com sucesso';
         this.cancelarEdicao();
         this.carregar();
-        this.carregando = false;
       },
       error: err => {
-        this.mensagem = err?.error?.mensagem || 'Nao foi possivel salvar usuario';
-        this.carregando = false;
+        this.mensagem = err?.error?.mensagem || (err?.name === 'TimeoutError'
+          ? 'O servidor demorou para responder. Tente novamente.'
+          : 'Nao foi possivel salvar usuario');
       }
     });
   }

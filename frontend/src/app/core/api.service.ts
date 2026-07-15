@@ -36,7 +36,11 @@ export class ApiService {
   }
 
   salvar(endpoint: string, dados: any) {
-    return this.http.post(`${this.api}/${endpoint}`, dados, this.opcoesAutenticadas());
+    const ambienteLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const url = ambienteLocal
+      ? `${this.api}/${endpoint}`
+      : `https://sga-backend-7y3i.onrender.com/api/${endpoint}`;
+    return this.http.post(url, dados, this.opcoesAutenticadas()).pipe(timeout(15000));
   }
 
   buscar(endpoint: string, id: number | string) {
