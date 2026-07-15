@@ -180,7 +180,7 @@ export class CadastroPage implements OnInit {
     if (!this.cursoSelecionado) return;
     this.carregando = true;
     this.matriz = undefined;
-    this.api.buscar('matriz-curricular', this.cursoSelecionado).pipe(
+    this.api.buscarComFallback('matriz-curricular', this.cursoSelecionado).pipe(
       finalize(() => this.carregando = false)
     ).subscribe({
       next: matriz => this.matriz = matriz,

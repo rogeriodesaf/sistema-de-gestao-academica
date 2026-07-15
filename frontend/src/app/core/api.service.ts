@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { catchError, timeout } from 'rxjs';
 import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -13,7 +14,25 @@ export class ApiService {
   }
 
   obter(endpoint: string) {
-    return this.http.get<any>(`${this.api}/${endpoint}`, this.opcoesAutenticadas());
+    return this.obterComFallback(endpoint);
+  }
+
+  buscarComFallback(endpoint: string, id: number | string) {
+    return this.obterComFallback(`${endpoint}/${id}`);
+  }
+
+  private obterComFallback(endpoint: string) {
+    const requisicao = this.http.get<any>(`${this.api}/${endpoint}`, this.opcoesAutenticadas());
+    const ambienteLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    if (ambienteLocal) return requisicao.pipe(timeout(15000));
+
+    return requisicao.pipe(
+      timeout(8000),
+      catchError(() => this.http.get<any>(
+        `https://sga-backend-7y3i.onrender.com/api/${endpoint}`,
+        this.opcoesAutenticadas()
+      ).pipe(timeout(15000)))
+    );
   }
 
   salvar(endpoint: string, dados: any) {
