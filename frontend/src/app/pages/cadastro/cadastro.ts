@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -31,6 +31,7 @@ export class CadastroPage implements OnInit {
   mensagem = '';
   buscaHistorico = '';
   carregando = false;
+  carregandoMatriz = signal(false);
   registroEditandoId?: number;
   ementaPlanoPendente?: File;
   matriculaVisualizada?: any;
@@ -152,10 +153,10 @@ export class CadastroPage implements OnInit {
       return;
     }
     if (this.endpoint === 'matriz-curricular') {
-      this.carregando = true;
+      this.carregandoMatriz.set(true);
       this.matriz = undefined;
       this.api.obter('matriz-curricular').pipe(
-        finalize(() => this.carregando = false)
+        finalize(() => this.carregandoMatriz.set(false))
       ).subscribe({
         next: dados => {
           this.cursos = dados.cursos || [];
@@ -178,10 +179,10 @@ export class CadastroPage implements OnInit {
 
   carregarMatriz() {
     if (!this.cursoSelecionado) return;
-    this.carregando = true;
+    this.carregandoMatriz.set(true);
     this.matriz = undefined;
     this.api.buscarComFallback('matriz-curricular', this.cursoSelecionado).pipe(
-      finalize(() => this.carregando = false)
+      finalize(() => this.carregandoMatriz.set(false))
     ).subscribe({
       next: matriz => this.matriz = matriz,
       error: () => this.mensagem = 'Nao foi possivel carregar a matriz curricular.'

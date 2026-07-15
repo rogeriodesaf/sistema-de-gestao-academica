@@ -4,17 +4,17 @@
   <div *ngIf="endpoint === 'matriz-curricular'" class="consulta card-bloco">
     <label>
       Curso
-      <select name="cursoSelecionado" [(ngModel)]="cursoSelecionado" (ngModelChange)="carregarMatriz()" [disabled]="carregando">
+      <select name="cursoSelecionado" [(ngModel)]="cursoSelecionado" (ngModelChange)="carregarMatriz()" [disabled]="carregandoMatriz()">
         <option *ngFor="let curso of cursos" [ngValue]="curso.id">{{ rotuloOpcao(curso) }}</option>
       </select>
     </label>
 
-    <div class="carregamento-matriz" *ngIf="carregando" role="status" aria-live="polite">
+    <div class="carregamento-matriz" *ngIf="carregandoMatriz()" role="status" aria-live="polite">
       <span class="spinner" aria-hidden="true"></span>
       <strong>Carregando matriz curricular...</strong>
     </div>
 
-    <div class="matriz" *ngIf="!carregando && matriz">
+    <div class="matriz" *ngIf="!carregandoMatriz() && matriz">
       <header>
         <div>
           <h2>{{ matriz.curso?.nome }}</h2>
