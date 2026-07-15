@@ -13,6 +13,7 @@ import { PdfCardComponent } from '../../shared/ui/pdf-card/pdf-card';
   templateUrl: './cadastro.html'
 })
 export class CadastroPage implements OnInit {
+  private readonly gradeCurricularPublica = '/documentos/grade-curricular-stcjp-2026.pdf';
   titulo = '';
   endpoint = '';
   campos: string[] = [];
@@ -470,15 +471,23 @@ export class CadastroPage implements OnInit {
   }
 
   abrirPdf(registro: any) {
+    if (this.endpoint === 'cursos') {
+      this.abrirGradeCurricularPublica();
+      return;
+    }
     this.abrirArquivoPdf(this.endpoint, registro.id, this.acaoPdf(), this.nomePdf(registro));
   }
 
   baixarPdf(registro: any) {
+    if (this.endpoint === 'cursos') {
+      this.baixarGradeCurricularPublica();
+      return;
+    }
     this.baixarArquivoPdf(this.endpoint, registro.id, this.acaoPdf(), this.nomePdf(registro));
   }
 
   abrirPdfCurso(curso: any) {
-    this.abrirArquivoPdf('cursos', curso.id, 'grade-pdf', curso.gradePdfNome || 'grade-curricular.pdf');
+    this.abrirGradeCurricularPublica();
   }
 
   abrirPdfDisciplina(disciplina: any) {
@@ -491,7 +500,7 @@ export class CadastroPage implements OnInit {
   }
 
   nomePdf(registro: any) {
-    if (this.endpoint === 'cursos') return registro.gradePdfNome;
+    if (this.endpoint === 'cursos') return 'Grade Curricular STCJP 2026.pdf';
     return this.endpoint === 'disciplinas' ? registro.ementaPdfNome : registro.planoPdfNome;
   }
 
@@ -829,6 +838,17 @@ export class CadastroPage implements OnInit {
         this.mensagem = err?.error?.mensagem || `Nao foi possivel abrir ${nome}`;
       }
     });
+  }
+
+  private abrirGradeCurricularPublica() {
+    window.open(this.gradeCurricularPublica, '_blank', 'noopener');
+  }
+
+  private baixarGradeCurricularPublica() {
+    const link = document.createElement('a');
+    link.href = this.gradeCurricularPublica;
+    link.download = 'Grade Curricular STCJP 2026.pdf';
+    link.click();
   }
 
   private baixarArquivoPdf(endpoint: string, id: number, acao: string, nome: string) {
