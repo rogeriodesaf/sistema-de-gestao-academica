@@ -49,9 +49,14 @@ export class App implements OnDestroy {
     { titulo: 'Administracao', itens: [
       { path: '/usuarios', label: 'Usuarios', icone: 'user' },
       { path: '/perfis', label: 'Perfis', icone: 'shield' },
+      { path: '/auditoria', label: 'Auditoria', icone: 'history' },
       { path: '/configuracoes', label: 'Configuracoes', icone: 'settings' }
     ] }
   ];
+  private readonly menuCoordenador: MenuGrupo[] = this.menuCompleto.map(grupo => ({
+    ...grupo,
+    itens: grupo.itens.filter(item => !['/usuarios', '/perfis', '/auditoria'].includes(item.path))
+  })).filter(grupo => grupo.itens.length);
   private readonly menuGestaoSemDiarios: MenuGrupo[] = this.menuCompleto.map(grupo => ({
     ...grupo,
     itens: grupo.itens.filter(item => item.path !== '/diarios-pendentes')
@@ -80,9 +85,9 @@ export class App implements OnDestroy {
     }
 
     const perfil = this.auth.usuario()?.perfil;
-    return perfil === 'ADMINISTRADOR' || perfil === 'COORDENADOR'
-      ? this.menuCompleto
-      : this.menuGestaoSemDiarios;
+    if (perfil === 'ADMINISTRADOR') return this.menuCompleto;
+    if (perfil === 'COORDENADOR') return this.menuCoordenador;
+    return this.menuGestaoSemDiarios;
   }
 
   private redirecionarPerfil() {

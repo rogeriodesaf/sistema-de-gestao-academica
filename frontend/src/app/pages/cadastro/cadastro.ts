@@ -133,7 +133,16 @@ export class CadastroPage implements OnInit {
     telefone: 'Telefone',
     trabalho: 'Trabalho',
     turno: 'Turno',
-    vagas: 'Vagas'
+    vagas: 'Vagas',
+    dataHora: 'Data e hora',
+    usuarioNome: 'Usuario',
+    usuarioEmail: 'E-mail',
+    perfil: 'Perfil',
+    acao: 'Acao',
+    metodo: 'Metodo',
+    rota: 'Rota',
+    statusHttp: 'Status HTTP',
+    sucesso: 'Sucesso'
   };
 
   constructor(private route: ActivatedRoute, private router: Router, private api: ApiService) {}
@@ -274,6 +283,9 @@ export class CadastroPage implements OnInit {
   }
 
   chaves(registro: any) {
+    if (this.endpoint === 'auditoria') {
+      return ['dataHora', 'usuarioNome', 'usuarioEmail', 'perfil', 'acao', 'metodo', 'rota', 'statusHttp', 'sucesso'];
+    }
     if (this.endpoint === 'planos-ensino') {
       return ['codigoDisciplina', 'nomeDisciplina', 'ementaPdf', 'ultimaAtualizacao', 'situacaoPlano'];
     }
@@ -356,7 +368,8 @@ export class CadastroPage implements OnInit {
       aulas: 'Controle aulas ministradas, conteudo e carga horaria.',
       frequencias: 'Registre presencas, justificativas e observacoes.',
       notas: 'Lance notas e acompanhe resultados academicos.',
-      historicos: 'Consulte os resultados consolidados automaticamente pela homologacao.'
+      historicos: 'Consulte os resultados consolidados automaticamente pela homologacao.',
+      auditoria: 'Consulte quem realizou inclusoes, alteracoes, exclusoes e outras acoes no sistema.'
     };
     return textos[this.endpoint] || 'Cadastro, consulta e manutencao dos registros academicos.';
   }
@@ -371,7 +384,7 @@ export class CadastroPage implements OnInit {
   }
 
   somenteConsulta() {
-    return this.endpoint === 'historicos';
+    return this.endpoint === 'historicos' || this.endpoint === 'auditoria';
   }
 
   textoPdf(registro: any) {
@@ -446,6 +459,9 @@ export class CadastroPage implements OnInit {
   }
 
   valor(registro: any, chave: string) {
+    if (this.endpoint === 'auditoria' && chave === 'dataHora' && registro[chave]) {
+      return new Date(registro[chave]).toLocaleString('pt-BR');
+    }
     if (this.endpoint === 'planos-ensino') {
       if (chave === 'codigoDisciplina') return registro.disciplina?.codigo || '-';
       if (chave === 'nomeDisciplina') return registro.disciplina?.nome || '-';

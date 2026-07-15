@@ -39,6 +39,7 @@ public class DadosAcademicosIniciaisService {
         if (existente != null) {
             garantirGradeMinisterial(existente);
             garantirGradePlaceholder(existente);
+            garantirProfessorDemonstracao();
             garantirProfessorHomologacao(existente);
             return;
         }
@@ -115,8 +116,34 @@ public class DadosAcademicosIniciaisService {
         matricula.status = StatusMatriculaDisciplina.ATIVA;
         matricula.persist();
 
+        garantirProfessorDemonstracao();
         garantirProfessorHomologacao(curso);
         garantirGradeMinisterial(curso);
+    }
+
+    private void garantirProfessorDemonstracao() {
+        Usuario usuario = Usuario.find("email", "professor@sga.local").firstResult();
+        if (usuario == null) {
+            usuario = new Usuario();
+            usuario.email = "professor@sga.local";
+        }
+        usuario.nome = "Professor Exemplo";
+        usuario.senhaHash = senhaService.criptografar("123456");
+        usuario.perfil = Perfil.PROFESSOR;
+        usuario.ativo = true;
+        if (!usuario.isPersistent()) usuario.persist();
+
+        Professor professor = Professor.find("usuario = ?1", usuario).firstResult();
+        if (professor == null) professor = Professor.find("nome", "Professor Exemplo").firstResult();
+        if (professor == null) {
+            professor = new Professor();
+            professor.nome = "Professor Exemplo";
+            professor.persist();
+        }
+        professor.email = "professor@sga.local";
+        professor.formacao = professor.formacao == null ? "Teologia" : professor.formacao;
+        professor.ativo = true;
+        professor.usuario = usuario;
     }
 
     private void garantirGradeMinisterial(Curso curso) {

@@ -31,6 +31,7 @@ const camposBase = {
   'matriculas-disciplinas': ['aluno.id', 'ofertaDisciplina.id', 'dataMatricula', 'status', 'observacoes'],
   'planos-ensino': ['disciplina.id', 'objetivos', 'conteudoProgramatico', 'metodologia', 'bibliografiaBasica', 'bibliografiaComplementar', 'observacoes'],
   historicos: ['aluno.id', 'turma.id', 'disciplina.id', 'notaFinal', 'frequenciaFinal', 'situacao', 'periodoCursado'],
+  auditoria: ['dataHora', 'usuarioNome', 'usuarioEmail', 'perfil', 'acao', 'metodo', 'rota', 'statusHttp', 'sucesso'],
   relatorios: [],
   usuarios: [],
   perfis: [],
@@ -63,7 +64,12 @@ export const routes: Routes = [
     path,
     component: CadastroPage,
     canActivate: [authGuard],
-    data: { titulo: path.replaceAll('-', ' '), endpoint: path === 'montagem-periodo' ? 'ofertas-disciplinas' : path, campos, perfis: perfisGestao }
+    data: {
+      titulo: path.replaceAll('-', ' '),
+      endpoint: path === 'montagem-periodo' ? 'ofertas-disciplinas' : path,
+      campos,
+      perfis: path === 'auditoria' ? perfisAdministracao : perfisGestao
+    }
   })),
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' }
