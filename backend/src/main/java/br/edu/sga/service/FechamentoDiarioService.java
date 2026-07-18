@@ -117,6 +117,9 @@ public class FechamentoDiarioService {
                 .recalcularOferta(oferta).stream().collect(Collectors.toMap(
                         FrequenciaAcademicaService.ResumoFrequencia::matriculaId, Function.identity()));
         LocalDateTime agora = LocalDateTime.now();
+        oferta.status = StatusOfertaDisciplina.CONCLUIDA;
+        oferta.dataHomologacao = agora;
+        oferta.homologadoPor = coordenador;
         List<String> concluintes = new ArrayList<>();
         for (MatriculaDisciplina matricula : matriculasAtivas(oferta)) {
             var frequencia = frequencias.get(matricula.id);
@@ -125,13 +128,15 @@ public class FechamentoDiarioService {
             matricula.notaFinal = resultado.media();
             matricula.frequenciaFinal = frequencia.percentualPresenca();
             matricula.dataConsolidacao = agora;
+            matricula.status = switch (situacao) {
+                case "APROVADO" -> StatusMatriculaDisciplina.CONCLUIDA;
+                case "REPROVADO_POR_FREQUENCIA" -> StatusMatriculaDisciplina.REPROVADO_POR_FREQUENCIA;
+                default -> StatusMatriculaDisciplina.REPROVADO_POR_NOTA;
+            };
             consolidarHistorico(matricula, situacao);
             var integralizacao = integralizacaoCursoService.recalcular(matricula.aluno);
             if (integralizacao.concluidoNestaVerificacao()) concluintes.add(matricula.aluno.nome);
         }
-        oferta.status = StatusOfertaDisciplina.CONCLUIDA;
-        oferta.dataHomologacao = agora;
-        oferta.homologadoPor = coordenador;
         String mensagem = concluintes.isEmpty() ? "Diario homologado e resultados consolidados."
                 : "Diario homologado. Requisitos academicos do curso concluidos por: "
                 + String.join(", ", concluintes) + ".";

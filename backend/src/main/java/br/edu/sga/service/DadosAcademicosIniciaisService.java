@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -41,6 +42,7 @@ public class DadosAcademicosIniciaisService {
             garantirGradePlaceholder(existente);
             garantirProfessorDemonstracao();
             garantirProfessorHomologacao(existente);
+            garantirCenarioConclusaoDemonstracao();
             return;
         }
 
@@ -119,6 +121,7 @@ public class DadosAcademicosIniciaisService {
         garantirProfessorDemonstracao();
         garantirProfessorHomologacao(curso);
         garantirGradeMinisterial(curso);
+        garantirCenarioConclusaoDemonstracao();
     }
 
     private void garantirProfessorDemonstracao() {
@@ -144,6 +147,200 @@ public class DadosAcademicosIniciaisService {
         professor.formacao = professor.formacao == null ? "Teologia" : professor.formacao;
         professor.ativo = true;
         professor.usuario = usuario;
+    }
+
+    private void garantirCenarioConclusaoDemonstracao() {
+        Professor professor = Professor.find("email", "professor@sga.local").firstResult();
+        if (professor == null) return;
+
+        Curso curso = Curso.find("nome", "Curso Demonstrativo de Conclusao").firstResult();
+        if (curso == null) {
+            curso = new Curso();
+            curso.nome = "Curso Demonstrativo de Conclusao";
+            curso.persist();
+        }
+        curso.descricao = "Cenario isolado para demonstrar fechamento de diario e conclusao de curso.";
+        curso.cargaHorariaTotal = 2;
+        curso.creditosTotais = 1;
+        curso.ativo = true;
+
+        Modulo modulo = Modulo.find("curso = ?1 and ordem = 1", curso).firstResult();
+        if (modulo == null) {
+            modulo = new Modulo();
+            modulo.curso = curso;
+            modulo.ordem = 1;
+        }
+        modulo.nome = "Modulo Unico - Demonstracao";
+        modulo.descricao = "Componente final utilizado na demonstracao da conclusao.";
+        modulo.status = StatusModulo.ABERTO;
+        modulo.ativo = true;
+        if (!modulo.isPersistent()) modulo.persist();
+
+        Disciplina disciplina = Disciplina.find("codigo", "DEMO-CONCLUSAO").firstResult();
+        if (disciplina == null) {
+            disciplina = new Disciplina();
+            disciplina.codigo = "DEMO-CONCLUSAO";
+        }
+        disciplina.nome = "Componente Final de Demonstracao";
+        disciplina.curso = curso;
+        disciplina.modulo = modulo;
+        disciplina.moduloOriginal = modulo;
+        disciplina.professorResponsavel = professor;
+        disciplina.cargaHoraria = 2;
+        disciplina.creditos = 1;
+        disciplina.tipoComponente = TipoComponenteCurricular.OBRIGATORIA;
+        disciplina.ementaResumo = "Componente preparado para demonstrar a conclusao do curso.";
+        disciplina.ativo = true;
+        if (!disciplina.isPersistent()) disciplina.persist();
+
+        AnoLetivo ano = AnoLetivo.find("ano", 2026).firstResult();
+        if (ano == null) {
+            ano = new AnoLetivo();
+            ano.ano = 2026;
+            ano.dataInicio = LocalDate.of(2026, 1, 1);
+            ano.dataFim = LocalDate.of(2026, 12, 31);
+            ano.status = StatusAnoLetivo.EM_ANDAMENTO;
+            ano.persist();
+        }
+        PeriodoLetivo periodo = PeriodoLetivo.find("anoLetivo = ?1 order by ordem", ano).firstResult();
+
+        Turma turma = Turma.find("nome", "Turma Demonstracao de Conclusao").firstResult();
+        if (turma == null) {
+            turma = new Turma();
+            turma.nome = "Turma Demonstracao de Conclusao";
+        }
+        turma.curso = curso;
+        turma.disciplina = disciplina;
+        turma.professor = professor;
+        turma.anoLetivo = ano;
+        turma.periodoLetivo = periodo;
+        turma.anoPeriodo = "2026";
+        turma.turno = "Noite";
+        turma.horario = "Demonstracao agendada";
+        turma.sala = "Sala Demonstrativa";
+        turma.quantidadeMaximaAlunos = 10;
+        turma.status = StatusTurma.EM_ANDAMENTO;
+        if (!turma.isPersistent()) turma.persist();
+
+        OfertaDisciplina oferta = OfertaDisciplina.find(
+                "turma = ?1 and disciplina = ?2", turma, disciplina).firstResult();
+        if (oferta == null) {
+            oferta = new OfertaDisciplina();
+            oferta.turma = turma;
+            oferta.disciplina = disciplina;
+            oferta.status = StatusOfertaDisciplina.EM_ANDAMENTO;
+        }
+        oferta.anoLetivo = ano;
+        oferta.periodoLetivo = periodo;
+        oferta.curso = curso;
+        oferta.modulo = modulo;
+        oferta.professor = professor;
+        oferta.vagas = 10;
+        oferta.horario = turma.horario;
+        oferta.sala = turma.sala;
+        oferta.cargaHorariaPrevista = 2;
+        oferta.dataInicio = LocalDate.of(2026, 7, 1);
+        oferta.dataFim = LocalDate.of(2026, 7, 31);
+        if (!oferta.isPersistent()) oferta.persist();
+
+        Usuario usuarioAluno = Usuario.find("email", "aluno.conclusao@sga.local").firstResult();
+        if (usuarioAluno == null) {
+            usuarioAluno = new Usuario();
+            usuarioAluno.email = "aluno.conclusao@sga.local";
+        }
+        usuarioAluno.nome = "Aluno Concluinte Demonstracao";
+        usuarioAluno.senhaHash = senhaService.criptografar("Aluno@123");
+        usuarioAluno.perfil = Perfil.ALUNO;
+        usuarioAluno.ativo = true;
+        if (!usuarioAluno.isPersistent()) usuarioAluno.persist();
+
+        Aluno aluno = Aluno.find("email", usuarioAluno.email).firstResult();
+        if (aluno == null) {
+            aluno = new Aluno();
+            aluno.email = usuarioAluno.email;
+        }
+        aluno.nome = usuarioAluno.nome;
+        aluno.status = StatusAluno.ATIVO;
+        aluno.dataIngresso = LocalDate.of(2026, 7, 1);
+        aluno.curso = curso;
+        aluno.usuario = usuarioAluno;
+        if (!aluno.isPersistent()) aluno.persist();
+
+        Matricula matriculaCurso = Matricula.find(
+                "aluno = ?1 and curso = ?2 and turma is null and disciplina is null", aluno, curso).firstResult();
+        if (matriculaCurso == null) {
+            matriculaCurso = new Matricula();
+            matriculaCurso.aluno = aluno;
+            matriculaCurso.curso = curso;
+            matriculaCurso.dataMatricula = LocalDate.of(2026, 7, 1);
+            matriculaCurso.status = StatusMatricula.EM_ANDAMENTO;
+            matriculaCurso.persist();
+        }
+
+        MatriculaDisciplina matricula = MatriculaDisciplina.find(
+                "aluno = ?1 and ofertaDisciplina = ?2", aluno, oferta).firstResult();
+        if (matricula == null) {
+            matricula = new MatriculaDisciplina();
+            matricula.aluno = aluno;
+            matricula.ofertaDisciplina = oferta;
+            matricula.curso = curso;
+            matricula.periodoLetivo = periodo;
+            matricula.dataMatricula = LocalDate.of(2026, 7, 1);
+            matricula.status = StatusMatriculaDisciplina.ATIVA;
+            matricula.persist();
+        }
+
+        AulaMinistrada aula = AulaMinistrada.find(
+                "ofertaDisciplina = ?1 and dataAula = ?2", oferta, LocalDate.of(2026, 7, 1)).firstResult();
+        if (aula == null) {
+            aula = new AulaMinistrada();
+            aula.ofertaDisciplina = oferta;
+            aula.dataAula = LocalDate.of(2026, 7, 1);
+            aula.persist();
+        }
+        aula.disciplina = disciplina;
+        aula.turma = turma;
+        aula.professor = professor;
+        aula.conteudoMinistrado = "Sintese final e encerramento do componente demonstrativo.";
+        aula.cargaHorariaAula = 2;
+
+        Frequencia frequencia = Frequencia.find(
+                "aula = ?1 and matriculaDisciplina = ?2", aula, matricula).firstResult();
+        if (frequencia == null) {
+            frequencia = new Frequencia();
+            frequencia.aula = aula;
+            frequencia.matriculaDisciplina = matricula;
+            frequencia.persist();
+        }
+        frequencia.aluno = aluno;
+        frequencia.status = StatusFrequencia.PRESENTE;
+        frequencia.presente = true;
+
+        Avaliacao avaliacao = Avaliacao.find(
+                "ofertaDisciplina = ?1 and nome = ?2", oferta, "Avaliacao Final Demonstrativa").firstResult();
+        if (avaliacao == null) {
+            avaliacao = new Avaliacao();
+            avaliacao.ofertaDisciplina = oferta;
+            avaliacao.nome = "Avaliacao Final Demonstrativa";
+        }
+        avaliacao.professor = professor;
+        avaliacao.ordem = 1;
+        avaliacao.data = LocalDate.of(2026, 7, 1);
+        avaliacao.notaMaxima = BigDecimal.TEN;
+        avaliacao.peso = BigDecimal.ONE;
+        if (!avaliacao.isPersistent()) avaliacao.persist();
+
+        NotaAvaliacao nota = NotaAvaliacao.find(
+                "avaliacao = ?1 and matriculaDisciplina = ?2", avaliacao, matricula).firstResult();
+        if (nota == null) {
+            nota = new NotaAvaliacao();
+            nota.avaliacao = avaliacao;
+            nota.matriculaDisciplina = matricula;
+        }
+        nota.aluno = aluno;
+        nota.nota = new BigDecimal("9.0");
+        nota.observacao = "Nota preparada para demonstracao da conclusao.";
+        if (!nota.isPersistent()) nota.persist();
     }
 
     private void garantirGradeMinisterial(Curso curso) {
