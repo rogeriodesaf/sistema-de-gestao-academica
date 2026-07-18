@@ -55,7 +55,8 @@ public class RelatorioResource {
                 HistoricoEscolar historico = historicoPorMatricula.get(matricula.id);
                 if (historico != null && historico.situacao == StatusHistorico.APROVADO) aprovados++;
                 if (historico != null && List.of(StatusHistorico.REPROVADO, StatusHistorico.REPROVADO_POR_NOTA,
-                        StatusHistorico.REPROVADO_POR_FREQUENCIA).contains(historico.situacao)) reprovados++;
+                        StatusHistorico.REPROVADO_POR_FREQUENCIA,
+                        StatusHistorico.REPROVADO_POR_NOTA_E_FREQUENCIA).contains(historico.situacao)) reprovados++;
                 BigDecimal nota = historico != null && historico.notaFinal != null
                         ? historico.notaFinal : matricula.notaFinal;
                 BigDecimal frequencia = historico != null && historico.frequenciaFinal != null
@@ -149,7 +150,8 @@ public class RelatorioResource {
                 "aprovados", HistoricoEscolar.count("situacao", StatusHistorico.APROVADO),
                 "reprovados", HistoricoEscolar.count("situacao in ?1", java.util.List.of(
                         StatusHistorico.REPROVADO, StatusHistorico.REPROVADO_POR_NOTA,
-                        StatusHistorico.REPROVADO_POR_FREQUENCIA)),
+                        StatusHistorico.REPROVADO_POR_FREQUENCIA,
+                        StatusHistorico.REPROVADO_POR_NOTA_E_FREQUENCIA)),
                 "pendentes", HistoricoEscolar.count("situacao", StatusHistorico.PENDENTE)
         );
     }

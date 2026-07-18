@@ -26,10 +26,15 @@ public class AcademicoService {
         if (oferta == null || aluno == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aluno ou oferta de disciplina nao encontrados");
         }
-        long jaMatriculado = MatriculaDisciplina.count("aluno = ?1 and ofertaDisciplina.disciplina = ?2 and status not in ?3",
-                aluno, oferta.disciplina, List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO));
-        if (jaMatriculado > 0) {
-            throw new ApiException(Response.Status.CONFLICT, "Aluno ja matriculado nesta disciplina");
+        MatriculaDisciplina existente = MatriculaDisciplina.find(
+                "aluno = ?1 and ofertaDisciplina = ?2 order by id", aluno, oferta).firstResult();
+        if (existente != null) {
+            String orientacao = existente.status == StatusMatriculaDisciplina.CANCELADO
+                    || existente.status == StatusMatriculaDisciplina.TRANCADO
+                    ? " Reative o registro existente para preservar o historico."
+                    : "";
+            throw new ApiException(Response.Status.CONFLICT,
+                    "O aluno ja possui matricula nesta oferta de disciplina." + orientacao);
         }
         Integer limiteVagas = oferta.vagas;
         if (limiteVagas != null) {
@@ -43,9 +48,12 @@ public class AcademicoService {
         matricula.ofertaDisciplina = oferta;
         matricula.curso = aluno.curso != null ? aluno.curso : oferta.curso;
         matricula.periodoLetivo = oferta.periodoLetivo;
-        matricula.status = matricula.status == null ? StatusMatriculaDisciplina.ATIVA : matricula.status;
+        matricula.status = StatusMatriculaDisciplina.ATIVA;
+        matricula.resultadoAcademico = ResultadoAcademico.EM_ANDAMENTO;
+        matricula.notaFinal = null;
+        matricula.frequenciaFinal = null;
+        matricula.dataConsolidacao = null;
         matricula.persist();
-        criarOuAtualizarHistorico(matricula);
         return matricula;
     }
 
@@ -85,7 +93,7 @@ public class AcademicoService {
         if (nota.id == null) {
             nota.persist();
         }
-        atualizarHistoricoPorNota(nota);
+        if (nota.ofertaDisciplina == null) atualizarHistoricoPorNota(nota);
         return nota;
     }
 
@@ -192,36 +200,6 @@ public class AcademicoService {
             historico.cargaHoraria = matricula.disciplina.cargaHoraria;
             historico.periodoCursado = matricula.turma.anoPeriodo;
             historico.persist();
-        }
-    }
-
-    private void criarOuAtualizarHistorico(MatriculaDisciplina matricula) {
-        OfertaDisciplina oferta = matricula.ofertaDisciplina;
-        HistoricoEscolar historico = HistoricoEscolar.find("matriculaDisciplina = ?1", matricula).firstResult();
-        if (historico == null) {
-            historico = HistoricoEscolar.find("aluno = ?1 and ofertaDisciplina = ?2", matricula.aluno, oferta).firstResult();
-        }
-        if (historico == null) {
-            historico = new HistoricoEscolar();
-            historico.aluno = matricula.aluno;
-            historico.matriculaDisciplina = matricula;
-            historico.ofertaDisciplina = oferta;
-            historico.turma = oferta.turma;
-            historico.curso = matricula.curso != null ? matricula.curso : oferta.curso;
-            historico.disciplina = oferta.disciplina;
-            historico.professorResponsavel = oferta.professor;
-            historico.cargaHoraria = oferta.cargaHorariaPrevista != null ? oferta.cargaHorariaPrevista : oferta.disciplina.cargaHoraria;
-            historico.periodoCursado = oferta.periodoLetivo == null ? null : oferta.periodoLetivo.nome;
-            historico.situacao = StatusHistorico.CURSANDO;
-            historico.notaFinal = matricula.notaFinal;
-            historico.frequenciaFinal = matricula.frequenciaFinal;
-            historico.persist();
-        } else {
-            historico.matriculaDisciplina = matricula;
-            historico.ofertaDisciplina = oferta;
-            historico.professorResponsavel = oferta.professor;
-            historico.notaFinal = matricula.notaFinal;
-            historico.frequenciaFinal = matricula.frequenciaFinal;
         }
     }
 

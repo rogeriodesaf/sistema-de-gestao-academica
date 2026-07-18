@@ -8,6 +8,7 @@ import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.entity.MatriculaDisciplina;
 import br.edu.sga.entity.OfertaDisciplina;
 import br.edu.sga.enums.Perfil;
+import br.edu.sga.enums.ResultadoAcademico;
 import br.edu.sga.enums.StatusFrequencia;
 import br.edu.sga.enums.StatusMatriculaDisciplina;
 import br.edu.sga.exception.ApiException;
@@ -277,10 +278,13 @@ public class AreaAlunoResource {
             if (historico.disciplina == null) continue;
             HistoricoItemDTO matricula = itens.get(historico.disciplina.id);
             itens.put(historico.disciplina.id, new HistoricoItemDTO(historico.periodoCursado,
-                    historico.ofertaDisciplina == null || historico.ofertaDisciplina.modulo == null ? null
+                    historico.moduloNome != null ? historico.moduloNome
+                            : historico.ofertaDisciplina == null || historico.ofertaDisciplina.modulo == null ? null
                             : historico.ofertaDisciplina.modulo.nome,
-                    historico.disciplina.nome, historico.disciplina.codigo, historico.cargaHoraria,
-                    historico.disciplina.creditos,
+                    historico.disciplinaNome != null ? historico.disciplinaNome : historico.disciplina.nome,
+                    historico.disciplinaCodigo != null ? historico.disciplinaCodigo : historico.disciplina.codigo,
+                    historico.cargaHoraria,
+                    historico.creditos != null ? historico.creditos : historico.disciplina.creditos,
                     historico.notaFinal == null && matricula != null ? matricula.nota() : historico.notaFinal,
                     historico.frequenciaFinal == null && matricula != null ? matricula.frequencia() : historico.frequenciaFinal,
                     historico.situacao == null ? null : historico.situacao.name()));
@@ -300,7 +304,8 @@ public class AreaAlunoResource {
         int pesos = 0;
         for (HistoricoItemDTO item : itens) {
             if (item.nota() == null || !List.of("APROVADO", "REPROVADO", "REPROVADO_POR_NOTA",
-                    "REPROVADO_POR_FREQUENCIA").contains(item.situacao())) continue;
+                    "REPROVADO_POR_FREQUENCIA", "REPROVADO_POR_NOTA_E_FREQUENCIA")
+                    .contains(item.situacao())) continue;
             int peso = item.creditos() == null || item.creditos() <= 0 ? 1 : item.creditos();
             soma = soma.add(item.nota().multiply(BigDecimal.valueOf(peso)));
             pesos += peso;
@@ -321,6 +326,10 @@ public class AreaAlunoResource {
     }
 
     private String situacaoMatricula(MatriculaDisciplina matricula) {
+        if (matricula.resultadoAcademico != null
+                && matricula.resultadoAcademico != ResultadoAcademico.EM_ANDAMENTO) {
+            return matricula.resultadoAcademico.name();
+        }
         return switch (matricula.status) {
             case CONCLUIDA, CONCLUIDO -> "APROVADO";
             case REPROVADO_POR_NOTA -> "REPROVADO_POR_NOTA";

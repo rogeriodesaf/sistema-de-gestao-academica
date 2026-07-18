@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "historicos_escolares")
@@ -45,4 +46,15 @@ public class HistoricoEscolar extends PanacheEntity {
     public StatusHistorico situacao = StatusHistorico.CURSANDO;
     @Column(name = "periodo_cursado")
     public String periodoCursado;
+    @Column(name = "disciplina_nome")
+    public String disciplinaNome;
+    @Column(name = "disciplina_codigo")
+    public String disciplinaCodigo;
+    @Column(name = "modulo_nome")
+    public String moduloNome;
+    public Integer creditos;
+    @Column(name = "professor_nome")
+    public String professorNome;
+    @Column(name = "data_homologacao")
+    public LocalDateTime dataHomologacao;
 }

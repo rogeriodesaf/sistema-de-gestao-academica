@@ -306,11 +306,12 @@ export class CadastroPage implements OnInit {
       return ['disciplina', 'professor', 'moduloOriginalOferta', 'modulo', 'turma', 'vagas', 'horario', 'sala', 'status'];
     }
     if (this.endpoint === 'matriculas-disciplinas') {
-      return ['aluno', 'curso', 'periodoLetivo', 'moduloOferta', 'ofertaDisciplina', 'dataMatricula', 'status', 'resultadoAcademico', 'observacoes'];
+      return ['aluno', 'curso', 'periodoLetivo', 'moduloOferta', 'turmaOferta', 'ofertaDisciplina',
+        'professorOferta', 'dataMatricula', 'status', 'resultadoAcademico', 'observacoes'];
     }
     if (this.endpoint === 'historicos') {
       return ['aluno', 'curso', 'disciplina', 'codigo', 'modulo', 'periodoCursado', 'cargaHoraria',
-        'creditos', 'notaFinal', 'frequenciaFinal', 'situacao', 'professor'];
+        'creditos', 'notaFinal', 'frequenciaFinal', 'situacao', 'professor', 'dataHomologacao'];
     }
     return Object.keys(registro).filter(chave => {
       const normalizada = chave.toLowerCase();
@@ -323,10 +324,19 @@ export class CadastroPage implements OnInit {
   }
 
   label(campo: string) {
+    if (this.endpoint === 'historicos') {
+      const labelsHistorico: Record<string, string> = {
+        periodoCursado: 'Período cursado', cargaHoraria: 'Carga horária', creditos: 'Créditos',
+        notaFinal: 'Média final', frequenciaFinal: 'Frequência final', situacao: 'Resultado acadêmico',
+        dataHomologacao: 'Data da homologação'
+      };
+      if (labelsHistorico[campo]) return labelsHistorico[campo];
+    }
     if (this.endpoint === 'matriculas-disciplinas') {
       const labelsMatricula: Record<string, string> = {
         aluno: 'Aluno', curso: 'Curso', periodoLetivo: 'Período Letivo', moduloOferta: 'Módulo',
-        ofertaDisciplina: 'Oferta da Disciplina', dataMatricula: 'Data da Matrícula',
+        turmaOferta: 'Turma', ofertaDisciplina: 'Oferta da Disciplina', professorOferta: 'Professor',
+        dataMatricula: 'Data da Matrícula',
         status: 'Situação da Matrícula', resultadoAcademico: 'Resultado Acadêmico', observacoes: 'Observações'
       };
       if (labelsMatricula[campo]) return labelsMatricula[campo];
@@ -452,10 +462,8 @@ export class CadastroPage implements OnInit {
       return complemento && !opcao.nome?.includes(complemento) ? `${opcao.nome} - ${complemento}` : opcao.nome;
     }
     if (opcao.disciplina && (opcao.modulo || opcao.anoLetivo || opcao.horario)) {
-      const modulo = opcao.modulo?.nome || 'Sem módulo';
-      const ano = opcao.anoLetivo?.ano || opcao.periodoLetivo?.anoLetivo?.ano || '';
-      const horario = opcao.horario ? ` — ${opcao.horario}` : '';
-      return `${opcao.disciplina.nome} — ${modulo}${ano ? '/' + ano : ''}${horario}`;
+      return [opcao.disciplina.nome, opcao.turma?.nome, opcao.horario]
+        .filter(Boolean).join(' — ');
     }
     const partes = [
       opcao.nome,
@@ -521,13 +529,53 @@ export class CadastroPage implements OnInit {
     if (this.endpoint === 'matriculas-disciplinas' && chave === 'moduloOferta') {
       return registro.ofertaDisciplina?.modulo?.nome || 'Sem módulo';
     }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'curso') {
+      return registro.ofertaDisciplina?.curso?.nome || registro.aluno?.curso?.nome || 'Aluno avulso';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'periodoLetivo') {
+      return registro.ofertaDisciplina?.periodoLetivo?.nome || 'Sem período específico';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'turmaOferta') {
+      return registro.ofertaDisciplina?.turma?.nome || 'Turma não informada';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'professorOferta') {
+      return registro.ofertaDisciplina?.professor?.nome || 'Professor não informado';
+    }
     if (this.endpoint === 'matriculas-disciplinas' && chave === 'status') {
-      return registro.status === 'TRANCADO' ? 'TRANCADA' : registro.status === 'CANCELADO' ? 'CANCELADA' : registro.status;
+      return registro.status === 'TRANCADO' ? 'Trancada' : registro.status === 'CANCELADO' ? 'Cancelada' : 'Ativa';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'resultadoAcademico') {
+      const resultados: Record<string, string> = {
+        EM_ANDAMENTO: 'Em andamento', APROVADO: 'Aprovado',
+        REPROVADO_POR_NOTA: 'Reprovado por nota',
+        REPROVADO_POR_FREQUENCIA: 'Reprovado por frequência',
+        REPROVADO_POR_NOTA_E_FREQUENCIA: 'Reprovado por nota e frequência'
+      };
+      return resultados[registro.resultadoAcademico] || registro.resultadoAcademico || 'Em andamento';
+    }
+    if (this.endpoint === 'historicos' && chave === 'situacao') {
+      return this.rotuloSituacao(registro.situacao);
+    }
+    if (this.endpoint === 'historicos' && chave === 'dataHomologacao') {
+      return registro.dataHomologacao ? new Date(registro.dataHomologacao).toLocaleString('pt-BR') : '-';
     }
     const valor = registro[chave];
     if (valor && typeof valor === 'object') return this.rotuloOpcao(valor);
     if (typeof valor === 'boolean') return valor ? 'Sim' : 'Nao';
     return valor ?? '';
+  }
+
+  rotuloSituacao(valor: string) {
+    if (!valor) return '-';
+    const rotulos: Record<string, string> = {
+      EM_ANDAMENTO: 'Em andamento', APROVADO: 'Aprovado',
+      REPROVADO_POR_NOTA: 'Reprovado por nota',
+      REPROVADO_POR_FREQUENCIA: 'Reprovado por frequência',
+      REPROVADO_POR_NOTA_E_FREQUENCIA: 'Reprovado por nota e frequência',
+      AGUARDANDO_HOMOLOGACAO: 'Aguardando homologação', CONCLUIDA: 'Homologado',
+      NAO_HOMOLOGADO: 'Não homologado', HOMOLOGADO: 'Homologado'
+    };
+    return rotulos[valor] || valor.replaceAll('_', ' ').toLowerCase();
   }
 
   enviarPdf(registro: any, event: Event) {

@@ -599,8 +599,8 @@ public class AreaProfessorResource {
     }
 
     private Long alunosMatriculados(OfertaDisciplina oferta) {
-        return MatriculaDisciplina.count("ofertaDisciplina = ?1 and status not in ?2", oferta,
-                List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO));
+        return MatriculaDisciplina.count("ofertaDisciplina = ?1 and status in ?2", oferta,
+                List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO));
     }
 
     private TurmaResumoDTO turmaResumo(br.edu.sga.entity.Turma turma) {
@@ -784,8 +784,8 @@ public class AreaProfessorResource {
     }
 
     private List<MatriculaDisciplina> matriculasDaOferta(OfertaDisciplina oferta) {
-        return MatriculaDisciplina.list("ofertaDisciplina = ?1 and status not in ?2 order by aluno.nome", oferta,
-                List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO));
+        return MatriculaDisciplina.list("ofertaDisciplina = ?1 and status in ?2 order by aluno.nome", oferta,
+                List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO));
     }
 
     private ResultadoAlunoDTO resultadoAluno(MatriculaDisciplina matricula,

@@ -1,7 +1,6 @@
 package br.edu.sga.service;
 
 import br.edu.sga.entity.Frequencia;
-import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.entity.MatriculaDisciplina;
 import br.edu.sga.entity.OfertaDisciplina;
 import br.edu.sga.enums.StatusFrequencia;
@@ -28,7 +27,7 @@ public class FrequenciaAcademicaService {
                                    long faltasJustificadas, BigDecimal percentualPresenca,
                                    BigDecimal percentualFaltas, String situacao) {}
     private record FrequenciaCalculo(Long alunoId, StatusFrequencia status, boolean presente,
-                                     String justificativa) {}
+                                     String justificativa, int cargaHoraria) {}
 
     @Transactional
     public List<ResumoFrequencia> recalcularOferta(OfertaDisciplina oferta) {
@@ -38,8 +37,6 @@ public class FrequenciaAcademicaService {
         for (MatriculaDisciplina matricula : matriculas) {
             ResumoFrequencia resumo = resumos.get(matricula.id);
             matricula.frequenciaFinal = resumo.percentualPresenca();
-            HistoricoEscolar.update("frequenciaFinal = ?1 where aluno = ?2 and ofertaDisciplina = ?3",
-                    resumo.percentualPresenca(), matricula.aluno, oferta);
         }
         return matriculas.stream().map(matricula -> resumos.get(matricula.id)).toList();
     }
@@ -51,11 +48,11 @@ public class FrequenciaAcademicaService {
     private List<ResumoFrequencia> calcular(OfertaDisciplina oferta, List<MatriculaDisciplina> matriculas) {
         long aulas = br.edu.sga.entity.AulaMinistrada.count("ofertaDisciplina", oferta);
         List<FrequenciaCalculo> frequencias = entityManager.createQuery("""
-                select f.aluno.id, f.status, f.presente, f.justificativa
+                select f.aluno.id, f.status, f.presente, f.justificativa, coalesce(f.aula.cargaHorariaAula, 1)
                 from Frequencia f where f.aula.ofertaDisciplina = :oferta
                 """, Object[].class).setParameter("oferta", oferta).getResultList().stream()
                 .map(item -> new FrequenciaCalculo((Long) item[0], (StatusFrequencia) item[1],
-                        (boolean) item[2], (String) item[3])).toList();
+                        (boolean) item[2], (String) item[3], ((Number) item[4]).intValue())).toList();
         Map<Long, List<FrequenciaCalculo>> porAluno = frequencias.stream()
                 .collect(Collectors.groupingBy(FrequenciaCalculo::alunoId));
 
@@ -65,8 +62,12 @@ public class FrequenciaAcademicaService {
             long justificadas = registros.stream().filter(this::justificada).count();
             long faltas = registros.size() - presencas;
             long chamadas = presencas + faltas;
-            BigDecimal percentualPresenca = percentual(presencas, chamadas);
-            BigDecimal percentualFaltas = percentual(faltas, chamadas);
+            long horasRegistradas = registros.stream().mapToLong(FrequenciaCalculo::cargaHoraria).sum();
+            long horasPresentes = registros.stream().filter(this::presente)
+                    .mapToLong(FrequenciaCalculo::cargaHoraria).sum();
+            long horasAusentes = horasRegistradas - horasPresentes;
+            BigDecimal percentualPresenca = percentual(horasPresentes, horasRegistradas);
+            BigDecimal percentualFaltas = percentual(horasAusentes, horasRegistradas);
             return new ResumoFrequencia(matricula.id, aulas, presencas, faltas, justificadas,
                     percentualPresenca, percentualFaltas, situacao(percentualPresenca, chamadas));
         }).toList();

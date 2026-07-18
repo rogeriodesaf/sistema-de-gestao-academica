@@ -243,6 +243,16 @@ public class DadosAcademicosIniciaisService {
         oferta.dataFim = LocalDate.of(2026, 7, 31);
         if (!oferta.isPersistent()) oferta.persist();
 
+        PlanoEnsino plano = PlanoEnsino.find("disciplina", disciplina).firstResult();
+        if (plano == null) {
+            plano = new PlanoEnsino();
+            plano.disciplina = disciplina;
+            plano.objetivos = "Consolidar os objetivos academicos do componente demonstrativo.";
+            plano.conteudoProgramatico = "Conteudo demonstrativo para validacao do fechamento.";
+            plano.metodologia = "Aula expositiva e avaliacao final.";
+            plano.persist();
+        }
+
         Usuario usuarioAluno = Usuario.find("email", "aluno.conclusao@sga.local").firstResult();
         if (usuarioAluno == null) {
             usuarioAluno = new Usuario();

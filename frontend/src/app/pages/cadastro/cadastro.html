@@ -92,7 +92,7 @@
           <input type="checkbox" [name]="'oferta-' + oferta.id" [(ngModel)]="ofertasSelecionadas[oferta.id]">
           <span>
             <strong>{{ oferta.disciplina?.nome }}</strong>
-            <small>{{ oferta.professor?.nome || 'Professor nao definido' }} - {{ oferta.horario || 'Horario nao definido' }} - {{ oferta.sala || 'Sala nao definida' }}</small>
+            <small>{{ oferta.turma?.nome || 'Turma não informada' }} — {{ oferta.professor?.nome || 'Professor não definido' }} — {{ oferta.horario || 'Horário não definido' }}</small>
           </span>
         </label>
       </section>
@@ -367,19 +367,23 @@
       </header>
       <div class="grade-detalhes">
         <article><strong>Situação da Matrícula</strong><span>{{ valor(matriculaVisualizada, 'status') }}</span></article>
-        <article><strong>Resultado Acadêmico</strong><span>{{ matriculaVisualizada.resultadoAcademico }}</span></article>
+        <article><strong>Resultado Acadêmico</strong><span>{{ valor(matriculaVisualizada, 'resultadoAcademico') }}</span></article>
         <article><strong>Data da Matrícula</strong><span>{{ matriculaVisualizada.dataMatricula | date:'dd/MM/yyyy' }}</span></article>
         <article><strong>Observações</strong><span>{{ matriculaVisualizada.observacoes || '-' }}</span></article>
       </div>
       <div *ngIf="desempenhoMatricula" class="card-bloco">
         <h2>Desempenho Acadêmico</h2>
+        <p><strong>Oferta:</strong> {{ desempenhoMatricula.oferta?.disciplina }} — {{ desempenhoMatricula.oferta?.turma }} — {{ desempenhoMatricula.oferta?.horario }}</p>
+        <p><strong>Professor:</strong> {{ desempenhoMatricula.professor || '-' }}</p>
         <p><strong>Média Final:</strong> {{ desempenhoMatricula.mediaFinal || '-' }}</p>
         <p><strong>Frequência:</strong> {{ desempenhoMatricula.frequenciaFinal === '' ? '-' : desempenhoMatricula.frequenciaFinal + '%' }}</p>
-        <p><strong>Situação:</strong> {{ desempenhoMatricula.situacao }}</p>
+        <p><strong>Resultado Acadêmico:</strong> {{ rotuloSituacao(desempenhoMatricula.resultadoAcademico) }}</p>
+        <p><strong>Situação do Diário:</strong> {{ rotuloSituacao(desempenhoMatricula.statusDiario) }}</p>
+        <p><strong>Homologação:</strong> {{ rotuloSituacao(desempenhoMatricula.statusHomologacao) }}</p>
         <h3>Avaliações</h3>
         <ul><li *ngFor="let avaliacao of desempenhoMatricula.avaliacoes">{{ avaliacao.nome }}: {{ avaliacao.nota ?? '-' }}</li></ul>
         <h3>Histórico da Disciplina</h3>
-        <p>{{ desempenhoMatricula.historico?.situacao || 'EM_ANDAMENTO' }} — {{ desempenhoMatricula.historico?.periodo || 'Período não informado' }}</p>
+        <p>{{ rotuloSituacao(desempenhoMatricula.historico?.situacao || 'EM_ANDAMENTO') }} — {{ desempenhoMatricula.historico?.periodo || 'Período não informado' }}</p>
       </div>
     </section>
   </div>
