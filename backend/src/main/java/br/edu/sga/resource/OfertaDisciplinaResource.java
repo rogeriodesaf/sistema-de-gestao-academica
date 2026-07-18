@@ -47,6 +47,7 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
     @Transactional
     @Override
     public OfertaDisciplina criar(@Valid OfertaDisciplina oferta) {
+        exigirGestaoAcademica();
         validarOferta(oferta, null);
         oferta.persist();
         return resumir(oferta);
@@ -57,6 +58,7 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
     @Transactional
     @Override
     public OfertaDisciplina atualizar(@PathParam("id") Long id, @Valid OfertaDisciplina oferta) {
+        exigirGestaoAcademica();
         OfertaDisciplina existente = buscar(id);
         validarAlteracaoStatus(existente, oferta);
         validarOferta(oferta, id);
@@ -208,21 +210,35 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
         }
         Turma turma = Turma.findById(oferta.turma.id);
         AnoLetivo anoLetivo = AnoLetivo.findById(oferta.anoLetivo.id);
+        PeriodoLetivo periodoLetivo = oferta.periodoLetivo == null || oferta.periodoLetivo.id == null
+                ? null : PeriodoLetivo.findById(oferta.periodoLetivo.id);
         Curso curso = oferta.curso == null || oferta.curso.id == null ? null : Curso.findById(oferta.curso.id);
         Modulo modulo = Modulo.findById(oferta.modulo.id);
         Disciplina disciplina = Disciplina.findById(oferta.disciplina.id);
         Professor professor = Professor.findById(oferta.professor.id);
         if (turma == null || anoLetivo == null || modulo == null || disciplina == null || professor == null
+                || oferta.periodoLetivo != null && oferta.periodoLetivo.id != null && periodoLetivo == null
                 || oferta.curso != null && oferta.curso.id != null && curso == null) {
             throw new ApiException(Response.Status.BAD_REQUEST,
                     "Turma, ano letivo, curso, modulo, disciplina ou professor nao encontrado");
         }
         oferta.turma = turma;
         oferta.anoLetivo = anoLetivo;
+        oferta.periodoLetivo = periodoLetivo;
         oferta.curso = curso;
         oferta.modulo = modulo;
         oferta.disciplina = disciplina;
         oferta.professor = professor;
+        if (turma.anoLetivo != null && !turma.anoLetivo.id.equals(anoLetivo.id)) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "A turma nao pertence ao ano letivo da oferta");
+        }
+        if (turma.periodoLetivo != null && (periodoLetivo == null
+                || !turma.periodoLetivo.id.equals(periodoLetivo.id))) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "A turma nao pertence ao periodo letivo da oferta");
+        }
+        if (turma.curso != null && (curso == null || !turma.curso.id.equals(curso.id))) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "A turma nao pertence ao curso de referencia da oferta");
+        }
         if (oferta.vagas == null || oferta.vagas <= 0) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Vagas obrigatorias");
         }
@@ -266,6 +282,23 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
         long duplicadas = OfertaDisciplina.count(consultaDuplicidade, parametros);
         if (duplicadas > 0) {
             throw new ApiException(Response.Status.CONFLICT, "Ja existe uma oferta desta disciplina no mesmo periodo, horario e sala");
+        }
+
+        String exclusaoAtual = idAtual == null ? "" : " and id <> ?5";
+        Object[] parametrosProfessor = idAtual == null
+                ? new Object[] { professor.id, oferta.horario.trim().toLowerCase(), anoLetivo.id, statusAtivos }
+                : new Object[] { professor.id, oferta.horario.trim().toLowerCase(), anoLetivo.id, statusAtivos, idAtual };
+        if (OfertaDisciplina.count("professor.id = ?1 and lower(horario) = ?2 and anoLetivo.id = ?3 and status in ?4"
+                + exclusaoAtual, parametrosProfessor) > 0) {
+            throw new ApiException(Response.Status.CONFLICT, "O professor ja possui uma oferta neste horario");
+        }
+
+        Object[] parametrosSala = idAtual == null
+                ? new Object[] { oferta.sala.trim().toLowerCase(), oferta.horario.trim().toLowerCase(), anoLetivo.id, statusAtivos }
+                : new Object[] { oferta.sala.trim().toLowerCase(), oferta.horario.trim().toLowerCase(), anoLetivo.id, statusAtivos, idAtual };
+        if (OfertaDisciplina.count("lower(sala) = ?1 and lower(horario) = ?2 and anoLetivo.id = ?3 and status in ?4"
+                + exclusaoAtual, parametrosSala) > 0) {
+            throw new ApiException(Response.Status.CONFLICT, "A sala ja esta ocupada neste horario");
         }
     }
 }

@@ -11,9 +11,18 @@
       Disciplina
       <select name="ofertaSelecionada" [ngModel]="ofertaSelecionadaId" (ngModelChange)="selecionarOferta($event)">
         <option [ngValue]="undefined">Selecione uma disciplina</option>
-        <option *ngFor="let oferta of ofertas" [ngValue]="oferta.id">
-          {{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}
-        </option>
+        <optgroup label="Em andamento" *ngIf="ofertasEmAndamento.length">
+          <option *ngFor="let oferta of ofertasEmAndamento" [ngValue]="oferta.id">{{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}</option>
+        </optgroup>
+        <optgroup label="Futuras" *ngIf="ofertasFuturas.length">
+          <option *ngFor="let oferta of ofertasFuturas" [ngValue]="oferta.id">{{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}</option>
+        </optgroup>
+        <optgroup label="Concluidas" *ngIf="ofertasConcluidas.length">
+          <option *ngFor="let oferta of ofertasConcluidas" [ngValue]="oferta.id">{{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}</option>
+        </optgroup>
+        <optgroup label="Canceladas (consulta)" *ngIf="ofertasCanceladas.length">
+          <option *ngFor="let oferta of ofertasCanceladas" [ngValue]="oferta.id">{{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}</option>
+        </optgroup>
       </select>
     </label>
 

@@ -15,6 +15,7 @@ import java.util.List;
 @ApplicationScoped
 public class AcademicoService {
     @Inject FrequenciaAcademicaService frequenciaAcademicaService;
+    @Inject ProfessorUsuarioService professorUsuarioService;
     @Transactional
     public MatriculaDisciplina matricularEmDisciplina(MatriculaDisciplina matricula) {
         if (matricula.aluno == null || matricula.ofertaDisciplina == null) {
@@ -30,8 +31,7 @@ public class AcademicoService {
         if (jaMatriculado > 0) {
             throw new ApiException(Response.Status.CONFLICT, "Aluno ja matriculado nesta disciplina");
         }
-        Integer limiteVagas = oferta.vagas != null ? oferta.vagas
-                : oferta.turma == null ? null : oferta.turma.quantidadeMaximaAlunos;
+        Integer limiteVagas = oferta.vagas;
         if (limiteVagas != null) {
             long ocupadas = MatriculaDisciplina.count("ofertaDisciplina = ?1 and status in ?2",
                     oferta, List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO));
@@ -41,7 +41,7 @@ public class AcademicoService {
         }
         matricula.aluno = aluno;
         matricula.ofertaDisciplina = oferta;
-        matricula.curso = aluno.curso != null ? aluno.curso : (oferta.curso != null ? oferta.curso : oferta.turma == null ? null : oferta.turma.curso);
+        matricula.curso = aluno.curso != null ? aluno.curso : oferta.curso;
         matricula.periodoLetivo = oferta.periodoLetivo;
         matricula.status = matricula.status == null ? StatusMatriculaDisciplina.ATIVA : matricula.status;
         matricula.persist();
@@ -121,30 +121,15 @@ public class AcademicoService {
         if (perfil != Perfil.PROFESSOR) {
             return;
         }
-        Professor professor = Professor.find("usuario.id", usuarioId).firstResult();
-        if (professor == null) {
-            throw new ApiException(Response.Status.FORBIDDEN, "Professor nao encontrado para o usuario logado");
+        Professor professor = professorUsuarioService.identificarProfessor(usuarioId);
+        if (oferta == null || oferta.id == null) {
+            throw new ApiException(Response.Status.FORBIDDEN,
+                    "Acesso docente exige uma oferta de disciplina vinculada ao professor");
         }
-        if (oferta != null) {
-            OfertaDisciplina ofertaCompleta = OfertaDisciplina.findById(oferta.id);
-            if (ofertaCompleta != null && mesmoProfessor(professor, ofertaCompleta.professor)) {
-                return;
-            }
-            if (ofertaCompleta != null && ofertaCompleta.disciplina != null && mesmoProfessor(professor, ofertaCompleta.disciplina.professorResponsavel)) {
-                return;
-            }
+        OfertaDisciplina ofertaCompleta = OfertaDisciplina.findById(oferta.id);
+        if (ofertaCompleta == null || !mesmoProfessor(professor, ofertaCompleta.professor)) {
+            throw new ApiException(Response.Status.FORBIDDEN, "Professor nao vinculado a esta oferta de disciplina");
         }
-        if (disciplina != null) {
-            Disciplina disciplinaCompleta = Disciplina.findById(disciplina.id);
-            if (disciplinaCompleta != null && mesmoProfessor(professor, disciplinaCompleta.professorResponsavel)) {
-                return;
-            }
-        }
-        if (disciplina != null && turma != null && VinculoProfessorDisciplinaTurma.count(
-                "professor = ?1 and disciplina.id = ?2 and turma.id = ?3", professor, disciplina.id, turma.id) > 0) {
-            return;
-        }
-        throw new ApiException(Response.Status.FORBIDDEN, "Professor nao vinculado a esta disciplina");
     }
 
     private boolean mesmoProfessor(Professor logado, Professor vinculado) {
@@ -222,7 +207,7 @@ public class AcademicoService {
             historico.matriculaDisciplina = matricula;
             historico.ofertaDisciplina = oferta;
             historico.turma = oferta.turma;
-            historico.curso = matricula.curso != null ? matricula.curso : oferta.curso != null ? oferta.curso : oferta.turma == null ? null : oferta.turma.curso;
+            historico.curso = matricula.curso != null ? matricula.curso : oferta.curso;
             historico.disciplina = oferta.disciplina;
             historico.professorResponsavel = oferta.professor;
             historico.cargaHoraria = oferta.cargaHorariaPrevista != null ? oferta.cargaHorariaPrevista : oferta.disciplina.cargaHoraria;

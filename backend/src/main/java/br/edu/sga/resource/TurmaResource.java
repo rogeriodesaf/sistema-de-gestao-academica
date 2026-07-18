@@ -1,6 +1,9 @@
 package br.edu.sga.resource;
 
 import br.edu.sga.dto.TurmaOpcaoDTO;
+import br.edu.sga.entity.AnoLetivo;
+import br.edu.sga.entity.Curso;
+import br.edu.sga.entity.PeriodoLetivo;
 import br.edu.sga.entity.Turma;
 import br.edu.sga.enums.StatusTurma;
 import br.edu.sga.exception.ApiException;
@@ -27,7 +30,7 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
     @Path("/opcoes")
     public List<TurmaOpcaoDTO> listarOpcoes(@QueryParam("anoLetivoId") Long anoLetivoId,
                                             @QueryParam("cursoId") Long cursoId,
-                                            @QueryParam("moduloId") Long moduloId) {
+                                            @QueryParam("periodoLetivoId") Long periodoLetivoId) {
         List<StatusTurma> disponiveis = List.of(
                 StatusTurma.PLANEJADA, StatusTurma.ABERTA, StatusTurma.EM_ANDAMENTO);
         StringBuilder consulta = new StringBuilder("status in :status");
@@ -38,12 +41,12 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
             parametros.put("anoLetivoId", anoLetivoId);
         }
         if (cursoId != null) {
-            consulta.append(" and (curso.id = :cursoId or (curso is null and disciplina.curso.id = :cursoId))");
+            consulta.append(" and (curso.id = :cursoId or curso is null)");
             parametros.put("cursoId", cursoId);
         }
-        if (moduloId != null) {
-            consulta.append(" and disciplina.modulo.id = :moduloId");
-            parametros.put("moduloId", moduloId);
+        if (periodoLetivoId != null) {
+            consulta.append(" and periodoLetivo.id = :periodoLetivoId");
+            parametros.put("periodoLetivoId", periodoLetivoId);
         }
         consulta.append(" order by nome");
         return Turma.<Turma>find(consulta.toString(), parametros)
@@ -54,7 +57,12 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
     @Transactional
     @Override
     public Turma criar(@Valid Turma turma) {
+        exigirGestaoAcademica();
         validarTurma(turma, null);
+        turma.disciplina = null;
+        turma.professor = null;
+        turma.horario = null;
+        turma.sala = null;
         turma.persist();
         return turma;
     }
@@ -64,8 +72,13 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
     @Transactional
     @Override
     public Turma atualizar(@PathParam("id") Long id, @Valid Turma turma) {
-        buscar(id);
+        exigirGestaoAcademica();
+        Turma existente = buscar(id);
         validarTurma(turma, id);
+        turma.disciplina = existente.disciplina;
+        turma.professor = existente.professor;
+        turma.horario = existente.horario;
+        turma.sala = existente.sala;
         turma.id = id;
         return getEntityManager().merge(turma);
     }
@@ -74,47 +87,28 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
         if (turma == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Turma obrigatoria");
         }
-        if (turma.disciplina == null || turma.disciplina.id == null) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Disciplina obrigatoria");
-        }
-        if (turma.professor == null || turma.professor.id == null) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Professor obrigatorio");
-        }
-        if (turma.horario == null || turma.horario.isBlank()) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Horario obrigatorio");
-        }
-        if (turma.sala == null || turma.sala.isBlank()) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Sala obrigatoria");
-        }
         if (turma.quantidadeMaximaAlunos == null || turma.quantidadeMaximaAlunos <= 0) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Quantidade maxima de alunos obrigatoria");
         }
+        if (turma.anoLetivo == null || turma.anoLetivo.id == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Ano letivo obrigatorio");
+        }
+        AnoLetivo anoLetivo = AnoLetivo.findById(turma.anoLetivo.id);
+        Curso curso = turma.curso == null || turma.curso.id == null ? null : Curso.findById(turma.curso.id);
+        PeriodoLetivo periodo = turma.periodoLetivo == null || turma.periodoLetivo.id == null
+                ? null : PeriodoLetivo.findById(turma.periodoLetivo.id);
+        if (anoLetivo == null || turma.curso != null && turma.curso.id != null && curso == null
+                || turma.periodoLetivo != null && turma.periodoLetivo.id != null && periodo == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Ano, periodo ou curso da turma nao encontrado");
+        }
+        if (periodo != null && periodo.anoLetivo != null && !anoLetivo.id.equals(periodo.anoLetivo.id)) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "O periodo letivo nao pertence ao ano informado");
+        }
+        turma.anoLetivo = anoLetivo;
+        turma.curso = curso;
+        turma.periodoLetivo = periodo;
         if (turma.status == null) {
             turma.status = StatusTurma.ABERTA;
-        }
-
-        List<StatusTurma> statusAtivos = List.of(StatusTurma.PLANEJADA, StatusTurma.ABERTA, StatusTurma.EM_ANDAMENTO);
-        String sufixoEdicao = idAtual == null ? "" : " and id <> ?4";
-        Object[] parametrosProfessor = idAtual == null
-                ? new Object[] { turma.professor.id, turma.horario.trim().toLowerCase(), statusAtivos }
-                : new Object[] { turma.professor.id, turma.horario.trim().toLowerCase(), statusAtivos, idAtual };
-        long conflitosProfessor = Turma.count(
-                "professor.id = ?1 and lower(horario) = ?2 and status in ?3" + sufixoEdicao,
-                parametrosProfessor
-        );
-        if (conflitosProfessor > 0) {
-            throw new ApiException(Response.Status.CONFLICT, "O professor ja possui uma turma neste horario.");
-        }
-
-        Object[] parametrosSala = idAtual == null
-                ? new Object[] { turma.sala.trim().toLowerCase(), turma.horario.trim().toLowerCase(), statusAtivos }
-                : new Object[] { turma.sala.trim().toLowerCase(), turma.horario.trim().toLowerCase(), statusAtivos, idAtual };
-        long conflitosSala = Turma.count(
-                "lower(sala) = ?1 and lower(horario) = ?2 and status in ?3" + sufixoEdicao,
-                parametrosSala
-        );
-        if (conflitosSala > 0) {
-            throw new ApiException(Response.Status.CONFLICT, "A sala ja esta ocupada neste horario.");
         }
     }
 }

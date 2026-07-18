@@ -47,6 +47,11 @@ export class AreaProfessorPage implements OnInit {
   private posicaoListaAulas = 0;
   private chamadasPorAula = new Map<number, any[]>();
 
+  get ofertasFuturas() { return this.ofertas.filter(oferta => oferta.status === 'PLANEJADA'); }
+  get ofertasEmAndamento() { return this.ofertas.filter(oferta => ['ABERTA', 'EM_ANDAMENTO'].includes(oferta.status)); }
+  get ofertasConcluidas() { return this.ofertas.filter(oferta => ['ENCERRADA', 'CONCLUIDA'].includes(oferta.status)); }
+  get ofertasCanceladas() { return this.ofertas.filter(oferta => oferta.status === 'CANCELADA'); }
+
   constructor(
     private api: ApiService,
     private auth: AuthService,

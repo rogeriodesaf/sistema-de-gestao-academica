@@ -23,9 +23,16 @@
       <h3>1. Ano letivo</h3>
       <label>
         Ano letivo
-        <select name="anoLetivo" [(ngModel)]="formulario['anoLetivo.id']" (ngModelChange)="formulario['periodoLetivo.id'] = ''; formulario['modulo.id'] = ''">
+        <select name="anoLetivo" [(ngModel)]="formulario['anoLetivo.id']" (ngModelChange)="formulario['periodoLetivo.id'] = ''; formulario['modulo.id'] = ''; filtrosTurmaAlterados()">
           <option value="">Selecione</option>
           <option *ngFor="let ano of anosLetivos" [ngValue]="ano.id">{{ rotulo(ano) }}</option>
+        </select>
+      </label>
+      <label>
+        Periodo letivo
+        <select name="periodoLetivo" [(ngModel)]="formulario['periodoLetivo.id']" (ngModelChange)="filtrosTurmaAlterados()">
+          <option value="">Sem periodo especifico</option>
+          <option *ngFor="let periodo of periodosLetivos" [ngValue]="periodo.id">{{ rotulo(periodo) }}</option>
         </select>
       </label>
     </section>
@@ -36,7 +43,7 @@
         Disciplina
         <select name="disciplina" [(ngModel)]="formulario['disciplina.id']">
           <option value="">Selecione</option>
-          <option *ngFor="let disciplina of disciplinas" [ngValue]="disciplina.id">{{ rotulo(disciplina) }}</option>
+          <option *ngFor="let disciplina of disciplinasDoModulo()" [ngValue]="disciplina.id">{{ rotulo(disciplina) }}</option>
         </select>
       </label>
 
@@ -52,7 +59,7 @@
       <h3>3. Modulo de oferta</h3>
       <label>
         Modulo de oferta
-        <select name="modulo" [(ngModel)]="formulario['modulo.id']">
+        <select name="modulo" [(ngModel)]="formulario['modulo.id']" (ngModelChange)="moduloAlterado()">
           <option value="">Selecione</option>
           <option *ngFor="let modulo of modulosDoAno()" [ngValue]="modulo.id">{{ rotulo(modulo) }}</option>
         </select>
@@ -73,17 +80,43 @@
         </select>
       </label>
       <label>
-        Nome da turma/oferta
-        <input name="nomeTurma" [(ngModel)]="formulario['nomeTurma']" placeholder="Hermeneutica I - Noite - 2026">
-      </label>
-      <label>
         Curso de referencia
-        <select name="cursoReferencia" [(ngModel)]="formulario['curso.id']">
+        <select name="cursoReferencia" [(ngModel)]="formulario['curso.id']" (ngModelChange)="filtrosTurmaAlterados()">
           <option value="">Sem curso de referencia</option>
           <option *ngFor="let curso of cursos" [ngValue]="curso.id">{{ rotulo(curso) }}</option>
         </select>
         <small>Alunos de outros cursos ou alunos avulsos poderao ser matriculados nesta oferta.</small>
       </label>
+      <label>
+        Turma academica
+        <select name="turma" [(ngModel)]="formulario['turma.id']">
+          <option value="">Criar nova turma administrativa</option>
+          <option *ngFor="let turma of turmas" [ngValue]="turma.id">{{ rotulo(turma) }}</option>
+        </select>
+      </label>
+      <p class="aviso-planejamento" *ngIf="!turmas.length">
+        Nenhuma turma cadastrada. Cadastre uma Turma Acadêmica antes de criar ofertas.
+      </p>
+      <ng-container *ngIf="!formulario['turma.id']">
+        <label>
+          Nome da nova turma
+          <input name="nomeTurma" [(ngModel)]="formulario['nomeTurma']" placeholder="Turma Noite - 2026">
+        </label>
+        <label>
+          Turno da nova turma
+          <select name="turnoTurma" [(ngModel)]="formulario['turnoTurma']">
+            <option value="">Nao informado</option>
+            <option value="Manha">Manha</option>
+            <option value="Tarde">Tarde</option>
+            <option value="Noite">Noite</option>
+          </select>
+        </label>
+        <label>
+          Capacidade da nova turma
+          <input type="number" min="1" name="capacidadeTurma" [(ngModel)]="formulario['capacidadeTurma']">
+          <small>Capacidade administrativa; nao altera as vagas desta oferta.</small>
+        </label>
+      </ng-container>
     </section>
 
     <section class="planejamento-bloco">

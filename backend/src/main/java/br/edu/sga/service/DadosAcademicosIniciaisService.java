@@ -106,6 +106,10 @@ public class DadosAcademicosIniciaisService {
         periodo.status = StatusPeriodoLetivo.ABERTO;
         periodo.persist();
 
+        turma.anoLetivo = ano;
+        turma.periodoLetivo = periodo;
+        turma.quantidadeMaximaAlunos = 30;
+
         OfertaDisciplina ofertaHermeneutica = oferta(turma, ano, periodo, curso, modulo, hermeneutica, professor, "Segunda 19h", "Sala 1");
         oferta(turma, ano, periodo, curso, modulo, homiletica, professor, "Terca 19h", "Sala 1");
         oferta(turma, ano, periodo, curso, modulo, apologetica, professor, "Quarta 19h", "Sala 1");
@@ -210,14 +214,10 @@ public class DadosAcademicosIniciaisService {
             turma.nome = "Turma Demonstracao de Conclusao";
         }
         turma.curso = curso;
-        turma.disciplina = disciplina;
-        turma.professor = professor;
         turma.anoLetivo = ano;
         turma.periodoLetivo = periodo;
         turma.anoPeriodo = "2026";
         turma.turno = "Noite";
-        turma.horario = "Demonstracao agendada";
-        turma.sala = "Sala Demonstrativa";
         turma.quantidadeMaximaAlunos = 10;
         turma.status = StatusTurma.EM_ANDAMENTO;
         if (!turma.isPersistent()) turma.persist();
@@ -236,8 +236,8 @@ public class DadosAcademicosIniciaisService {
         oferta.modulo = modulo;
         oferta.professor = professor;
         oferta.vagas = 10;
-        oferta.horario = turma.horario;
-        oferta.sala = turma.sala;
+        oferta.horario = "Demonstracao agendada";
+        oferta.sala = "Sala Demonstrativa";
         oferta.cargaHorariaPrevista = 2;
         oferta.dataInicio = LocalDate.of(2026, 7, 1);
         oferta.dataFim = LocalDate.of(2026, 7, 31);
@@ -541,6 +541,8 @@ public class DadosAcademicosIniciaisService {
         Turma turma = turmaHomologacao(curso, disciplina, professor);
         AnoLetivo ano = anoLetivoHomologacao(turma);
         PeriodoLetivo periodo = periodoLetivoHomologacao(ano);
+        turma.anoLetivo = ano;
+        turma.periodoLetivo = periodo;
         OfertaDisciplina oferta = ofertaHomologacao(turma, ano, periodo, curso, modulo, disciplina, professor);
 
         turma.anoLetivo = ano;
@@ -629,12 +631,8 @@ public class DadosAcademicosIniciaisService {
             turma.nome = "Hermenêutica I - Noite - 2026";
         }
         turma.curso = curso;
-        turma.disciplina = disciplina;
-        turma.professor = professor;
         turma.anoPeriodo = "2026";
         turma.turno = "Noite";
-        turma.horario = "Segunda-feira, 19h";
-        turma.sala = "Sala 1";
         turma.quantidadeMaximaAlunos = turma.quantidadeMaximaAlunos == null ? 30 : turma.quantidadeMaximaAlunos;
         turma.status = StatusTurma.EM_ANDAMENTO;
         if (!turma.isPersistent()) {

@@ -75,8 +75,8 @@ public class AreaProfessorResource {
     public record PessoaResumoDTO(Long id, String nome, String email) {}
     public record ModuloResumoDTO(Long id, String nome) {}
     public record PeriodoResumoDTO(Long id, String nome) {}
-    public record TurmaResumoDTO(Long id, String nome, String turno, String horario, String sala) {}
-    public record DisciplinaResumoDTO(Long id, String nome, String codigo, Integer cargaHoraria, PessoaResumoDTO professorResponsavel) {}
+    public record TurmaResumoDTO(Long id, String nome, String turno) {}
+    public record DisciplinaResumoDTO(Long id, String nome, String codigo, Integer cargaHoraria) {}
     public record OfertaProfessorDTO(Long id, TurmaResumoDTO turma, DisciplinaResumoDTO disciplina, ModuloResumoDTO modulo,
                                      PeriodoResumoDTO periodoLetivo, PessoaResumoDTO professor, String horario, String sala,
                                      Integer cargaHorariaPrevista, Integer cargaHorariaMinistrada, String status,
@@ -120,10 +120,9 @@ public class AreaProfessorResource {
         Professor professor = professorLogadoObrigatorio();
         List<Object[]> linhas = entityManager.createQuery("""
                 select o.id,
-                       t.id, t.nome, t.turno, t.horario, t.sala,
+                       t.id, t.nome, t.turno,
                        d.id, d.nome, d.codigo, d.cargaHoraria,
-                       dr.id, dr.nome, dr.email,
-                       coalesce(op.id, dr.id), coalesce(op.nome, dr.nome), coalesce(op.email, dr.email),
+                       op.id, op.nome, op.email,
                        mo.id, mo.nome, pe.id, pe.nome,
                        o.horario, o.sala, o.cargaHorariaPrevista, o.cargaHorariaMinistrada, o.status,
                        o.motivoReabertura, o.dataEncerramento,
@@ -131,15 +130,14 @@ public class AreaProfessorResource {
                 from OfertaDisciplina o
                 join o.turma t
                 join o.disciplina d
-                left join d.professorResponsavel dr
-                left join o.professor op
+                join o.professor op
                 left join o.modulo mo
                 left join o.periodoLetivo pe
                 left join MatriculaDisciplina m on m.ofertaDisciplina = o and m.status in :statusMatricula
                 where op.id = :professorId
-                group by o.id, t.id, t.nome, t.turno, t.horario, t.sala,
+                group by o.id, t.id, t.nome, t.turno,
                          d.id, d.nome, d.codigo, d.cargaHoraria,
-                         dr.id, dr.nome, dr.email, op.id, op.nome, op.email,
+                         op.id, op.nome, op.email,
                          mo.id, mo.nome, pe.id, pe.nome,
                          o.horario, o.sala, o.cargaHorariaPrevista, o.cargaHorariaMinistrada, o.status,
                          o.motivoReabertura, o.dataEncerramento
@@ -296,7 +294,7 @@ public class AreaProfessorResource {
         validarAvaliacao(dto, oferta, null);
         Avaliacao avaliacao = new Avaliacao();
         avaliacao.ofertaDisciplina = oferta;
-        avaliacao.professor = professorDaOferta(oferta);
+        avaliacao.professor = oferta.professor;
         preencherAvaliacao(avaliacao, dto);
         avaliacao.persist();
         return avaliacaoResumo(avaliacao);
@@ -550,23 +548,18 @@ public class AreaProfessorResource {
         return oferta;
     }
 
-    private Professor professorDaOferta(OfertaDisciplina oferta) {
-        return oferta.professor != null ? oferta.professor : oferta.disciplina.professorResponsavel;
-    }
-
     private boolean mesmoProfessor(Professor logado, Professor vinculado) {
         return logado != null && vinculado != null && logado.id != null && logado.id.equals(vinculado.id);
     }
 
     private OfertaProfessorDTO ofertaResumo(OfertaDisciplina oferta) {
-        Professor professor = professorDaOferta(oferta);
         return new OfertaProfessorDTO(
                 oferta.id,
                 turmaResumo(oferta.turma),
                 disciplinaResumo(oferta.disciplina),
                 oferta.modulo == null ? null : new ModuloResumoDTO(oferta.modulo.id, oferta.modulo.nome),
                 oferta.periodoLetivo == null ? null : new PeriodoResumoDTO(oferta.periodoLetivo.id, oferta.periodoLetivo.nome),
-                pessoaResumo(professor),
+                pessoaResumo(oferta.professor),
                 oferta.horario,
                 oferta.sala,
                 oferta.cargaHorariaPrevista,
@@ -579,25 +572,22 @@ public class AreaProfessorResource {
     }
 
     private OfertaProfessorDTO ofertaResumoProjetado(Object[] linha) {
-        PessoaResumoDTO responsavel = linha[10] == null ? null
-                : new PessoaResumoDTO((Long) linha[10], (String) linha[11], (String) linha[12]);
-        PessoaResumoDTO professor = linha[13] == null ? null
-                : new PessoaResumoDTO((Long) linha[13], (String) linha[14], (String) linha[15]);
+        PessoaResumoDTO professor = new PessoaResumoDTO((Long) linha[8], (String) linha[9], (String) linha[10]);
         return new OfertaProfessorDTO(
                 (Long) linha[0],
-                new TurmaResumoDTO((Long) linha[1], (String) linha[2], (String) linha[3], (String) linha[4], (String) linha[5]),
-                new DisciplinaResumoDTO((Long) linha[6], (String) linha[7], (String) linha[8], (Integer) linha[9], responsavel),
-                linha[16] == null ? null : new ModuloResumoDTO((Long) linha[16], (String) linha[17]),
-                linha[18] == null ? null : new PeriodoResumoDTO((Long) linha[18], (String) linha[19]),
+                new TurmaResumoDTO((Long) linha[1], (String) linha[2], (String) linha[3]),
+                new DisciplinaResumoDTO((Long) linha[4], (String) linha[5], (String) linha[6], (Integer) linha[7]),
+                linha[11] == null ? null : new ModuloResumoDTO((Long) linha[11], (String) linha[12]),
+                linha[13] == null ? null : new PeriodoResumoDTO((Long) linha[13], (String) linha[14]),
                 professor,
+                (String) linha[15],
+                (String) linha[16],
+                (Integer) linha[17],
+                (Integer) linha[18],
+                linha[19] == null ? null : linha[19].toString(),
+                ((Number) linha[22]).longValue(),
                 (String) linha[20],
-                (String) linha[21],
-                (Integer) linha[22],
-                (Integer) linha[23],
-                linha[24] == null ? null : linha[24].toString(),
-                ((Number) linha[27]).longValue(),
-                (String) linha[25],
-                (LocalDateTime) linha[26]
+                (LocalDateTime) linha[21]
         );
     }
 
@@ -615,7 +605,7 @@ public class AreaProfessorResource {
 
     private TurmaResumoDTO turmaResumo(br.edu.sga.entity.Turma turma) {
         if (turma == null) return null;
-        return new TurmaResumoDTO(turma.id, turma.nome, turma.turno, turma.horario, turma.sala);
+        return new TurmaResumoDTO(turma.id, turma.nome, turma.turno);
     }
 
     private DisciplinaResumoDTO disciplinaResumo(br.edu.sga.entity.Disciplina disciplina) {
@@ -624,8 +614,7 @@ public class AreaProfessorResource {
                 disciplina.id,
                 disciplina.nome,
                 disciplina.codigo,
-                disciplina.cargaHoraria,
-                pessoaResumo(disciplina.professorResponsavel)
+                disciplina.cargaHoraria
         );
     }
 
@@ -689,7 +678,7 @@ public class AreaProfessorResource {
         aula.ofertaDisciplina = oferta;
         aula.disciplina = oferta.disciplina;
         aula.turma = oferta.turma;
-        aula.professor = professorDaOferta(oferta);
+        aula.professor = oferta.professor;
         aula.dataAula = data;
         aula.conteudoMinistrado = conteudo;
         aula.observacoes = textoOpcional(observacoes);

@@ -1,7 +1,7 @@
 <section class="painel">
   <app-page-header
     titulo="Turmas"
-    subtitulo="Gerencie turmas academicas como a oferta real de uma disciplina, com professor, horario, sala, vagas e situacao."
+    subtitulo="Gerencie os agrupamentos administrativos de alunos por ano, periodo, curso de referencia e turno."
   />
 
   <form class="formulario card-bloco" (ngSubmit)="salvar()">
@@ -13,28 +13,20 @@
     </div>
 
     <label>
-      Disciplina
-      <select name="disciplina" [(ngModel)]="formulario['disciplina.id']" (ngModelChange)="sugerirNome()">
-        <option value="">Selecione</option>
-        <option *ngFor="let disciplina of disciplinas" [ngValue]="disciplina.id">{{ disciplina.nome }} {{ disciplina.codigo ? '- ' + disciplina.codigo : '' }}</option>
-      </select>
-    </label>
-
-    <label>
-      Professor
-      <select name="professor" [(ngModel)]="formulario['professor.id']">
-        <option value="">Selecione</option>
-        <option *ngFor="let professor of professores" [ngValue]="professor.id">{{ professor.nome }}</option>
-      </select>
-    </label>
-
-    <label>
       Curso de referencia
       <select name="curso" [(ngModel)]="formulario['curso.id']">
         <option value="">Sem curso de referencia</option>
         <option *ngFor="let curso of cursos" [ngValue]="curso.id">{{ curso.nome }}</option>
       </select>
       <small>Esta turma podera receber alunos de outros cursos e alunos matriculados apenas em disciplinas avulsas.</small>
+    </label>
+
+    <label>
+      Periodo letivo
+      <select name="periodoLetivo" [(ngModel)]="formulario['periodoLetivo.id']">
+        <option value="">Sem periodo especifico</option>
+        <option *ngFor="let periodo of periodosLetivos" [ngValue]="periodo.id">{{ periodo.nome }}</option>
+      </select>
     </label>
 
     <label>
@@ -61,16 +53,6 @@
     </label>
 
     <label>
-      Dia e horario
-      <input name="horario" [(ngModel)]="formulario['horario']" placeholder="Segunda 19h">
-    </label>
-
-    <label>
-      Sala
-      <input name="sala" [(ngModel)]="formulario['sala']" placeholder="Sala 02">
-    </label>
-
-    <label>
       Quantidade maxima de alunos
       <input type="number" min="1" name="quantidadeMaximaAlunos" [(ngModel)]="formulario['quantidadeMaximaAlunos']">
     </label>
@@ -88,6 +70,7 @@
     <label>
       Situacao
       <select name="status" [(ngModel)]="formulario['status']">
+        <option value="PLANEJADA">Planejada</option>
         <option value="ABERTA">Aberta</option>
         <option value="EM_ANDAMENTO">Em andamento</option>
         <option value="ENCERRADA">Encerrada</option>
@@ -111,7 +94,7 @@
 
   <div class="vazio" *ngIf="carregando">
     <h2>Carregando turmas</h2>
-    <p>Buscando disciplinas, professores, modulos de oferta e capacidade das turmas.</p>
+    <p>Buscando os dados administrativos e a capacidade das turmas.</p>
   </div>
 
   <section class="tabela card-bloco" *ngIf="!carregando && !erroCarregamento && turmas.length">
@@ -126,11 +109,11 @@
       <thead>
         <tr>
           <th>Nome</th>
-          <th>Disciplina</th>
-          <th>Professor</th>
-          <th>Horario</th>
-          <th>Sala</th>
-          <th>Vagas</th>
+          <th>Curso</th>
+          <th>Ano</th>
+          <th>Periodo</th>
+          <th>Turno</th>
+          <th>Capacidade disponivel</th>
           <th>Alunos</th>
           <th>Situacao</th>
           <th>Acoes</th>
@@ -139,10 +122,10 @@
       <tbody>
         <tr *ngFor="let turma of turmas">
           <td><strong>{{ turma.nome }}</strong></td>
-          <td>{{ turma.disciplina?.nome || 'Disciplina nao definida' }}</td>
-          <td>{{ turma.professor?.nome || 'Professor nao definido' }}</td>
-          <td>{{ turma.horario || 'Horario nao definido' }}</td>
-          <td>{{ turma.sala || 'Sala nao definida' }}</td>
+          <td>{{ turma.curso?.nome || 'Multicurso' }}</td>
+          <td>{{ turma.anoLetivo?.ano || turma.anoPeriodo || 'Nao informado' }}</td>
+          <td>{{ turma.periodoLetivo?.nome || 'Nao especifico' }}</td>
+          <td>{{ turma.turno || 'Nao informado' }}</td>
           <td>{{ vagasDisponiveis(turma) }}</td>
           <td>
             <span class="badge-ocupacao" [class.lotada]="lotada(turma)">

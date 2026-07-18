@@ -436,6 +436,11 @@ export class CadastroPage implements OnInit {
     if (campo === 'status') return this.opcoesStatus();
     if (campo === 'tipo') return [{ id: 'MODULO', nome: 'Modulo' }, { id: 'SEMESTRE', nome: 'Semestre' }, { id: 'BIMESTRE', nome: 'Bimestre' }];
     if (campo === 'turma.id' && this.endpoint === 'ofertas-disciplinas') return this.turmasCompativeis();
+    if (campo === 'disciplina.id' && this.endpoint === 'ofertas-disciplinas') {
+      const moduloId = Number(this.formulario['modulo.id']);
+      return (this.opcoes[campo] || []).filter(disciplina => !moduloId
+        || disciplina.modulo?.id === moduloId || disciplina.moduloOriginal?.id === moduloId);
+    }
     return this.opcoes[campo] || [];
   }
 
@@ -465,15 +470,22 @@ export class CadastroPage implements OnInit {
   }
 
   campoOpcaoAlterado(campo: string) {
-    if (this.endpoint !== 'ofertas-disciplinas'
-        || !['anoLetivo.id', 'curso.id', 'modulo.id'].includes(campo)) return;
-    this.carregarTurmas();
+    if (this.endpoint !== 'ofertas-disciplinas') return;
+    if (campo === 'modulo.id') {
+      const disponiveis = this.opcoesCampo('disciplina.id');
+      if (this.formulario['disciplina.id']
+          && !disponiveis.some(item => item.id === Number(this.formulario['disciplina.id']))) {
+        this.formulario['disciplina.id'] = '';
+      }
+      return;
+    }
+    if (['anoLetivo.id', 'periodoLetivo.id', 'curso.id'].includes(campo)) this.carregarTurmas();
   }
 
   private turmasCompativeis() {
     const anoId = Number(this.formulario['anoLetivo.id']);
     const cursoId = Number(this.formulario['curso.id']);
-    const moduloId = Number(this.formulario['modulo.id']);
+    const periodoId = Number(this.formulario['periodoLetivo.id']);
     const anoSelecionado = (this.opcoes['anoLetivo.id'] || []).find(ano => ano.id === anoId)?.ano;
     return (this.opcoes['turma.id'] || []).filter(turma => {
       const anoCompativel = !anoId
@@ -481,8 +493,8 @@ export class CadastroPage implements OnInit {
         || (!turma.anoLetivoId && (!turma.ano && !turma.anoPeriodo
           || String(turma.ano || turma.anoPeriodo).includes(String(anoSelecionado))));
       const cursoCompativel = !cursoId || !turma.cursoId || turma.cursoId === cursoId;
-      const moduloCompativel = !moduloId || !turma.moduloId || turma.moduloId === moduloId;
-      return anoCompativel && cursoCompativel && moduloCompativel;
+      const periodoCompativel = !periodoId || turma.periodoLetivoId === periodoId;
+      return anoCompativel && cursoCompativel && periodoCompativel;
     });
   }
 
@@ -993,7 +1005,7 @@ export class CadastroPage implements OnInit {
     const filtros: Record<string, string> = {
       anoLetivoId: 'anoLetivo.id',
       cursoId: 'curso.id',
-      moduloId: 'modulo.id'
+      periodoLetivoId: 'periodoLetivo.id'
     };
     for (const [parametro, campo] of Object.entries(filtros)) {
       const valor = this.formulario[campo];

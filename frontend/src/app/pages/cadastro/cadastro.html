@@ -92,7 +92,7 @@
           <input type="checkbox" [name]="'oferta-' + oferta.id" [(ngModel)]="ofertasSelecionadas[oferta.id]">
           <span>
             <strong>{{ oferta.disciplina?.nome }}</strong>
-            <small>{{ oferta.professor?.nome || oferta.disciplina?.professorResponsavel?.nome || 'Professor nao definido' }} - {{ oferta.horario || 'Horario nao definido' }} - {{ oferta.sala || 'Sala nao definida' }}</small>
+            <small>{{ oferta.professor?.nome || 'Professor nao definido' }} - {{ oferta.horario || 'Horario nao definido' }} - {{ oferta.sala || 'Sala nao definida' }}</small>
           </span>
         </label>
       </section>

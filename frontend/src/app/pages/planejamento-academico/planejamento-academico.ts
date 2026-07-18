@@ -42,7 +42,7 @@ export class PlanejamentoAcademicoPage implements OnInit {
       disciplinas: this.api.listar('disciplinas'),
       professores: this.api.listar('professores'),
       modulos: this.api.listar('modulos'),
-      turmas: this.api.listar('turmas'),
+      turmas: this.api.obter('turmas/opcoes'),
       cursos: this.api.listar('cursos'),
       anosLetivos: this.api.listar('anos-letivos'),
       periodosLetivos: this.api.listar('periodos-letivos')
@@ -76,10 +76,12 @@ export class PlanejamentoAcademicoPage implements OnInit {
 
     this.salvando = true;
     this.mensagem = '';
-    const turmaPayload = this.montarTurma();
-    const turmaRequest = this.formulario['turma.id']
-      ? this.api.atualizar('turmas', Number(this.formulario['turma.id']), turmaPayload)
-      : this.api.salvar('turmas', turmaPayload);
+    if (this.formulario['turma.id']) {
+      this.salvarOferta({ id: Number(this.formulario['turma.id']) });
+      return;
+    }
+
+    const turmaRequest = this.api.salvar('turmas', this.montarTurma());
 
     turmaRequest.subscribe({
       next: (turma: any) => this.salvarOferta(turma),
@@ -119,16 +121,19 @@ export class PlanejamentoAcademicoPage implements OnInit {
       'modulo.id': oferta.modulo?.id || '',
       'professor.id': oferta.professor?.id || '',
       'turma.id': oferta.turma?.id || '',
-      nomeTurma: oferta.turma?.nome || '',
-      'curso.id': oferta.curso?.id || oferta.turma?.curso?.id || '',
-      horario: oferta.horario || oferta.turma?.horario || '',
-      sala: oferta.sala || oferta.turma?.sala || '',
-      vagas: oferta.vagas || oferta.turma?.quantidadeMaximaAlunos || '',
-      dataInicio: oferta.dataInicio || oferta.turma?.dataInicio || '',
-      dataFim: oferta.dataFim || oferta.turma?.dataTermino || '',
+      nomeTurma: '',
+      turnoTurma: '',
+      capacidadeTurma: 30,
+      'curso.id': oferta.curso?.id || '',
+      horario: oferta.horario || '',
+      sala: oferta.sala || '',
+      vagas: oferta.vagas || '',
+      dataInicio: oferta.dataInicio || '',
+      dataFim: oferta.dataFim || '',
       cargaHorariaPrevista: oferta.cargaHorariaPrevista || oferta.disciplina?.cargaHoraria || '',
       status: oferta.status || 'ABERTA'
     };
+    this.carregarTurmas();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -150,6 +155,45 @@ export class PlanejamentoAcademicoPage implements OnInit {
   disciplinaSelecionada() {
     const id = Number(this.formulario['disciplina.id']);
     return this.disciplinas.find(item => item.id === id);
+  }
+
+  disciplinasDoModulo() {
+    const moduloId = Number(this.formulario['modulo.id']);
+    return this.disciplinas.filter(disciplina => !moduloId
+      || disciplina.modulo?.id === moduloId || disciplina.moduloOriginal?.id === moduloId);
+  }
+
+  moduloAlterado() {
+    const selecionada = Number(this.formulario['disciplina.id']);
+    if (selecionada && !this.disciplinasDoModulo().some(disciplina => disciplina.id === selecionada)) {
+      this.formulario['disciplina.id'] = '';
+    }
+  }
+
+  filtrosTurmaAlterados() {
+    this.formulario['turma.id'] = '';
+    this.carregarTurmas();
+  }
+
+  carregarTurmas() {
+    const parametros = new URLSearchParams();
+    const filtros: Record<string, string> = {
+      anoLetivoId: 'anoLetivo.id',
+      periodoLetivoId: 'periodoLetivo.id',
+      cursoId: 'curso.id'
+    };
+    for (const [parametro, campo] of Object.entries(filtros)) {
+      const valor = this.formulario[campo];
+      if (valor !== undefined && valor !== '') parametros.set(parametro, String(valor));
+    }
+    const sufixo = parametros.size ? `?${parametros.toString()}` : '';
+    this.api.obter(`turmas/opcoes${sufixo}`).subscribe({
+      next: turmas => this.turmas = turmas || [],
+      error: () => {
+        this.turmas = [];
+        this.mensagem = 'Nao foi possivel carregar as turmas academicas.';
+      }
+    });
   }
 
   moduloOfertaSelecionado() {
@@ -198,6 +242,8 @@ export class PlanejamentoAcademicoPage implements OnInit {
       'professor.id': '',
       'turma.id': '',
       nomeTurma: '',
+      turnoTurma: '',
+      capacidadeTurma: 30,
       'curso.id': '',
       horario: '',
       sala: '',
@@ -213,16 +259,13 @@ export class PlanejamentoAcademicoPage implements OnInit {
     return {
       id: this.formulario['turma.id'] ? Number(this.formulario['turma.id']) : undefined,
       nome: this.formulario['nomeTurma'],
-      disciplina: { id: Number(this.formulario['disciplina.id']) },
-      professor: { id: Number(this.formulario['professor.id']) },
       curso: this.formulario['curso.id'] ? { id: Number(this.formulario['curso.id']) } : undefined,
-      turno: '',
-      horario: this.formulario['horario'],
-      sala: this.formulario['sala'],
-      quantidadeMaximaAlunos: Number(this.formulario['vagas']),
-      dataInicio: this.formulario['dataInicio'] || undefined,
-      dataTermino: this.formulario['dataFim'] || undefined,
-      status: this.statusTurma()
+      anoLetivo: { id: Number(this.formulario['anoLetivo.id']) },
+      periodoLetivo: this.formulario['periodoLetivo.id']
+        ? { id: Number(this.formulario['periodoLetivo.id']) } : undefined,
+      turno: this.formulario['turnoTurma'] || undefined,
+      quantidadeMaximaAlunos: Number(this.formulario['capacidadeTurma']),
+      status: 'PLANEJADA'
     };
   }
 
@@ -251,19 +294,14 @@ export class PlanejamentoAcademicoPage implements OnInit {
     if (!this.formulario['disciplina.id']) return 'Disciplina obrigatoria.';
     if (!this.formulario['modulo.id']) return 'Modulo de oferta obrigatorio.';
     if (!this.formulario['professor.id']) return 'Professor obrigatorio.';
-    if (!this.formulario['nomeTurma']) return 'Nome da turma/oferta obrigatorio.';
+    if (!this.formulario['turma.id'] && !this.formulario['nomeTurma']) return 'Nome da nova turma obrigatorio.';
+    if (!this.formulario['turma.id'] && (!this.formulario['capacidadeTurma']
+        || Number(this.formulario['capacidadeTurma']) <= 0)) return 'Capacidade da nova turma obrigatoria.';
     if (!this.formulario['horario']) return 'Horario obrigatorio.';
     if (!this.formulario['sala']) return 'Sala obrigatoria.';
     if (!this.formulario['vagas'] || Number(this.formulario['vagas']) <= 0) return 'Vagas obrigatorias.';
     if (!this.formulario['status']) return 'Situacao obrigatoria.';
     return '';
-  }
-
-  private statusTurma() {
-    if (this.formulario['status'] === 'ENCERRADA') return 'ENCERRADA';
-    if (this.formulario['status'] === 'CANCELADA') return 'CANCELADA';
-    if (this.formulario['status'] === 'EM_ANDAMENTO') return 'EM_ANDAMENTO';
-    return 'PLANEJADA';
   }
 
   private aplicarEdicaoDaUrl() {
