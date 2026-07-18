@@ -115,10 +115,6 @@ export class AreaProfessorPage implements OnInit {
     this.novaAula = this.formularioAulaInicial();
     this.novaAvaliacao = this.formularioAvaliacaoInicial();
     this.pendenciasEncerramento = [];
-    if (this.ofertaSelecionadaId) {
-      this.carregarAvaliacoes();
-      this.carregarArquivos();
-    }
   }
 
   carregarAlunos() {
@@ -141,12 +137,7 @@ export class AreaProfessorPage implements OnInit {
           this.atualizarOfertaSelecionada();
         }
         this.alunos = Array.isArray(diario?.matriculas) ? diario.matriculas : [];
-        const frequencias = Array.isArray(diario?.frequencias) ? diario.frequencias : [];
-        this.aulas = (Array.isArray(diario?.aulas) ? diario.aulas : []).map((aula: any) => ({
-          ...aula,
-          chamadaPreenchida: this.alunos.length > 0
-            && frequencias.filter((frequencia: any) => frequencia.aula?.id === aula.id).length >= this.alunos.length
-        }));
+        this.aulas = Array.isArray(diario?.aulas) ? diario.aulas : [];
         this.carregandoAlunos = false;
         this.alunosCarregados = true;
         this.carregarComplementos();
@@ -156,7 +147,7 @@ export class AreaProfessorPage implements OnInit {
         this.alunos = [];
         this.carregandoAlunos = false;
         this.alunosCarregados = true;
-        this.mensagem = err?.error?.mensagem || 'Nao foi possivel carregar os alunos da disciplina.';
+        this.mensagem = err?.error?.mensagem || 'Não foi possível carregar os alunos da oferta.';
         this.changeDetector.detectChanges();
       }
     });
@@ -179,14 +170,14 @@ export class AreaProfessorPage implements OnInit {
       next: (resposta: any) => {
         this.pendenciasEncerramento = resposta?.pendencias || [];
         if (this.pendenciasEncerramento.length) {
-          this.mostrarMensagem(resposta.mensagem || 'O diario possui pendencias.', 'erro');
+          this.mostrarMensagem(resposta.mensagem || 'O diário possui pendências.', 'erro');
           return;
         }
         this.ofertaSelecionada = { ...this.ofertaSelecionada, status: resposta.status };
         this.atualizarOfertaSelecionada();
-        this.mostrarMensagem(resposta.mensagem || 'Diario encerrado.', 'sucesso');
+        this.mostrarMensagem(resposta.mensagem || 'Diário encerrado.', 'sucesso');
       },
-      error: err => this.mostrarMensagem(err?.error?.mensagem || 'Nao foi possivel encerrar o diario.', 'erro')
+      error: err => this.mostrarMensagem(err?.error?.mensagem || 'Não foi possível encerrar o diário.', 'erro')
     });
   }
 
@@ -201,11 +192,11 @@ export class AreaProfessorPage implements OnInit {
       return;
     }
     if (!this.novaAula.dataAula || !this.novaAula.conteudoMinistrado.trim()) {
-      this.mostrarMensagem('Informe a data e o conteudo ministrado.', 'erro');
+      this.mostrarMensagem('Informe a data e o conteúdo ministrado.', 'erro');
       return;
     }
     if (!this.novaAula.cargaHorariaAula || this.novaAula.cargaHorariaAula <= 0) {
-      this.mostrarMensagem('A carga horaria deve ser maior que zero.', 'erro');
+      this.mostrarMensagem('A carga horária deve ser maior que zero.', 'erro');
       return;
     }
 
@@ -222,7 +213,7 @@ export class AreaProfessorPage implements OnInit {
       },
       error: err => {
         this.salvandoAula = false;
-        this.mostrarMensagem(err?.error?.mensagem || 'Nao foi possivel registrar a aula.', 'erro');
+        this.mostrarMensagem(err?.error?.mensagem || 'Não foi possível registrar a aula.', 'erro');
         this.changeDetector.detectChanges();
       }
     });
@@ -246,13 +237,13 @@ export class AreaProfessorPage implements OnInit {
         this.chamadasPorAula.set(aula.id, this.chamada.map(item => ({ ...item })));
         this.carregandoChamada = false;
         if (!this.chamada.length) {
-          this.mostrarMensagem('Nao ha alunos matriculados para realizar a chamada.', 'erro');
+          this.mostrarMensagem('Não há alunos matriculados para realizar a chamada.', 'erro');
         }
         this.changeDetector.detectChanges();
       },
       error: err => {
         this.carregandoChamada = false;
-        this.mostrarMensagem(err?.error?.mensagem || 'Nao foi possivel abrir a chamada.', 'erro');
+        this.mostrarMensagem(err?.error?.mensagem || 'Não foi possível abrir a chamada.', 'erro');
         this.changeDetector.detectChanges();
       }
     });
@@ -275,7 +266,7 @@ export class AreaProfessorPage implements OnInit {
       return;
     }
     if (!this.chamada.length) {
-      this.mostrarMensagem('Nao ha alunos matriculados para realizar a chamada.', 'erro');
+      this.mostrarMensagem('Não há alunos matriculados para realizar a chamada.', 'erro');
       return;
     }
 
@@ -296,12 +287,12 @@ export class AreaProfessorPage implements OnInit {
           : aula);
         this.carregarResultados();
         this.voltarParaAulas();
-        this.mostrarMensagem((resposta as any)?.mensagem || 'Aula e chamada salvas com sucesso.', 'sucesso');
+        this.mostrarMensagem((resposta as any)?.mensagem || 'Chamada salva com sucesso.', 'sucesso');
         this.changeDetector.detectChanges();
       },
       error: err => {
         this.salvandoChamada = false;
-        this.mostrarMensagem(err?.error?.mensagem || 'Nao foi possivel salvar a chamada.', 'erro');
+        this.mostrarMensagem(err?.error?.mensagem || 'Não foi possível salvar a chamada.', 'erro');
         this.changeDetector.detectChanges();
       }
     });
@@ -360,7 +351,11 @@ export class AreaProfessorPage implements OnInit {
     this.carregandoNotas = true;
     this.api.buscarAcao('professor/avaliacoes', avaliacao.id, 'notas').subscribe({
       next: notas => {
-        this.notasAvaliacao = Array.isArray(notas) ? notas : [];
+        this.notasAvaliacao = (Array.isArray(notas) ? notas : []).map((item: any) => ({
+          ...item,
+          notaOriginal: item.nota,
+          observacaoOriginal: item.observacao || null
+        }));
         this.carregandoNotas = false;
         this.changeDetector.detectChanges();
       },
@@ -375,10 +370,13 @@ export class AreaProfessorPage implements OnInit {
     if (!this.avaliacaoSelecionada?.id || this.salvandoNotas) return;
     const avaliacaoId = this.avaliacaoSelecionada.id;
     const notas = this.notasAvaliacao
-      .filter(item => item.nota !== null && item.nota !== undefined && item.nota !== '')
+      .filter(item => item.nota !== null && item.nota !== undefined && item.nota !== ''
+        && ((item.notaOriginal === null || item.notaOriginal === undefined || item.notaOriginal === '')
+          || Number(item.nota) !== Number(item.notaOriginal)
+          || (item.observacao || null) !== item.observacaoOriginal))
       .map(item => ({ matriculaId: item.matriculaId, nota: Number(item.nota), observacao: item.observacao || null }));
     if (!notas.length) {
-      this.mostrarMensagem('Informe ao menos uma nota.', 'erro');
+      this.mostrarMensagem('Nenhuma nota foi alterada.', 'erro');
       return;
     }
     this.salvandoNotas = true;
@@ -492,6 +490,8 @@ export class AreaProfessorPage implements OnInit {
   }
 
   private carregarComplementos() {
+    this.carregarAvaliacoes();
+    this.carregarArquivos();
     this.carregarResultados();
   }
 
@@ -530,6 +530,23 @@ export class AreaProfessorPage implements OnInit {
 
   statusTexto(status: string) {
     return ({ PRESENTE: 'Presente', AUSENTE: 'Ausente', JUSTIFICADO: 'Justificado' } as Record<string, string>)[status] || status;
+  }
+
+  statusOfertaTexto(status: string) {
+    return ({
+      PLANEJADA: 'Planejada', ABERTA: 'Aberta', EM_ANDAMENTO: 'Em andamento',
+      AGUARDANDO_HOMOLOGACAO: 'Aguardando homologação', ENCERRADA: 'Encerrada',
+      CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada'
+    } as Record<string, string>)[status] || status;
+  }
+
+  resultadoTexto(situacao: string) {
+    return ({
+      EM_ANDAMENTO: 'Em andamento', APROVADO: 'Aprovado',
+      REPROVADO_POR_NOTA: 'Reprovado por nota',
+      REPROVADO_POR_FREQUENCIA: 'Reprovado por frequência',
+      REPROVADO_POR_NOTA_E_FREQUENCIA: 'Reprovado por nota e frequência'
+    } as Record<string, string>)[situacao] || situacao;
   }
 
   private mostrarMensagem(texto: string, tipo: 'sucesso' | 'erro') {
