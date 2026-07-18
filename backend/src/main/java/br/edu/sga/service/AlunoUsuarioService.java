@@ -53,7 +53,7 @@ public class AlunoUsuarioService {
                 .page(0, 2).list();
         if (candidatos.size() > 1) {
             throw new ApiException(Response.Status.CONFLICT,
-                    "Mais de um cadastro de aluno possui o e-mail do usuario");
+                    "Mais de um cadastro de aluno possui o e-mail do usuário");
         }
         if (candidatos.size() == 1) candidatos.getFirst().usuario = usuario;
     }
@@ -61,14 +61,14 @@ public class AlunoUsuarioService {
     private void validarVinculo(Aluno aluno, Usuario usuario) {
         if (usuario == null || usuario.perfil != Perfil.ALUNO) {
             throw new ApiException(Response.Status.BAD_REQUEST,
-                    "O cadastro deve ser vinculado a um usuario com perfil ALUNO");
+                    "O cadastro deve ser vinculado a um usuário com perfil de aluno");
         }
         long outrosVinculos = aluno.id == null
                 ? Aluno.count("usuario", usuario)
                 : Aluno.count("usuario = ?1 and id <> ?2", usuario, aluno.id);
         if (outrosVinculos > 0) {
             throw new ApiException(Response.Status.CONFLICT,
-                    "O usuario ja esta vinculado a outro cadastro de aluno");
+                    "O usuário já está vinculado a outro cadastro de aluno");
         }
     }
 
@@ -78,6 +78,6 @@ public class AlunoUsuarioService {
 
     private ApiException cadastroNaoVinculado() {
         return new ApiException(Response.Status.NOT_FOUND,
-                "Cadastro de aluno nao vinculado ao usuario autenticado");
+                "Cadastro de aluno não vinculado ao usuário autenticado");
     }
 }

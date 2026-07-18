@@ -7,10 +7,12 @@ import br.edu.sga.entity.Frequencia;
 import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.entity.MatriculaDisciplina;
 import br.edu.sga.entity.OfertaDisciplina;
+import br.edu.sga.entity.PlanoEnsino;
 import br.edu.sga.enums.Perfil;
 import br.edu.sga.enums.ResultadoAcademico;
 import br.edu.sga.enums.StatusFrequencia;
 import br.edu.sga.enums.StatusMatriculaDisciplina;
+import br.edu.sga.enums.StatusOfertaDisciplina;
 import br.edu.sga.exception.ApiException;
 import br.edu.sga.service.FrequenciaAcademicaService;
 import br.edu.sga.service.HistoricoPdfService;
@@ -21,7 +23,6 @@ import br.edu.sga.service.ResultadoAcademicoService;
 import br.edu.sga.service.ValidacaoHistoricoService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -39,6 +40,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,18 +63,27 @@ public class AreaAlunoResource {
                             String moduloAtual, String periodoAtual, String status,
                             IntegralizacaoCursoService.IntegralizacaoDTO integralizacao) {}
     public record DisciplinaDTO(Long ofertaId, String nome, String codigo, String turma, String professor,
-                                String modulo, String periodo, Integer cargaHoraria, String horario,
-                                String sala, String status, BigDecimal media, BigDecimal frequencia,
-                                String situacao) {}
+                                String modulo, String periodo, Integer cargaHoraria, Integer creditos,
+                                String horario, String sala, String situacaoMatricula,
+                                String resultadoAcademico, String statusOferta, String statusDiario,
+                                BigDecimal media, BigDecimal frequencia, boolean resultadoDefinitivo) {}
     public record FrequenciaDTO(long aulasMinistradas, long presencas, long faltas, long justificadas,
                                 BigDecimal percentualPresenca, BigDecimal percentualFaltas,
                                 BigDecimal frequenciaMinima, String situacao) {}
     public record AulaDTO(LocalDate data, String conteudo, Integer cargaHoraria,
-                          String status, String observacao) {}
+                          String status, String observacoes) {}
     public record ArquivoDTO(Long id, String titulo, String nome, String vinculo,
                              String referencia, Long tamanho, java.time.LocalDateTime enviadoEm) {}
+    public record PlanoEnsinoDTO(Long id, String objetivos, String ementa, String conteudoProgramatico,
+                                 String metodologia, String criteriosAvaliacao, String bibliografiaBasica,
+                                 String bibliografiaComplementar, String arquivoNome, Long arquivoTamanho,
+                                 java.time.LocalDateTime atualizadoEm) {}
+    public record DetalheDisciplinaDTO(DisciplinaDTO disciplina, FrequenciaDTO frequencia,
+                                       List<AulaDTO> aulas, ResultadoAcademicoService.Resultado resultado,
+                                       PlanoEnsinoDTO plano, List<ArquivoDTO> arquivos) {}
+    public record PortalAlunoDTO(PerfilDTO perfil, List<DisciplinaDTO> disciplinas) {}
     public record HistoricoItemDTO(String periodo, String modulo, String disciplina, String codigo,
-                                   Integer cargaHoraria, Integer creditos, BigDecimal nota,
+                                   Integer cargaHoraria, Integer creditos, String professor, BigDecimal nota,
                                    BigDecimal frequencia, String situacao) {}
     public record ProgressoDTO(long disciplinasPrevistas, long disciplinasConcluidas,
                                int cargaHorariaPrevista, int cargaHorariaConcluida,
@@ -85,6 +96,15 @@ public class AreaAlunoResource {
                                Map<String, List<HistoricoItemDTO>> porPeriodo, ProgressoDTO progresso) {}
 
     @GET
+    @Path("/portal")
+    public PortalAlunoDTO portal() {
+        Aluno aluno = alunoLogado();
+        List<MatriculaDisciplina> matriculas = matriculas(aluno);
+        return new PortalAlunoDTO(perfilDto(aluno, matriculas),
+                matriculas.stream().map(item -> disciplinaDto(item, null, null)).toList());
+    }
+
+    @GET
     @Path("/me")
     public PerfilDTO perfil() {
         return perfilDto(alunoLogado());
@@ -94,13 +114,26 @@ public class AreaAlunoResource {
     @Path("/disciplinas")
     public List<DisciplinaDTO> disciplinas() {
         Aluno aluno = alunoLogado();
-        return matriculas(aluno).stream().map(item -> disciplinaDto(item, false)).toList();
+        return matriculas(aluno).stream().map(item -> disciplinaDto(item, null, null)).toList();
     }
 
     @GET
     @Path("/disciplinas/{ofertaId}")
     public DisciplinaDTO disciplina(@PathParam("ofertaId") Long ofertaId) {
-        return disciplinaDto(matriculaPermitida(ofertaId), true);
+        MatriculaDisciplina matricula = matriculaPermitida(ofertaId);
+        var resumo = resumoFrequencia(matricula);
+        return disciplinaDto(matricula, resultadoService.calcularPreliminar(matricula, resumo), resumo);
+    }
+
+    @GET
+    @Path("/disciplinas/{ofertaId}/detalhes")
+    public DetalheDisciplinaDTO detalhes(@PathParam("ofertaId") Long ofertaId) {
+        MatriculaDisciplina matricula = matriculaPermitida(ofertaId);
+        var resumo = resumoFrequencia(matricula);
+        var resultado = resultadoService.calcularPreliminar(matricula, resumo);
+        return new DetalheDisciplinaDTO(
+                disciplinaDto(matricula, resultado, resumo), frequenciaDto(resumo), aulasDto(matricula),
+                resultado, planoDto(matricula.ofertaDisciplina), arquivosDto(matricula.ofertaDisciplina));
     }
 
     @GET
@@ -108,41 +141,48 @@ public class AreaAlunoResource {
     public FrequenciaDTO frequencia(@PathParam("ofertaId") Long ofertaId) {
         MatriculaDisciplina matricula = matriculaPermitida(ofertaId);
         var resumo = resumoFrequencia(matricula);
-        if (resumo == null) return new FrequenciaDTO(0, 0, 0, 0, null, null,
-                frequenciaMinima, "SEM_CHAMADAS");
-        return new FrequenciaDTO(resumo.aulasMinistradas(), resumo.presencas(), resumo.faltas(),
-                resumo.faltasJustificadas(), resumo.percentualPresenca(), resumo.percentualFaltas(),
-                frequenciaMinima, resumo.situacao());
+        return frequenciaDto(resumo);
     }
 
     @GET
     @Path("/disciplinas/{ofertaId}/aulas")
     public List<AulaDTO> aulas(@PathParam("ofertaId") Long ofertaId) {
         MatriculaDisciplina matricula = matriculaPermitida(ofertaId);
-        List<AulaMinistrada> aulas = AulaMinistrada.list(
-                "ofertaDisciplina = ?1 order by dataAula desc, id desc", matricula.ofertaDisciplina);
-        return aulas.stream().map(aula -> {
-            Frequencia registro = Frequencia.find("aula = ?1 and aluno = ?2", aula, matricula.aluno).firstResult();
-            String status = registro == null ? "NAO_REGISTRADA" : statusFrequencia(registro);
-            return new AulaDTO(aula.dataAula, aula.conteudoMinistrado, aula.cargaHorariaAula,
-                    status, registro == null ? null : registro.observacao);
-        }).toList();
+        return aulasDto(matricula);
     }
 
     @GET
     @Path("/disciplinas/{ofertaId}/avaliacoes")
     public ResultadoAcademicoService.Resultado avaliacoes(@PathParam("ofertaId") Long ofertaId) {
         MatriculaDisciplina matricula = matriculaPermitida(ofertaId);
-        return resultadoService.calcular(matricula, resumoFrequencia(matricula));
+        return resultadoService.calcularPreliminar(matricula, resumoFrequencia(matricula));
     }
 
     @GET
     @Path("/disciplinas/{ofertaId}/arquivos")
     public List<ArquivoDTO> arquivos(@PathParam("ofertaId") Long ofertaId) {
         MatriculaDisciplina matricula = matriculaPermitida(ofertaId);
-        return ArquivoProfessor.<ArquivoProfessor>list(
-                "ofertaDisciplina = ?1 order by dataEnvio desc", matricula.ofertaDisciplina)
-                .stream().map(this::arquivoDto).toList();
+        return arquivosDto(matricula.ofertaDisciplina);
+    }
+
+    @GET
+    @Path("/disciplinas/{ofertaId}/plano")
+    public PlanoEnsinoDTO plano(@PathParam("ofertaId") Long ofertaId) {
+        return planoDto(matriculaPermitida(ofertaId).ofertaDisciplina);
+    }
+
+    @GET
+    @Path("/disciplinas/{ofertaId}/plano/pdf")
+    @Produces("application/pdf")
+    public Response abrirPlano(@PathParam("ofertaId") Long ofertaId) {
+        return respostaPlano(ofertaId, false);
+    }
+
+    @GET
+    @Path("/disciplinas/{ofertaId}/plano/pdf/download")
+    @Produces("application/pdf")
+    public Response baixarPlano(@PathParam("ofertaId") Long ofertaId) {
+        return respostaPlano(ofertaId, true);
     }
 
     @GET
@@ -151,7 +191,7 @@ public class AreaAlunoResource {
     public Response abrirArquivo(@PathParam("arquivoId") Long arquivoId) {
         ArquivoProfessor arquivo = arquivoPermitido(arquivoId);
         File pdf = new File(arquivo.caminho);
-        if (!pdf.exists()) throw new NotFoundException();
+        if (!pdf.exists()) throw new ApiException(Response.Status.NOT_FOUND, "Arquivo não encontrado");
         return Response.ok(pdf, "application/pdf")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + arquivo.nomeOriginal + "\"")
                 .build();
@@ -163,7 +203,7 @@ public class AreaAlunoResource {
     public Response baixarArquivo(@PathParam("arquivoId") Long arquivoId) {
         ArquivoProfessor arquivo = arquivoPermitido(arquivoId);
         File pdf = new File(arquivo.caminho);
-        if (!pdf.exists()) throw new NotFoundException();
+        if (!pdf.exists()) throw new ApiException(Response.Status.NOT_FOUND, "Arquivo não encontrado");
         return Response.ok(pdf, "application/pdf")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + arquivo.nomeOriginal + "\"")
                 .build();
@@ -205,48 +245,94 @@ public class AreaAlunoResource {
                 "aluno = ?1 and ofertaDisciplina.id = ?2 and status <> ?3",
                 alunoLogado(), ofertaId, StatusMatriculaDisciplina.CANCELADO).firstResult();
         if (matricula == null) throw new ApiException(Response.Status.FORBIDDEN,
-                "Disciplina nao pertence ao aluno autenticado");
+                "Esta disciplina não pertence ao aluno autenticado");
         return matricula;
     }
 
     private ArquivoProfessor arquivoPermitido(Long arquivoId) {
         ArquivoProfessor arquivo = ArquivoProfessor.findById(arquivoId);
-        if (arquivo == null) throw new NotFoundException();
+        if (arquivo == null || arquivo.ofertaDisciplina == null) {
+            throw new ApiException(Response.Status.NOT_FOUND, "Arquivo não encontrado");
+        }
         matriculaPermitida(arquivo.ofertaDisciplina.id);
         return arquivo;
     }
 
     private PerfilDTO perfilDto(Aluno aluno) {
-        MatriculaDisciplina atual = matriculas(aluno).stream()
+        return perfilDto(aluno, matriculas(aluno));
+    }
+
+    private PerfilDTO perfilDto(Aluno aluno, List<MatriculaDisciplina> matriculas) {
+        MatriculaDisciplina atual = matriculas.stream()
                 .filter(item -> item.status == StatusMatriculaDisciplina.ATIVA
                         || item.status == StatusMatriculaDisciplina.MATRICULADO).findFirst().orElse(null);
         return new PerfilDTO(aluno.nome, String.format("SGA-%06d", aluno.id), aluno.email,
-                aluno.curso == null ? null : aluno.curso.nome,
+                aluno.curso == null ? "Aluno avulso" : aluno.curso.nome,
                 atual == null || atual.ofertaDisciplina.modulo == null ? null : atual.ofertaDisciplina.modulo.nome,
-                atual == null || atual.periodoLetivo == null ? null : atual.periodoLetivo.nome,
+                atual == null || atual.ofertaDisciplina.periodoLetivo == null
+                        ? null : atual.ofertaDisciplina.periodoLetivo.nome,
                 aluno.status == null ? null : aluno.status.name(), integralizacaoCursoService.consultar(aluno));
     }
 
-    private DisciplinaDTO disciplinaDto(MatriculaDisciplina matricula, boolean atualizar) {
+    private DisciplinaDTO disciplinaDto(MatriculaDisciplina matricula,
+                                        ResultadoAcademicoService.Resultado resultado,
+                                        FrequenciaAcademicaService.ResumoFrequencia resumo) {
         OfertaDisciplina oferta = matricula.ofertaDisciplina;
-        var resumo = atualizar ? resumoFrequencia(matricula) : null;
-        var resultado = atualizar ? resultadoService.calcular(matricula, resumo) : null;
+        ResultadoAcademico resultadoPersistido = matricula.resultadoAcademico == null
+                ? ResultadoAcademico.EM_ANDAMENTO : matricula.resultadoAcademico;
+        String statusOferta = oferta.status == null ? "EM_ANDAMENTO" : oferta.status.name();
+        boolean definitivo = resultado != null ? resultado.definitivo()
+                : matricula.dataConsolidacao != null && resultadoPersistido != ResultadoAcademico.EM_ANDAMENTO;
         return new DisciplinaDTO(oferta.id, oferta.disciplina.nome, oferta.disciplina.codigo,
                 oferta.turma == null ? null : oferta.turma.nome,
                 oferta.professor == null ? null : oferta.professor.nome,
                 oferta.modulo == null ? null : oferta.modulo.nome,
                 oferta.periodoLetivo == null ? null : oferta.periodoLetivo.nome,
                 oferta.cargaHorariaPrevista == null ? oferta.disciplina.cargaHoraria : oferta.cargaHorariaPrevista,
-                oferta.horario, oferta.sala,
-                oferta.status == null ? "EM_ANDAMENTO" : oferta.status.name(),
+                oferta.disciplina.creditos, oferta.horario, oferta.sala,
+                matricula.status == null ? null : matricula.status.name(),
+                resultado == null ? resultadoPersistido.name() : resultado.situacao(), statusOferta,
+                statusDiario(oferta),
                 resultado == null ? matricula.notaFinal : resultado.media(),
                 resumo == null ? matricula.frequenciaFinal : resumo.percentualPresenca(),
-                resultado == null ? situacaoMatricula(matricula) : resultado.situacao());
+                definitivo);
+    }
+
+    private FrequenciaDTO frequenciaDto(FrequenciaAcademicaService.ResumoFrequencia resumo) {
+        if (resumo == null) return new FrequenciaDTO(0, 0, 0, 0, null, null,
+                frequenciaMinima, "SEM_CHAMADAS");
+        return new FrequenciaDTO(resumo.aulasMinistradas(), resumo.presencas(), resumo.faltas(),
+                resumo.faltasJustificadas(), resumo.percentualPresenca(), resumo.percentualFaltas(),
+                frequenciaMinima, resumo.situacao());
+    }
+
+    private String statusDiario(OfertaDisciplina oferta) {
+        if (oferta.dataHomologacao != null || oferta.status == StatusOfertaDisciplina.CONCLUIDA) {
+            return "HOMOLOGADO";
+        }
+        if (oferta.dataEncerramento != null || oferta.status == StatusOfertaDisciplina.AGUARDANDO_HOMOLOGACAO
+                || oferta.status == StatusOfertaDisciplina.ENCERRADA) return "ENCERRADO";
+        return "EM_ANDAMENTO";
     }
 
     private FrequenciaAcademicaService.ResumoFrequencia resumoFrequencia(MatriculaDisciplina matricula) {
         return frequenciaService.resumirOferta(matricula.ofertaDisciplina).stream()
                 .filter(item -> item.matriculaId().equals(matricula.id)).findFirst().orElse(null);
+    }
+
+    private List<AulaDTO> aulasDto(MatriculaDisciplina matricula) {
+        List<AulaMinistrada> aulas = AulaMinistrada.list(
+                "ofertaDisciplina = ?1 order by dataAula desc, id desc", matricula.ofertaDisciplina);
+        Map<Long, Frequencia> frequenciasPorAula = new HashMap<>();
+        Frequencia.<Frequencia>list("aula.ofertaDisciplina = ?1 and (matriculaDisciplina = ?2 or "
+                        + "(matriculaDisciplina is null and aluno = ?3))",
+                matricula.ofertaDisciplina, matricula, matricula.aluno)
+                .forEach(registro -> frequenciasPorAula.put(registro.aula.id, registro));
+        return aulas.stream().map(aula -> {
+            Frequencia registro = frequenciasPorAula.get(aula.id);
+            return new AulaDTO(aula.dataAula, aula.conteudoMinistrado, aula.cargaHorariaAula,
+                    registro == null ? "NAO_REGISTRADA" : statusFrequencia(registro), aula.observacoes);
+        }).toList();
     }
 
     private String statusFrequencia(Frequencia registro) {
@@ -264,37 +350,67 @@ public class AreaAlunoResource {
                 arquivo.tipoVinculo.name(), referencia, arquivo.tamanho, arquivo.dataEnvio);
     }
 
+    private List<ArquivoDTO> arquivosDto(OfertaDisciplina oferta) {
+        return ArquivoProfessor.<ArquivoProfessor>list(
+                "ofertaDisciplina = ?1 order by dataEnvio desc", oferta)
+                .stream().map(this::arquivoDto).toList();
+    }
+
+    private PlanoEnsino planoDaOferta(OfertaDisciplina oferta) {
+        return PlanoEnsino.find("ofertaDisciplina", oferta).firstResult();
+    }
+
+    private PlanoEnsinoDTO planoDto(OfertaDisciplina oferta) {
+        PlanoEnsino plano = planoDaOferta(oferta);
+        if (plano == null) return null;
+        String ementa = plano.ementa == null || plano.ementa.isBlank()
+                ? plano.disciplina.ementaResumo : plano.ementa;
+        return new PlanoEnsinoDTO(plano.id, plano.objetivos, ementa, plano.conteudoProgramatico,
+                plano.metodologia, plano.criteriosAvaliacao, plano.bibliografiaBasica,
+                plano.bibliografiaComplementar, plano.planoPdfNome, plano.planoPdfTamanho,
+                plano.ultimaAtualizacao);
+    }
+
+    private Response respostaPlano(Long ofertaId, boolean download) {
+        OfertaDisciplina oferta = matriculaPermitida(ofertaId).ofertaDisciplina;
+        PlanoEnsino plano = planoDaOferta(oferta);
+        if (plano == null || plano.planoPdfCaminho == null || plano.planoPdfCaminho.isBlank()) {
+            throw new ApiException(Response.Status.NOT_FOUND, "Plano de ensino em PDF ainda não disponibilizado");
+        }
+        File arquivo = new File(plano.planoPdfCaminho);
+        if (!arquivo.exists()) {
+            throw new ApiException(Response.Status.NOT_FOUND, "Arquivo do plano de ensino não encontrado");
+        }
+        String disposicao = download ? "attachment" : "inline";
+        return Response.ok(arquivo, plano.planoPdfTipo == null ? "application/pdf" : plano.planoPdfTipo)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        disposicao + "; filename=\"" + plano.planoPdfNome + "\"").build();
+    }
+
     private HistoricoDTO montarHistorico(Aluno aluno) {
-        Map<Long, HistoricoItemDTO> itens = new LinkedHashMap<>();
-        for (MatriculaDisciplina matricula : matriculas(aluno)) {
-            OfertaDisciplina oferta = matricula.ofertaDisciplina;
-            String periodo = periodo(oferta, matricula);
-            itens.put(oferta.disciplina.id, new HistoricoItemDTO(periodo,
-                    oferta.modulo == null ? null : oferta.modulo.nome, oferta.disciplina.nome,
-                    oferta.disciplina.codigo, oferta.disciplina.cargaHoraria, oferta.disciplina.creditos,
-                    matricula.notaFinal, matricula.frequenciaFinal, situacaoMatricula(matricula)));
-        }
-        for (HistoricoEscolar historico : HistoricoEscolar.<HistoricoEscolar>list("aluno", aluno)) {
-            if (historico.disciplina == null) continue;
-            HistoricoItemDTO matricula = itens.get(historico.disciplina.id);
-            itens.put(historico.disciplina.id, new HistoricoItemDTO(historico.periodoCursado,
-                    historico.moduloNome != null ? historico.moduloNome
-                            : historico.ofertaDisciplina == null || historico.ofertaDisciplina.modulo == null ? null
-                            : historico.ofertaDisciplina.modulo.nome,
-                    historico.disciplinaNome != null ? historico.disciplinaNome : historico.disciplina.nome,
-                    historico.disciplinaCodigo != null ? historico.disciplinaCodigo : historico.disciplina.codigo,
-                    historico.cargaHoraria,
-                    historico.creditos != null ? historico.creditos : historico.disciplina.creditos,
-                    historico.notaFinal == null && matricula != null ? matricula.nota() : historico.notaFinal,
-                    historico.frequenciaFinal == null && matricula != null ? matricula.frequencia() : historico.frequenciaFinal,
-                    historico.situacao == null ? null : historico.situacao.name()));
-        }
-        List<HistoricoItemDTO> componentes = new ArrayList<>(itens.values());
+        List<HistoricoItemDTO> componentes = HistoricoEscolar.<HistoricoEscolar>list("aluno", aluno).stream()
+                .filter(historico -> historico.disciplina != null || historico.disciplinaNome != null)
+                .map(historico -> new HistoricoItemDTO(historico.periodoCursado,
+                        historico.moduloNome != null ? historico.moduloNome
+                                : historico.ofertaDisciplina == null || historico.ofertaDisciplina.modulo == null
+                                ? null : historico.ofertaDisciplina.modulo.nome,
+                        historico.disciplinaNome != null ? historico.disciplinaNome
+                                : historico.disciplina == null ? "Disciplina não informada" : historico.disciplina.nome,
+                        historico.disciplinaCodigo != null ? historico.disciplinaCodigo
+                                : historico.disciplina == null ? null : historico.disciplina.codigo,
+                        historico.cargaHoraria,
+                        historico.creditos != null ? historico.creditos
+                                : historico.disciplina == null ? null : historico.disciplina.creditos,
+                        historico.professorNome != null ? historico.professorNome
+                                : historico.professorResponsavel == null ? null : historico.professorResponsavel.nome,
+                        historico.notaFinal, historico.frequenciaFinal,
+                        historico.situacao == null ? null : historico.situacao.name()))
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         componentes.sort(Comparator.comparing(HistoricoItemDTO::periodo,
                 Comparator.nullsLast(Comparator.reverseOrder())).thenComparing(HistoricoItemDTO::disciplina));
         Map<String, List<HistoricoItemDTO>> porPeriodo = new LinkedHashMap<>();
         componentes.forEach(item -> porPeriodo.computeIfAbsent(
-                item.periodo() == null ? "Sem periodo" : item.periodo(), chave -> new ArrayList<>()).add(item));
+                item.periodo() == null ? "Sem período" : item.periodo(), chave -> new ArrayList<>()).add(item));
         return new HistoricoDTO(perfilDto(aluno), componentes, porPeriodo, progresso(aluno, componentes));
     }
 
@@ -318,26 +434,6 @@ public class AreaAlunoResource {
                 integralizacao.creditosRestantes(), integralizacao.percentual(), coeficiente,
                 integralizacao.disciplinasPendentes(), integralizacao.situacaoCurso(),
                 integralizacao.dataConclusao());
-    }
-
-    private String periodo(OfertaDisciplina oferta, MatriculaDisciplina matricula) {
-        if (oferta.anoLetivo != null && oferta.periodoLetivo != null) return oferta.anoLetivo.ano + " - " + oferta.periodoLetivo.nome;
-        return matricula.periodoLetivo == null ? null : matricula.periodoLetivo.nome;
-    }
-
-    private String situacaoMatricula(MatriculaDisciplina matricula) {
-        if (matricula.resultadoAcademico != null
-                && matricula.resultadoAcademico != ResultadoAcademico.EM_ANDAMENTO) {
-            return matricula.resultadoAcademico.name();
-        }
-        return switch (matricula.status) {
-            case CONCLUIDA, CONCLUIDO -> "APROVADO";
-            case REPROVADO_POR_NOTA -> "REPROVADO_POR_NOTA";
-            case REPROVADO_POR_FREQUENCIA -> "REPROVADO_POR_FREQUENCIA";
-            case REPROVADA -> "REPROVADO";
-            case TRANCADO -> "TRANCADO";
-            default -> "EM_ANDAMENTO";
-        };
     }
 
     private List<String> linhasPdf(HistoricoDTO historico, String codigo, Instant emissao) {

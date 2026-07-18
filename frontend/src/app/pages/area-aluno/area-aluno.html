@@ -1,90 +1,131 @@
 <section class="portal">
   <header class="cabecalho">
-    <div><span class="rotulo">Portal do aluno</span><h1>{{ perfil?.nome || 'Area do aluno' }}</h1><p>Acompanhe sua vida academica em um unico lugar.</p></div>
-    <button type="button" class="secundario" (click)="carregarHistorico()">Historico escolar</button>
+    <div><span class="rotulo">Portal do aluno</span><h1>{{ perfil?.nome || 'Área do aluno' }}</h1><p>Acompanhe sua vida acadêmica em um único lugar.</p></div>
+    <button type="button" class="secundario" (click)="carregarHistorico()">Histórico escolar</button>
   </header>
 
   <p class="mensagem erro" *ngIf="mensagem">{{ mensagem }}</p>
-  <p class="carregando" *ngIf="carregando">Carregando dados academicos...</p>
+  <p class="carregando" *ngIf="carregando">Carregando dados acadêmicos...</p>
 
   <div class="perfil" *ngIf="perfil">
-    <div><small>Matricula</small><strong>{{ perfil.matricula }}</strong></div>
-    <div><small>Curso</small><strong>{{ formatar(perfil.curso) }}</strong></div>
-    <div><small>Modulo atual</small><strong>{{ formatar(perfil.moduloAtual) }}</strong></div>
-    <div><small>Periodo atual</small><strong>{{ formatar(perfil.periodoAtual) }}</strong></div>
-    <div><small>Situacao</small><strong class="situacao">{{ perfil.status }}</strong></div>
+    <div><small>Matrícula</small><strong>{{ perfil.matricula }}</strong></div>
+    <div><small>Curso</small><strong>{{ perfil.curso || 'Aluno avulso' }}</strong></div>
+    <div><small>Módulo atual</small><strong>{{ formatar(perfil.moduloAtual) }}</strong></div>
+    <div><small>Período atual</small><strong>{{ formatar(perfil.periodoAtual) }}</strong></div>
+    <div><small>Situação</small><strong class="situacao">{{ enumTexto(perfil.status) }}</strong></div>
   </div>
 
   <section class="bloco" *ngIf="perfil?.integralizacao as integralizacao">
-    <div class="titulo"><div><h2>Integralizacao do curso</h2><p>Acompanhamento dos requisitos da matriz curricular.</p></div><span class="pill">{{ integralizacao.situacaoCurso }}</span></div>
-    <p class="aviso-resultado concluido" *ngIf="integralizacao.situacaoCurso === 'CONCLUIDO'">Requisitos academicos concluidos.</p>
+    <div class="titulo"><div><h2>Integralização do curso</h2><p>Acompanhamento dos requisitos da matriz curricular.</p></div><span class="pill">{{ enumTexto(integralizacao.situacaoCurso) }}</span></div>
+    <p class="aviso-resultado concluido" *ngIf="integralizacao.situacaoCurso === 'CONCLUIDO'">Requisitos acadêmicos concluídos.</p>
     <div class="indicadores">
       <div><small>Carga cumprida</small><strong>{{ integralizacao.cargaHorariaCumprida }}h</strong></div>
       <div><small>Carga restante</small><strong>{{ integralizacao.cargaHorariaRestante }}h</strong></div>
-      <div><small>Creditos cumpridos</small><strong>{{ integralizacao.creditosCumpridos }}</strong></div>
-      <div><small>Creditos restantes</small><strong>{{ integralizacao.creditosRestantes }}</strong></div>
-      <div><small>Conclusao</small><strong>{{ integralizacao.percentual }}%</strong></div>
+      <div><small>Créditos cumpridos</small><strong>{{ integralizacao.creditosCumpridos }}</strong></div>
+      <div><small>Créditos restantes</small><strong>{{ integralizacao.creditosRestantes }}</strong></div>
+      <div><small>Conclusão</small><strong>{{ integralizacao.percentual }}%</strong></div>
       <div><small>Disciplinas pendentes</small><strong>{{ integralizacao.disciplinasPendentes.length }}</strong></div>
     </div>
-    <p class="vazio" *ngIf="integralizacao.disciplinasPendentes.length">
-      Pendentes: {{ integralizacao.disciplinasPendentes.join(', ') }}
-    </p>
+    <p class="vazio" *ngIf="integralizacao.disciplinasPendentes.length">Pendentes: {{ integralizacao.disciplinasPendentes.join(', ') }}</p>
   </section>
 
   <section class="bloco" *ngIf="!historico">
     <div class="titulo"><div><h2>Minhas disciplinas</h2><p>Selecione uma disciplina para consultar os detalhes.</p></div></div>
-    <div class="grade-disciplinas" *ngIf="disciplinas.length; else semDisciplinas">
-      <button type="button" class="disciplina-card" *ngFor="let item of disciplinas" (click)="selecionar(item)">
-        <span>{{ item.modulo || item.periodo || 'Disciplina' }}</span><strong>{{ item.nome }}</strong>
-        <small>{{ item.turma }} · {{ item.professor || 'Professor nao informado' }}</small>
-        <small class="status-oferta">{{ item.status }}</small>
-        <div><b>Media {{ formatar(item.media) }}</b><b>Frequencia {{ item.frequencia == null ? '-' : item.frequencia + '%' }}</b></div>
-      </button>
-    </div>
-    <ng-template #semDisciplinas><p class="vazio">Nenhuma disciplina vinculada a sua matricula.</p></ng-template>
+    <ng-container *ngIf="disciplinas.length; else semDisciplinas">
+      <h3 *ngIf="disciplinasEmAndamento.length">Em andamento</h3>
+      <div class="grade-disciplinas" *ngIf="disciplinasEmAndamento.length">
+        <button type="button" class="disciplina-card" *ngFor="let item of disciplinasEmAndamento" (click)="selecionar(item)">
+          <span>{{ item.modulo || item.periodo || 'Disciplina' }}</span><strong>{{ item.nome }}</strong>
+          <small>{{ item.turma || 'Turma não informada' }} · {{ item.professor || 'Professor não informado' }}</small>
+          <small class="status-oferta">Matrícula: {{ enumTexto(item.situacaoMatricula) }} · Resultado: {{ enumTexto(item.resultadoAcademico) }}</small>
+          <div><b>Média {{ formatar(item.media) }}</b><b>{{ percentual(item.frequencia) }}</b></div>
+        </button>
+      </div>
+      <h3 *ngIf="disciplinasConcluidas.length">Concluídas</h3>
+      <div class="grade-disciplinas" *ngIf="disciplinasConcluidas.length">
+        <button type="button" class="disciplina-card" *ngFor="let item of disciplinasConcluidas" (click)="selecionar(item)">
+          <span>{{ item.modulo || item.periodo || 'Disciplina' }}</span><strong>{{ item.nome }}</strong>
+          <small>{{ item.turma || 'Turma não informada' }} · {{ item.professor || 'Professor não informado' }}</small>
+          <small class="status-oferta">{{ enumTexto(item.resultadoAcademico) }} · {{ enumTexto(item.statusDiario) }}</small>
+          <div><b>Média {{ formatar(item.media) }}</b><b>{{ percentual(item.frequencia) }}</b></div>
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #semDisciplinas><p class="vazio">Você ainda não possui disciplinas matriculadas.</p></ng-template>
   </section>
 
   <section class="bloco detalhe" *ngIf="disciplina && !historico">
     <button type="button" class="link" (click)="disciplina = undefined">← Voltar para disciplinas</button>
-    <div class="titulo"><div><h2>{{ disciplina.nome }}</h2><p>{{ disciplina.turma }} · {{ disciplina.periodo }}</p></div><span class="pill">{{ disciplina.status }}</span></div>
-    <p class="aviso-resultado" *ngIf="disciplina.status === 'EM_ANDAMENTO'">As notas e a frequencia sao parciais; o resultado ainda nao e definitivo.</p>
-    <p class="aviso-resultado" *ngIf="disciplina.status === 'AGUARDANDO_HOMOLOGACAO'">O diario foi encerrado e aguarda homologacao.</p>
-    <p class="aviso-resultado concluido" *ngIf="disciplina.status === 'CONCLUIDA'">Resultado homologado: {{ disciplina.situacao }}.</p>
+    <div class="titulo"><div><h2>{{ disciplina.nome }}</h2><p>{{ disciplina.turma || 'Turma não informada' }} · {{ disciplina.periodo || 'Período não informado' }}</p></div><span class="pill">{{ enumTexto(disciplina.statusOferta) }}</span></div>
+    <p class="aviso-resultado" *ngIf="!disciplina.resultadoDefinitivo">Resultado provisório — aguardando homologação.</p>
+    <p class="aviso-resultado concluido" *ngIf="disciplina.resultadoDefinitivo">Resultado final homologado: {{ enumTexto(disciplina.resultadoAcademico) }}.</p>
     <nav class="abas" aria-label="Detalhes da disciplina">
       <button type="button" [class.ativa]="aba === 'resumo'" (click)="trocarAba('resumo')">Resumo</button>
-      <button type="button" [class.ativa]="aba === 'frequencia'" (click)="trocarAba('frequencia')">Frequencia</button>
-      <button type="button" [class.ativa]="aba === 'avaliacoes'" (click)="trocarAba('avaliacoes')">Avaliacoes e notas</button>
-      <button type="button" [class.ativa]="aba === 'materiais'" (click)="trocarAba('materiais')">PDFs</button>
+      <button type="button" [class.ativa]="aba === 'plano'" (click)="trocarAba('plano')">Plano de ensino</button>
+      <button type="button" [class.ativa]="aba === 'frequencia'" (click)="trocarAba('frequencia')">Frequência e aulas</button>
+      <button type="button" [class.ativa]="aba === 'avaliacoes'" (click)="trocarAba('avaliacoes')">Avaliações e notas</button>
+      <button type="button" [class.ativa]="aba === 'materiais'" (click)="trocarAba('materiais')">Materiais</button>
     </nav>
-    <p class="carregando" *ngIf="carregandoDetalhe">Carregando secao...</p>
+    <p class="carregando" *ngIf="carregandoDetalhe">Carregando detalhes...</p>
 
     <div class="resumo" *ngIf="aba === 'resumo' && !carregandoDetalhe">
-      <div><small>Professor</small><strong>{{ formatar(disciplina.professor) }}</strong></div><div><small>Horario</small><strong>{{ formatar(disciplina.horario) }}</strong></div>
-      <div><small>Sala</small><strong>{{ formatar(disciplina.sala) }}</strong></div><div><small>Carga horaria</small><strong>{{ disciplina.cargaHoraria }}h</strong></div>
-      <div><small>Media</small><strong>{{ formatar(disciplina.media) }}</strong></div><div><small>Frequencia</small><strong>{{ disciplina.frequencia == null ? '-' : disciplina.frequencia + '%' }}</strong></div>
+      <div><small>Professor</small><strong>{{ formatar(disciplina.professor) }}</strong></div>
+      <div><small>Turma</small><strong>{{ formatar(disciplina.turma) }}</strong></div>
+      <div><small>Módulo</small><strong>{{ formatar(disciplina.modulo) }}</strong></div>
+      <div><small>Período letivo</small><strong>{{ formatar(disciplina.periodo) }}</strong></div>
+      <div><small>Horário</small><strong>{{ formatar(disciplina.horario) }}</strong></div>
+      <div><small>Sala</small><strong>{{ formatar(disciplina.sala) }}</strong></div>
+      <div><small>Carga horária</small><strong>{{ formatar(disciplina.cargaHoraria) }}h</strong></div>
+      <div><small>Créditos</small><strong>{{ formatar(disciplina.creditos) }}</strong></div>
+      <div><small>Situação da matrícula</small><strong>{{ enumTexto(disciplina.situacaoMatricula) }}</strong></div>
+      <div><small>Resultado acadêmico</small><strong>{{ enumTexto(disciplina.resultadoAcademico) }}</strong></div>
+      <div><small>Situação do diário</small><strong>{{ enumTexto(disciplina.statusDiario) }}</strong></div>
+      <div><small>Média</small><strong>{{ formatar(disciplina.media) }}</strong></div>
+      <div><small>Frequência</small><strong>{{ percentual(disciplina.frequencia) }}</strong></div>
     </div>
 
-    <div *ngIf="aba === 'frequencia' && frequencia && !carregandoDetalhe">
-      <div class="indicadores"><div><small>Presencas</small><strong>{{ frequencia.presencas }}</strong></div><div><small>Faltas</small><strong>{{ frequencia.faltas }}</strong></div><div><small>Justificadas</small><strong>{{ frequencia.justificadas }}</strong></div><div><small>Frequencia</small><strong>{{ formatar(frequencia.percentualPresenca) }}%</strong></div><div><small>Minima</small><strong>{{ frequencia.frequenciaMinima }}%</strong></div></div>
-      <div class="tabela"><table><thead><tr><th>Data</th><th>Conteudo</th><th>Carga</th><th>Presenca</th></tr></thead><tbody><tr *ngFor="let aula of aulas"><td>{{ aula.data | date:'dd/MM/yyyy' }}</td><td>{{ aula.conteudo }}</td><td>{{ aula.cargaHoraria }}h</td><td><span class="pill">{{ aula.status }}</span></td></tr></tbody></table></div>
+    <div *ngIf="aba === 'plano' && !carregandoDetalhe">
+      <div class="resumo" *ngIf="plano; else semPlano">
+        <div><small>Objetivos</small><strong>{{ formatar(plano.objetivos) }}</strong></div>
+        <div><small>Ementa</small><strong>{{ formatar(plano.ementa) }}</strong></div>
+        <div><small>Conteúdo programático</small><strong>{{ formatar(plano.conteudoProgramatico) }}</strong></div>
+        <div><small>Metodologia</small><strong>{{ formatar(plano.metodologia) }}</strong></div>
+        <div><small>Critérios de avaliação</small><strong>{{ formatar(plano.criteriosAvaliacao) }}</strong></div>
+        <div><small>Bibliografia básica</small><strong>{{ formatar(plano.bibliografiaBasica) }}</strong></div>
+        <div><small>Bibliografia complementar</small><strong>{{ formatar(plano.bibliografiaComplementar) }}</strong></div>
+      </div>
+      <div class="arquivos" *ngIf="plano?.arquivoNome">
+        <article><div><strong>Plano de ensino em PDF</strong><small>{{ plano.arquivoNome }}</small></div><div><button type="button" class="link" (click)="abrirPlano()">Visualizar</button><button type="button" class="link" (click)="abrirPlano(true)">Baixar</button></div></article>
+      </div>
+      <ng-template #semPlano><p class="vazio">Plano de ensino ainda não disponibilizado.</p></ng-template>
+    </div>
+
+    <div *ngIf="aba === 'frequencia' && !carregandoDetalhe">
+      <div class="indicadores" *ngIf="frequencia?.percentualPresenca != null; else semFrequencia"><div><small>Aulas ministradas</small><strong>{{ frequencia.aulasMinistradas }}</strong></div><div><small>Presenças</small><strong>{{ frequencia.presencas }}</strong></div><div><small>Faltas</small><strong>{{ frequencia.faltas }}</strong></div><div><small>Justificadas</small><strong>{{ frequencia.justificadas }}</strong></div><div><small>Frequência</small><strong>{{ percentual(frequencia.percentualPresenca) }}</strong></div></div>
+      <ng-template #semFrequencia><p class="vazio">Frequência ainda não disponível.</p></ng-template>
+      <div class="tabela" *ngIf="aulas.length"><table><thead><tr><th>Data</th><th>Conteúdo</th><th>Carga horária</th><th>Presença</th><th>Observações</th></tr></thead><tbody><tr *ngFor="let aula of aulas"><td>{{ aula.data | date:'dd/MM/yyyy' }}</td><td>{{ aula.conteudo }}</td><td>{{ aula.cargaHoraria }}h</td><td><span class="pill">{{ enumTexto(aula.status) }}</span></td><td>{{ formatar(aula.observacoes) }}</td></tr></tbody></table></div>
+      <p class="vazio" *ngIf="!aulas.length">Nenhuma aula registrada.</p>
     </div>
 
     <div *ngIf="aba === 'avaliacoes' && resultado && !carregandoDetalhe">
-      <div class="indicadores"><div><small>{{ resultado.definitivo ? 'Media final' : 'Media parcial' }}</small><strong>{{ formatar(resultado.media) }}</strong></div><div><small>Media minima</small><strong>{{ resultado.mediaMinima }}</strong></div><div><small>Situacao</small><strong>{{ resultado.situacao }}</strong></div></div>
-      <p class="aviso-resultado">{{ resultado.mensagem }}</p>
-      <div class="tabela"><table><thead><tr><th>Avaliacao</th><th>Data</th><th>Nota maxima</th><th>Peso</th><th>Nota</th><th>Status</th></tr></thead><tbody><tr *ngFor="let item of resultado.avaliacoes"><td><strong>{{ item.nome }}</strong><small>{{ item.descricao }}</small></td><td>{{ item.data ? (item.data | date:'dd/MM/yyyy') : '-' }}</td><td>{{ item.notaMaxima }}</td><td>{{ item.peso }}</td><td>{{ item.nota === null ? '-' : item.nota }}</td><td>{{ item.status }}</td></tr></tbody></table></div>
-      <p class="vazio" *ngIf="!resultado.avaliacoes.length">Nenhuma avaliacao configurada.</p>
+      <div class="indicadores"><div><small>{{ resultado.definitivo ? 'Média final' : 'Média parcial' }}</small><strong>{{ formatar(resultado.media) }}</strong></div><div><small>Média mínima</small><strong>{{ resultado.mediaMinima }}</strong></div><div><small>Resultado acadêmico</small><strong>{{ enumTexto(resultado.situacao) }}</strong></div></div>
+      <p class="aviso-resultado">{{ resultado.definitivo ? 'Resultado final homologado.' : 'Resultado provisório — aguardando homologação.' }}</p>
+      <div class="tabela" *ngIf="resultado.avaliacoes.length"><table><thead><tr><th>Avaliação</th><th>Data</th><th>Nota máxima</th><th>Peso</th><th>Nota obtida</th><th>Situação</th></tr></thead><tbody><tr *ngFor="let item of resultado.avaliacoes"><td><strong>{{ item.nome }}</strong><small>{{ item.descricao }}</small></td><td>{{ item.data ? (item.data | date:'dd/MM/yyyy') : '-' }}</td><td>{{ item.notaMaxima }}</td><td>{{ item.peso }}</td><td>{{ item.nota == null ? 'Pendente' : item.nota }}</td><td>{{ enumTexto(item.status) }}</td></tr></tbody></table></div>
+      <p class="vazio" *ngIf="!resultado.avaliacoes.length">Nenhuma avaliação cadastrada.</p>
     </div>
 
     <div class="arquivos" *ngIf="aba === 'materiais' && !carregandoDetalhe">
-      <article *ngFor="let arquivo of arquivos"><div><strong>{{ arquivo.titulo }}</strong><small>{{ arquivo.vinculo }} · {{ arquivo.referencia }}</small></div><div><button type="button" class="link" (click)="abrirArquivo(arquivo)">Visualizar</button><button type="button" class="link" (click)="abrirArquivo(arquivo, true)">Baixar</button></div></article>
-      <p class="vazio" *ngIf="!arquivos.length">Nenhum PDF disponibilizado nesta disciplina.</p>
+      <article *ngFor="let arquivo of arquivos"><div><strong>{{ arquivo.titulo }}</strong><small>{{ arquivo.nome }} · {{ arquivo.enviadoEm | date:'dd/MM/yyyy' }} · {{ arquivo.referencia }}</small></div><div><button type="button" class="link" (click)="abrirArquivo(arquivo)">Visualizar</button><button type="button" class="link" (click)="abrirArquivo(arquivo, true)">Baixar</button></div></article>
+      <p class="vazio" *ngIf="!arquivos.length">Nenhum material disponibilizado nesta disciplina.</p>
     </div>
   </section>
 
   <section class="bloco" *ngIf="historico">
-    <div class="titulo"><div><button type="button" class="link" (click)="historico = undefined">← Voltar ao portal</button><h2>Historico escolar</h2><p>Componentes curriculares agrupados por periodo.</p></div><button type="button" class="primario" [disabled]="baixandoHistorico" (click)="baixarHistorico()">{{ baixandoHistorico ? 'Gerando...' : 'Baixar PDF oficial' }}</button></div>
-    <div class="indicadores"><div><small>Disciplinas concluidas</small><strong>{{ historico.progresso.disciplinasConcluidas }}/{{ historico.progresso.disciplinasPrevistas }}</strong></div><div><small>Carga total</small><strong>{{ historico.progresso.cargaHorariaPrevista }}h</strong></div><div><small>Carga cumprida</small><strong>{{ historico.progresso.cargaHorariaConcluida }}h</strong></div><div><small>Carga restante</small><strong>{{ historico.progresso.cargaHorariaRestante }}h</strong></div><div><small>Creditos totais</small><strong>{{ historico.progresso.creditosPrevistos }}</strong></div><div><small>Creditos cumpridos</small><strong>{{ historico.progresso.creditosConcluidos }}</strong></div><div><small>Creditos restantes</small><strong>{{ historico.progresso.creditosRestantes }}</strong></div><div><small>Progresso</small><strong>{{ formatar(historico.progresso.percentualCurso) }}%</strong></div><div><small>Situacao do curso</small><strong>{{ historico.progresso.situacaoCurso }}</strong></div><div><small>Data de conclusao</small><strong>{{ historico.progresso.dataConclusao ? (historico.progresso.dataConclusao | date:'dd/MM/yyyy') : '-' }}</strong></div><div><small>Coeficiente</small><strong>{{ formatar(historico.progresso.coeficiente) }}</strong></div></div>
-    <section class="periodo" *ngFor="let periodo of periodosHistorico()"><h3>{{ periodo }}</h3><div class="tabela"><table><thead><tr><th>Disciplina</th><th>Modulo</th><th>CH</th><th>Nota</th><th>Frequencia</th><th>Situacao</th></tr></thead><tbody><tr *ngFor="let item of historico.porPeriodo[periodo]"><td>{{ item.disciplina }}</td><td>{{ formatar(item.modulo) }}</td><td>{{ formatar(item.cargaHoraria) }}</td><td>{{ formatar(item.nota) }}</td><td>{{ item.frequencia == null ? '-' : item.frequencia + '%' }}</td><td><span class="pill">{{ item.situacao }}</span></td></tr></tbody></table></div></section>
+    <div class="titulo"><div><button type="button" class="link" (click)="historico = undefined">← Voltar ao portal</button><h2>Histórico escolar</h2><p>Resultados acadêmicos consolidados.</p></div><button type="button" class="primario" [disabled]="baixandoHistorico" (click)="baixarHistorico()">{{ baixandoHistorico ? 'Gerando...' : 'Baixar PDF oficial' }}</button></div>
+    <div class="indicadores"><div><small>Disciplinas concluídas</small><strong>{{ historico.progresso.disciplinasConcluidas }}/{{ historico.progresso.disciplinasPrevistas }}</strong></div><div><small>Carga total</small><strong>{{ historico.progresso.cargaHorariaPrevista }}h</strong></div><div><small>Carga cumprida</small><strong>{{ historico.progresso.cargaHorariaConcluida }}h</strong></div><div><small>Carga restante</small><strong>{{ historico.progresso.cargaHorariaRestante }}h</strong></div><div><small>Créditos totais</small><strong>{{ historico.progresso.creditosPrevistos }}</strong></div><div><small>Créditos cumpridos</small><strong>{{ historico.progresso.creditosConcluidos }}</strong></div><div><small>Créditos restantes</small><strong>{{ historico.progresso.creditosRestantes }}</strong></div><div><small>Progresso</small><strong>{{ formatar(historico.progresso.percentualCurso) }}%</strong></div><div><small>Situação do curso</small><strong>{{ enumTexto(historico.progresso.situacaoCurso) }}</strong></div><div><small>Data de conclusão</small><strong>{{ historico.progresso.dataConclusao ? (historico.progresso.dataConclusao | date:'dd/MM/yyyy') : '-' }}</strong></div><div><small>Coeficiente</small><strong>{{ formatar(historico.progresso.coeficiente) }}</strong></div></div>
+    <ng-container *ngIf="historico.componentes.length; else semHistorico">
+      <section class="periodo" *ngFor="let periodo of periodosHistorico()"><h3>{{ periodo }}</h3><div class="tabela"><table><thead><tr><th>Disciplina</th><th>Módulo</th><th>Professor</th><th>Carga horária</th><th>Créditos</th><th>Média final</th><th>Frequência final</th><th>Resultado acadêmico</th></tr></thead><tbody><tr *ngFor="let item of historico.porPeriodo[periodo]"><td>{{ item.disciplina }}</td><td>{{ formatar(item.modulo) }}</td><td>{{ formatar(item.professor) }}</td><td>{{ formatar(item.cargaHoraria) }}</td><td>{{ formatar(item.creditos) }}</td><td>{{ formatar(item.nota) }}</td><td>{{ percentual(item.frequencia) }}</td><td><span class="pill">{{ enumTexto(item.situacao) }}</span></td></tr></tbody></table></div></section>
+    </ng-container>
+    <ng-template #semHistorico><p class="vazio">Nenhum registro disponível no histórico escolar.</p></ng-template>
   </section>
 </section>
