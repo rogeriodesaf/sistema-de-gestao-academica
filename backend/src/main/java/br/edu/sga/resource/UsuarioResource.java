@@ -10,6 +10,7 @@ import br.edu.sga.enums.Perfil;
 import br.edu.sga.exception.ApiException;
 import br.edu.sga.security.SenhaService;
 import br.edu.sga.service.PermissaoService;
+import br.edu.sga.service.AlunoUsuarioService;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -41,6 +42,8 @@ public class UsuarioResource {
     SenhaService senhaService;
     @Inject
     PermissaoService permissaoService;
+    @Inject
+    AlunoUsuarioService alunoUsuarioService;
     @Context
     ContainerRequestContext contexto;
 
@@ -80,6 +83,7 @@ public class UsuarioResource {
         usuario.ativo = dto.ativo();
         usuario.observacoes = dto.observacoes();
         usuario.persist();
+        alunoUsuarioService.vincularCadastroCompativel(usuario);
         return UsuarioAdminDTO.de(usuario);
     }
 
@@ -98,6 +102,7 @@ public class UsuarioResource {
         usuario.perfil = dto.perfil();
         usuario.ativo = dto.ativo();
         usuario.observacoes = dto.observacoes();
+        alunoUsuarioService.vincularCadastroCompativel(usuario);
         return UsuarioAdminDTO.de(usuario);
     }
 

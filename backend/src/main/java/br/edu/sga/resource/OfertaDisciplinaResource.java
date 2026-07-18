@@ -206,6 +206,23 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
         if (oferta.turma == null || oferta.turma.id == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Turma da oferta obrigatoria");
         }
+        Turma turma = Turma.findById(oferta.turma.id);
+        AnoLetivo anoLetivo = AnoLetivo.findById(oferta.anoLetivo.id);
+        Curso curso = oferta.curso == null || oferta.curso.id == null ? null : Curso.findById(oferta.curso.id);
+        Modulo modulo = Modulo.findById(oferta.modulo.id);
+        Disciplina disciplina = Disciplina.findById(oferta.disciplina.id);
+        Professor professor = Professor.findById(oferta.professor.id);
+        if (turma == null || anoLetivo == null || modulo == null || disciplina == null || professor == null
+                || oferta.curso != null && oferta.curso.id != null && curso == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST,
+                    "Turma, ano letivo, curso, modulo, disciplina ou professor nao encontrado");
+        }
+        oferta.turma = turma;
+        oferta.anoLetivo = anoLetivo;
+        oferta.curso = curso;
+        oferta.modulo = modulo;
+        oferta.disciplina = disciplina;
+        oferta.professor = professor;
         if (oferta.vagas == null || oferta.vagas <= 0) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Vagas obrigatorias");
         }

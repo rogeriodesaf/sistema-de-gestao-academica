@@ -102,9 +102,9 @@
     <label [class.campo-longo]="isTextoLongo(campo)">
       {{ endpoint === 'planos-ensino' && campo === 'metodologia' ? 'Metodologia oficial' : endpoint === 'planos-ensino' && campo === 'observacoes' ? 'Observações da disciplina' : label(campo) }}
 
-      <select *ngIf="isSelect(campo)" [name]="campo" [(ngModel)]="formulario[campo]">
+      <select *ngIf="isSelect(campo)" [name]="campo" [(ngModel)]="formulario[campo]" (ngModelChange)="campoOpcaoAlterado(campo)">
         <option value="">Selecione</option>
-        <option *ngFor="let opcao of opcoesCampo(campo)" [ngValue]="opcao.id">{{ rotuloOpcao(opcao) }}</option>
+        <option *ngFor="let opcao of opcoesCampo(campo)" [ngValue]="opcao.id">{{ rotuloOpcao(opcao, campo) }}</option>
       </select>
 
       <textarea *ngIf="!isSelect(campo) && isTextoLongo(campo)" [name]="campo" [(ngModel)]="formulario[campo]"></textarea>

@@ -1,10 +1,12 @@
 package br.edu.sga.resource;
 
+import br.edu.sga.dto.TurmaOpcaoDTO;
 import br.edu.sga.entity.Turma;
 import br.edu.sga.enums.StatusTurma;
 import br.edu.sga.exception.ApiException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -16,6 +18,15 @@ import java.util.List;
 public class TurmaResource extends CadastroResource.Crud<Turma> {
     public TurmaResource() {
         super(Turma.class);
+    }
+
+    @GET
+    @Path("/opcoes")
+    public List<TurmaOpcaoDTO> listarOpcoes() {
+        List<StatusTurma> disponiveis = List.of(
+                StatusTurma.PLANEJADA, StatusTurma.ABERTA, StatusTurma.EM_ANDAMENTO);
+        return Turma.<Turma>find("status in ?1 order by nome", disponiveis)
+                .list().stream().map(TurmaOpcaoDTO::de).toList();
     }
 
     @POST

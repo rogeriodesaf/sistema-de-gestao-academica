@@ -14,6 +14,7 @@ import br.edu.sga.exception.ApiException;
 import br.edu.sga.service.FrequenciaAcademicaService;
 import br.edu.sga.service.HistoricoPdfService;
 import br.edu.sga.service.IntegralizacaoCursoService;
+import br.edu.sga.service.AlunoUsuarioService;
 import br.edu.sga.service.PermissaoService;
 import br.edu.sga.service.ResultadoAcademicoService;
 import br.edu.sga.service.ValidacaoHistoricoService;
@@ -46,6 +47,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Produces(MediaType.APPLICATION_JSON)
 public class AreaAlunoResource {
     @Inject PermissaoService permissaoService;
+    @Inject AlunoUsuarioService alunoUsuarioService;
     @Inject FrequenciaAcademicaService frequenciaService;
     @Inject ResultadoAcademicoService resultadoService;
     @Inject HistoricoPdfService pdfService;
@@ -188,11 +190,7 @@ public class AreaAlunoResource {
 
     private Aluno alunoLogado() {
         permissaoService.exigir(contexto, Perfil.ALUNO);
-        Long usuarioId = permissaoService.usuarioId(contexto);
-        Aluno aluno = Aluno.find("usuario.id", usuarioId).firstResult();
-        if (aluno == null) throw new ApiException(Response.Status.NOT_FOUND,
-                "Cadastro de aluno nao vinculado ao usuario autenticado");
-        return aluno;
+        return alunoUsuarioService.identificarAluno(permissaoService.usuarioId(contexto));
     }
 
     private List<MatriculaDisciplina> matriculas(Aluno aluno) {

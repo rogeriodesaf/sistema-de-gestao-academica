@@ -434,12 +434,17 @@ export class CadastroPage implements OnInit {
     if (campo === 'ativo' || campo === 'presente') return [{ id: true, nome: 'Sim' }, { id: false, nome: 'Nao' }];
     if (campo === 'status') return this.opcoesStatus();
     if (campo === 'tipo') return [{ id: 'MODULO', nome: 'Modulo' }, { id: 'SEMESTRE', nome: 'Semestre' }, { id: 'BIMESTRE', nome: 'Bimestre' }];
+    if (campo === 'turma.id' && this.endpoint === 'ofertas-disciplinas') return this.turmasCompativeis();
     return this.opcoes[campo] || [];
   }
 
-  rotuloOpcao(opcao: any) {
+  rotuloOpcao(opcao: any, campo?: string) {
     if (opcao === null || opcao === undefined) return '';
     if (typeof opcao !== 'object') return String(opcao);
+    if (campo === 'turma.id') {
+      const complemento = [opcao.anoPeriodo || opcao.ano].filter(Boolean).join(' - ');
+      return complemento && !opcao.nome?.includes(complemento) ? `${opcao.nome} - ${complemento}` : opcao.nome;
+    }
     if (opcao.disciplina && (opcao.modulo || opcao.anoLetivo || opcao.horario)) {
       const modulo = opcao.modulo?.nome || 'Sem módulo';
       const ano = opcao.anoLetivo?.ano || opcao.periodoLetivo?.anoLetivo?.ano || '';
@@ -456,6 +461,32 @@ export class CadastroPage implements OnInit {
       opcao.periodoLetivo?.nome
     ].filter(Boolean);
     return partes.length ? partes.join(' - ') : `Registro ${opcao.id}`;
+  }
+
+  campoOpcaoAlterado(campo: string) {
+    if (this.endpoint !== 'ofertas-disciplinas'
+        || !['anoLetivo.id', 'curso.id', 'modulo.id'].includes(campo)
+        || !this.formulario['turma.id']) return;
+    const turmaSelecionada = Number(this.formulario['turma.id']);
+    if (!this.turmasCompativeis().some(turma => turma.id === turmaSelecionada)) {
+      this.formulario['turma.id'] = '';
+    }
+  }
+
+  private turmasCompativeis() {
+    const anoId = Number(this.formulario['anoLetivo.id']);
+    const cursoId = Number(this.formulario['curso.id']);
+    const moduloId = Number(this.formulario['modulo.id']);
+    const anoSelecionado = (this.opcoes['anoLetivo.id'] || []).find(ano => ano.id === anoId)?.ano;
+    return (this.opcoes['turma.id'] || []).filter(turma => {
+      const anoCompativel = !anoId
+        || turma.anoLetivoId === anoId
+        || (!turma.anoLetivoId && (!turma.ano && !turma.anoPeriodo
+          || String(turma.ano || turma.anoPeriodo).includes(String(anoSelecionado))));
+      const cursoCompativel = !cursoId || !turma.cursoId || turma.cursoId === cursoId;
+      const moduloCompativel = !moduloId || !turma.moduloId || turma.moduloId === moduloId;
+      return anoCompativel && cursoCompativel && moduloCompativel;
+    });
   }
 
   valor(registro: any, chave: string) {
@@ -944,7 +975,9 @@ export class CadastroPage implements OnInit {
   private carregarOpcoes() {
     for (const campo of this.campos.filter(campo => campo.endsWith('.id'))) {
       const chave = campo.split('.')[0];
-      const endpoint = this.selects[chave];
+      const endpoint = campo === 'turma.id' && this.endpoint === 'ofertas-disciplinas'
+        ? 'turmas/opcoes'
+        : this.selects[chave];
       if (!endpoint || this.opcoes[campo]) continue;
       this.api.listar(endpoint).subscribe(opcoes => this.opcoes[campo] = opcoes);
     }
