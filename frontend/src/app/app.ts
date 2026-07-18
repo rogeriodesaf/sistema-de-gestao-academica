@@ -28,6 +28,7 @@ export class App implements OnDestroy {
       { path: '/matriz-curricular', label: 'Matriz curricular', icone: 'matrix' },
       { path: '/disciplinas', label: 'Disciplinas', icone: 'book' },
       { path: '/modulos', label: 'Modulos', icone: 'layers' },
+      { path: '/turmas', label: 'Turmas Acadêmicas', icone: 'users' },
       { path: '/montagem-periodo', label: 'Oferta por modulo', icone: 'calendar' },
       { path: '/ofertas-disciplinas', label: 'Ofertas de disciplinas', icone: 'checklist' },
       { path: '/anos-letivos', label: 'Anos letivos', icone: 'calendar' },

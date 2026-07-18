@@ -23,6 +23,7 @@ import br.edu.sga.service.PermissaoService;
 import br.edu.sga.service.FrequenciaAcademicaService;
 import br.edu.sga.service.ResultadoAcademicoService;
 import br.edu.sga.service.FechamentoDiarioService;
+import br.edu.sga.service.ProfessorUsuarioService;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -62,6 +63,7 @@ public class AreaProfessorResource {
     @Inject FrequenciaAcademicaService frequenciaAcademicaService;
     @Inject ResultadoAcademicoService resultadoAcademicoService;
     @Inject FechamentoDiarioService fechamentoDiarioService;
+    @Inject ProfessorUsuarioService professorUsuarioService;
     @Inject EntityManager entityManager;
     @Context ContainerRequestContext contexto;
 
@@ -134,7 +136,7 @@ public class AreaProfessorResource {
                 left join o.modulo mo
                 left join o.periodoLetivo pe
                 left join MatriculaDisciplina m on m.ofertaDisciplina = o and m.status in :statusMatricula
-                where (op.id = :professorId or dr.id = :professorId) and o.status in :statusOferta
+                where op.id = :professorId
                 group by o.id, t.id, t.nome, t.turno, t.horario, t.sala,
                          d.id, d.nome, d.codigo, d.cargaHoraria,
                          dr.id, dr.nome, dr.email, op.id, op.nome, op.email,
@@ -145,12 +147,6 @@ public class AreaProfessorResource {
                 """, Object[].class)
                 .setParameter("professorId", professor.id)
                 .setParameter("statusMatricula", List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO))
-                .setParameter("statusOferta", List.of(
-                        br.edu.sga.enums.StatusOfertaDisciplina.PLANEJADA,
-                        br.edu.sga.enums.StatusOfertaDisciplina.ABERTA,
-                        br.edu.sga.enums.StatusOfertaDisciplina.EM_ANDAMENTO,
-                        br.edu.sga.enums.StatusOfertaDisciplina.AGUARDANDO_HOMOLOGACAO,
-                        br.edu.sga.enums.StatusOfertaDisciplina.CONCLUIDA))
                 .getResultList();
         return linhas.stream().map(this::ofertaResumoProjetado).toList();
     }
@@ -541,18 +537,14 @@ public class AreaProfessorResource {
 
     private Professor professorLogadoObrigatorio() {
         permissaoService.exigir(contexto, Perfil.PROFESSOR, Perfil.COORDENADOR, Perfil.SECRETARIA);
-        Professor professor = Professor.find("usuario.id", permissaoService.usuarioId(contexto)).firstResult();
-        if (professor == null) {
-            throw new ApiException(Response.Status.FORBIDDEN, "Professor nao encontrado para o usuario logado");
-        }
-        return professor;
+        return professorUsuarioService.identificarProfessor(permissaoService.usuarioId(contexto));
     }
 
     private OfertaDisciplina ofertaPermitida(Long id) {
         Professor professor = professorLogadoObrigatorio();
         OfertaDisciplina oferta = OfertaDisciplina.findById(id);
         if (oferta == null) throw new NotFoundException();
-        if (!mesmoProfessor(professor, oferta.professor) && !mesmoProfessor(professor, oferta.disciplina.professorResponsavel)) {
+        if (!mesmoProfessor(professor, oferta.professor)) {
             throw new ApiException(Response.Status.FORBIDDEN, "Professor nao vinculado a esta disciplina");
         }
         return oferta;

@@ -15,6 +15,8 @@ import { PlanejamentoAcademicoPage } from './pages/planejamento-academico/planej
 import { PerfisPage } from './pages/perfis/perfis';
 import { UsuarioDetalhePage } from './pages/usuario-detalhe/usuario-detalhe';
 import { UsuariosPage } from './pages/usuarios/usuarios';
+import { TurmasPage } from './pages/turmas/turmas';
+import { TurmaDetalhePage } from './pages/turma-detalhe/turma-detalhe';
 
 const camposBase = {
   alunos: ['curso.id', 'nome', 'cpf', 'email', 'telefone', 'dataNascimento', 'endereco', 'status', 'dataIngresso', 'observacoes'],
@@ -55,6 +57,8 @@ export const routes: Routes = [
   { path: 'aulas', component: ConsultaAulasPage, canActivate: [authGuard], data: { perfis: perfisCoordenacao } },
   { path: 'disciplinas/:id', component: DisciplinaDetalhePage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'modulos/:id', component: ModuloDetalhePage, canActivate: [authGuard], data: { perfis: perfisGestao } },
+  { path: 'turmas', component: TurmasPage, canActivate: [authGuard], data: { perfis: perfisGestao } },
+  { path: 'turmas/:id', component: TurmaDetalhePage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'montagem-periodo', component: PlanejamentoAcademicoPage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'ofertas-disciplinas/:id', component: OfertaDetalhePage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'usuarios', component: UsuariosPage, canActivate: [authGuard], data: { perfis: perfisAdministracao } },
