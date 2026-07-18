@@ -34,6 +34,7 @@ export class CadastroPage implements OnInit {
   ofertasSelecionadas: Record<number, boolean> = {};
   disciplinasModulo: Record<number, Record<number, boolean>> = {};
   mensagem = '';
+  turmasCarregadas = false;
   buscaHistorico = '';
   carregando = false;
   carregandoMatriz = signal(false);
@@ -465,12 +466,8 @@ export class CadastroPage implements OnInit {
 
   campoOpcaoAlterado(campo: string) {
     if (this.endpoint !== 'ofertas-disciplinas'
-        || !['anoLetivo.id', 'curso.id', 'modulo.id'].includes(campo)
-        || !this.formulario['turma.id']) return;
-    const turmaSelecionada = Number(this.formulario['turma.id']);
-    if (!this.turmasCompativeis().some(turma => turma.id === turmaSelecionada)) {
-      this.formulario['turma.id'] = '';
-    }
+        || !['anoLetivo.id', 'curso.id', 'modulo.id'].includes(campo)) return;
+    this.carregarTurmas();
   }
 
   private turmasCompativeis() {
@@ -975,9 +972,11 @@ export class CadastroPage implements OnInit {
   private carregarOpcoes() {
     for (const campo of this.campos.filter(campo => campo.endsWith('.id'))) {
       const chave = campo.split('.')[0];
-      const endpoint = campo === 'turma.id' && this.endpoint === 'ofertas-disciplinas'
-        ? 'turmas/opcoes'
-        : this.selects[chave];
+      if (campo === 'turma.id' && this.endpoint === 'ofertas-disciplinas') {
+        this.carregarTurmas();
+        continue;
+      }
+      const endpoint = this.selects[chave];
       if (!endpoint || this.opcoes[campo]) continue;
       this.api.listar(endpoint).subscribe(opcoes => this.opcoes[campo] = opcoes);
     }
@@ -987,6 +986,35 @@ export class CadastroPage implements OnInit {
     if (this.endpoint === 'modulos') {
       this.api.listar('disciplinas').subscribe(opcoes => this.opcoes['disciplina.id'] = opcoes);
     }
+  }
+
+  private carregarTurmas() {
+    const parametros = new URLSearchParams();
+    const filtros: Record<string, string> = {
+      anoLetivoId: 'anoLetivo.id',
+      cursoId: 'curso.id',
+      moduloId: 'modulo.id'
+    };
+    for (const [parametro, campo] of Object.entries(filtros)) {
+      const valor = this.formulario[campo];
+      if (valor !== undefined && valor !== '') parametros.set(parametro, String(valor));
+    }
+    const turmaSelecionada = Number(this.formulario['turma.id']);
+    const sufixo = parametros.size ? `?${parametros.toString()}` : '';
+    this.turmasCarregadas = false;
+    this.api.obter(`turmas/opcoes${sufixo}`).subscribe({
+      next: turmas => {
+        this.opcoes['turma.id'] = turmas;
+        this.turmasCarregadas = true;
+        if (turmaSelecionada && !turmas.some((turma: any) => turma.id === turmaSelecionada)) {
+          this.formulario['turma.id'] = '';
+        }
+      },
+      error: () => {
+        this.opcoes['turma.id'] = [];
+        this.mensagem = 'Nao foi possivel carregar as turmas cadastradas.';
+      }
+    });
   }
 
   private opcoesStatus() {

@@ -21,8 +21,9 @@ public record TurmaOpcaoDTO(
                 turma.anoLetivo == null ? null : turma.anoLetivo.id,
                 turma.anoLetivo == null ? null : turma.anoLetivo.ano,
                 turma.anoPeriodo,
-                turma.curso == null ? null : turma.curso.id,
-                null
+                turma.curso != null ? turma.curso.id
+                        : turma.disciplina == null || turma.disciplina.curso == null ? null : turma.disciplina.curso.id,
+                turma.disciplina == null || turma.disciplina.modulo == null ? null : turma.disciplina.modulo.id
         );
     }
 }

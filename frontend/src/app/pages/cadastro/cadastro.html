@@ -106,6 +106,9 @@
         <option value="">Selecione</option>
         <option *ngFor="let opcao of opcoesCampo(campo)" [ngValue]="opcao.id">{{ rotuloOpcao(opcao, campo) }}</option>
       </select>
+      <small *ngIf="endpoint === 'ofertas-disciplinas' && campo === 'turma.id' && turmasCarregadas && !opcoesCampo(campo).length">
+        Nenhuma turma cadastrada. Cadastre uma Turma Acadêmica antes de criar ofertas.
+      </small>
 
       <textarea *ngIf="!isSelect(campo) && isTextoLongo(campo)" [name]="campo" [(ngModel)]="formulario[campo]"></textarea>
 
