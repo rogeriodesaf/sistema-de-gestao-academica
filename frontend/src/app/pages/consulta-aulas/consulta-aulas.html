@@ -11,7 +11,7 @@
       <label>Período inicial<input type="date" [(ngModel)]="filtros.inicio"></label><label>Período final<input type="date" [(ngModel)]="filtros.fim"></label>
       <button type="button" (click)="limpar()">Limpar filtros</button>
     </div>
-    <p class="vazio" *ngIf="carregando">Carregando aulas...</p>
+    <p class="vazio estado-carregando" *ngIf="carregando" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Carregando aulas...</span></p>
     <div class="tabela card-bloco" *ngIf="!carregando && aulasFiltradas().length"><table><thead><tr><th>Data da aula</th><th>Disciplina</th><th>Professor</th><th>Oferta</th><th>Conteúdo ministrado</th><th>Carga horária da aula</th><th>Alunos</th><th>Presenças</th><th>Faltas</th><th>Situação do Diário</th><th>Ações</th></tr></thead><tbody>
       <tr *ngFor="let aula of aulasFiltradas()"><td>{{ aula.data | date:'dd/MM/yyyy' }}</td><td>{{ aula.disciplina }}</td><td>{{ aula.professor || '-' }}</td><td>{{ aula.oferta || '-' }}</td><td>{{ aula.conteudo }}</td><td>{{ aula.cargaHoraria }}h</td><td>{{ aula.alunos }}</td><td>{{ aula.presencas }}</td><td>{{ aula.faltas }}</td><td>{{ aula.situacaoDiario }}</td><td><button type="button" (click)="visualizar(aula)">Visualizar</button></td></tr>
     </tbody></table></div><p class="vazio" *ngIf="!carregando && !aulasFiltradas().length">Nenhuma aula encontrada.</p>

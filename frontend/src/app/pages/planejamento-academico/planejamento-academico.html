@@ -6,7 +6,8 @@
 
   <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
 
-  <div class="vazio" *ngIf="carregando">
+  <div class="vazio estado-carregando" *ngIf="carregando" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
     <h2>Carregando planejamento</h2>
     <p>Buscando disciplinas, modulos, turmas e ofertas academicas.</p>
   </div>

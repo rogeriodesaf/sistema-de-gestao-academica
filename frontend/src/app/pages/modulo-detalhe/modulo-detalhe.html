@@ -12,7 +12,8 @@
 
   <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
 
-  <div class="vazio" *ngIf="carregando()">
+  <div class="vazio estado-carregando" *ngIf="carregando()" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
     <h2>Carregando modulo</h2>
     <p>Buscando as informacoes do agrupamento de disciplinas.</p>
   </div>

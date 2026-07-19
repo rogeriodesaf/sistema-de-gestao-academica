@@ -387,6 +387,22 @@ tbody tr:hover {
   animation: girar .7s linear infinite;
 }
 
+.estado-carregando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--azul-600);
+}
+
+.estado-carregando .spinner {
+  flex: 0 0 auto;
+}
+
+.estado-carregando > div {
+  min-width: 0;
+}
+
 @keyframes girar {
   to { transform: rotate(360deg); }
 }

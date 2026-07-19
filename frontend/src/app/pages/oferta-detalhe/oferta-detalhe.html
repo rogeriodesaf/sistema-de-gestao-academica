@@ -12,9 +12,9 @@
 
   <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
 
-  <div class="vazio" *ngIf="carregando()">
-    <h2>Carregando oferta</h2>
-    <p>Buscando dados da disciplina, turma e matriculas.</p>
+  <div class="vazio estado-carregando" *ngIf="carregando()" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <div><h2>Carregando oferta</h2><p>Buscando dados da disciplina, turma e matriculas.</p></div>
   </div>
 
   <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando() && oferta() as oferta">

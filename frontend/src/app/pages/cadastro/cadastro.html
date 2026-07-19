@@ -344,9 +344,9 @@
     </div>
   </div>
 
-  <div class="vazio" *ngIf="carregandoLista">
-    <h2>Carregando registros</h2>
-    <p>Aguarde enquanto as informações são consultadas.</p>
+  <div class="vazio estado-carregando" *ngIf="carregandoLista" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <div><h2>Carregando registros</h2><p>Aguarde enquanto as informações são consultadas.</p></div>
   </div>
 
   <div class="vazio" *ngIf="!carregandoLista && !mensagem && campos.length && !registros.length && endpoint !== 'historicos'">
