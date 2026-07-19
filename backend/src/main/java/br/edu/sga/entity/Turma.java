@@ -56,5 +56,5 @@ public class Turma extends PanacheEntity {
     public LocalDate dataTermino;
     @NotNull
     @Enumerated(EnumType.STRING)
-    public StatusTurma status = StatusTurma.PLANEJADA;
+    public StatusTurma status = StatusTurma.ABERTA;
 }

@@ -6,8 +6,10 @@ import br.edu.sga.entity.OfertaDisciplina;
 import br.edu.sga.entity.PeriodoLetivo;
 import br.edu.sga.entity.Professor;
 import br.edu.sga.entity.Turma;
+import br.edu.sga.enums.StatusTurma;
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -118,6 +120,32 @@ class OfertaDisciplinaTurmaTest {
         assertEquals(null, turma.professor);
         assertEquals(null, turma.horario);
         assertEquals(null, turma.sala);
+        assertEquals(StatusTurma.ABERTA, turma.status);
+
+        Map<String, Object> turmaEmAndamento = Map.of(
+                "nome", nome,
+                "curso", Map.of("id", disciplina.curso.id),
+                "anoLetivo", Map.of("id", ano.id),
+                "periodoLetivo", Map.of("id", periodo.id),
+                "turno", "Noite",
+                "quantidadeMaximaAlunos", 40,
+                "status", "EM_ANDAMENTO");
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(turmaEmAndamento)
+                .when().put("/api/turmas/" + turmaId)
+                .then().statusCode(200)
+                .body("status", equalTo("EM_ANDAMENTO"));
+
+        Map<String, Object> turmaEncerrada = new HashMap<>(turmaEmAndamento);
+        turmaEncerrada.put("status", "ENCERRADA");
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(turmaEncerrada)
+                .when().put("/api/turmas/" + turmaId)
+                .then().statusCode(409);
 
         given()
                 .header("Authorization", "Bearer " + token)

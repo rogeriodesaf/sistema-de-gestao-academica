@@ -12,6 +12,7 @@ import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.entity.Nota;
 import br.edu.sga.entity.PlanoEnsino;
 import br.edu.sga.enums.StatusTurma;
+import br.edu.sga.enums.StatusOfertaDisciplina;
 import br.edu.sga.exception.ApiException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -70,6 +71,7 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
         turma.professor = null;
         turma.horario = null;
         turma.sala = null;
+        turma.status = StatusTurma.ABERTA;
         turma.persist();
         return turma;
     }
@@ -81,7 +83,9 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
     public Turma atualizar(@PathParam("id") Long id, @Valid Turma turma) {
         exigirGestaoAcademica();
         Turma existente = buscar(id);
+        if (turma.status == null) turma.status = existente.status;
         validarTurma(turma, id);
+        validarTransicaoStatus(existente, turma.status);
         turma.disciplina = existente.disciplina;
         turma.professor = existente.professor;
         turma.horario = existente.horario;
@@ -132,6 +136,44 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
         turma.periodoLetivo = periodo;
         if (turma.status == null) {
             turma.status = StatusTurma.ABERTA;
+        }
+    }
+
+    private void validarTransicaoStatus(Turma existente, StatusTurma destino) {
+        if (destino == existente.status) return;
+        if (existente.status == StatusTurma.ENCERRADA || existente.status == StatusTurma.CANCELADA) {
+            throw new ApiException(Response.Status.CONFLICT, "Uma turma encerrada ou cancelada não pode ter sua situação alterada");
+        }
+        if (destino == StatusTurma.ENCERRADA) {
+            if (existente.status != StatusTurma.EM_ANDAMENTO) {
+                throw new ApiException(Response.Status.CONFLICT,
+                        "A turma deve estar em andamento antes de ser encerrada");
+            }
+            validarEncerramento(existente);
+            return;
+        }
+        boolean transicaoValida = existente.status == StatusTurma.PLANEJADA && destino == StatusTurma.ABERTA
+                || existente.status == StatusTurma.ABERTA && destino == StatusTurma.EM_ANDAMENTO
+                || destino == StatusTurma.CANCELADA;
+        if (!transicaoValida) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Transição de situação da turma não permitida");
+        }
+    }
+
+    private void validarEncerramento(Turma turma) {
+        List<OfertaDisciplina> ofertas = OfertaDisciplina.list("turma", turma);
+        if (ofertas.isEmpty()) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "A turma não pode ser encerrada sem ofertas concluídas");
+        }
+        boolean ofertaPendente = ofertas.stream().anyMatch(oferta ->
+                oferta.status != StatusOfertaDisciplina.CONCLUIDA
+                        || oferta.dataEncerramento == null
+                        || oferta.dataHomologacao == null);
+        if (ofertaPendente) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "A turma possui ofertas, diários ou homologações pendentes");
         }
     }
 }

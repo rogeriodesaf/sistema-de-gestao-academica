@@ -16,6 +16,7 @@ import br.edu.sga.entity.PlanoEnsino;
 import br.edu.sga.entity.Professor;
 import br.edu.sga.entity.Turma;
 import br.edu.sga.enums.StatusOfertaDisciplina;
+import br.edu.sga.enums.StatusTurma;
 import br.edu.sga.exception.ApiException;
 import br.edu.sga.service.IntegridadeAcademicaService;
 import jakarta.inject.Inject;
@@ -75,6 +76,10 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
         OfertaDisciplina existente = super.buscar(id);
         validarAlteracaoStatus(existente, oferta);
         validarOferta(oferta, id);
+        if (oferta.status == StatusOfertaDisciplina.EM_ANDAMENTO
+                && oferta.turma.status == StatusTurma.ABERTA) {
+            oferta.turma.status = StatusTurma.EM_ANDAMENTO;
+        }
         oferta.id = id;
         OfertaDisciplina atualizada = getEntityManager().merge(oferta);
         return resumir(atualizada);
