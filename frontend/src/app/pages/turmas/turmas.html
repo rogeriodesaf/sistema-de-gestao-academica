@@ -92,9 +92,9 @@
   <p class="mensagem" *ngIf="mensagem">{{ mensagem }}</p>
   <p class="mensagem erro" *ngIf="erroCarregamento">{{ erroCarregamento }}</p>
 
-  <div class="vazio" *ngIf="carregando">
-    <h2>Carregando turmas</h2>
-    <p>Buscando os dados administrativos e a capacidade das turmas.</p>
+  <div class="vazio estado-carregando" *ngIf="carregando" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <div><h2>Carregando turmas</h2><p>Buscando os dados administrativos e a capacidade das turmas.</p></div>
   </div>
 
   <section class="tabela card-bloco" *ngIf="!carregando && !erroCarregamento && turmas.length">

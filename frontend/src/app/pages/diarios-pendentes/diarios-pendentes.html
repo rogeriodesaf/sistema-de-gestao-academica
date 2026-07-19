@@ -2,7 +2,7 @@
   <div class="card-bloco"><h1>Diarios pendentes</h1><p>Confira os diarios encerrados antes da homologacao.</p></div>
   <p class="mensagem" [class.erro]="tipoMensagem === 'erro'" *ngIf="mensagem">{{ mensagem }}</p>
   <div class="card-bloco" *ngIf="!diario">
-    <p class="vazio" *ngIf="carregando">Carregando diarios...</p>
+    <p class="vazio estado-carregando" *ngIf="carregando" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Carregando diarios...</span></p>
     <p class="vazio" *ngIf="!carregando && !diarios.length">Nenhum diario aguardando homologacao.</p>
     <div class="tabela" *ngIf="diarios.length"><table><thead><tr><th>Disciplina</th><th>Turma/oferta</th><th>Professor</th><th>Periodo</th><th>Modulo</th><th>Alunos</th><th>Encerramento</th><th>Situacao</th><th></th></tr></thead><tbody>
       <tr *ngFor="let item of diarios"><td>{{ item.disciplina }}</td><td>{{ item.turma }}</td><td>{{ item.professor || '-' }}</td><td>{{ item.periodo || '-' }}</td><td>{{ item.modulo || '-' }}</td><td>{{ item.alunos }}</td><td>{{ item.encerradoEm | date:'dd/MM/yyyy HH:mm' }}</td><td><span class="pill">{{ item.status }}</span></td><td><button type="button" (click)="visualizar(item)">Visualizar diario</button></td></tr>

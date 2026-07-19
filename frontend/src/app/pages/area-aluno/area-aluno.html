@@ -5,7 +5,7 @@
   </header>
 
   <p class="mensagem erro" *ngIf="mensagem">{{ mensagem }}</p>
-  <p class="carregando" *ngIf="carregando">Carregando dados acadêmicos...</p>
+  <p class="carregando estado-carregando" *ngIf="carregando" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Carregando dados acadêmicos...</span></p>
 
   <div class="perfil" *ngIf="perfil">
     <div><small>Matrícula</small><strong>{{ perfil.matricula }}</strong></div>
@@ -66,7 +66,7 @@
       <button type="button" [class.ativa]="aba === 'avaliacoes'" (click)="trocarAba('avaliacoes')">Avaliações e notas</button>
       <button type="button" [class.ativa]="aba === 'materiais'" (click)="trocarAba('materiais')">Materiais</button>
     </nav>
-    <p class="carregando" *ngIf="carregandoDetalhe">Carregando detalhes...</p>
+    <p class="carregando estado-carregando" *ngIf="carregandoDetalhe" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Carregando detalhes...</span></p>
 
     <div class="resumo" *ngIf="aba === 'resumo' && !carregandoDetalhe">
       <div><small>Professor</small><strong>{{ formatar(disciplina.professor) }}</strong></div>

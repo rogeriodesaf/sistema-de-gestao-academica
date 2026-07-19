@@ -4,9 +4,9 @@
     subtitulo="Visão geral dos cadastros, ofertas, matrículas e andamento acadêmico."
   />
 
-  <div class="vazio" *ngIf="carregando()">
-    <h2>Carregando dashboard</h2>
-    <p>Buscando os indicadores acadêmicos do sistema.</p>
+  <div class="vazio estado-carregando" *ngIf="carregando()" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <div><h2>Carregando dashboard</h2><p>Buscando os indicadores acadêmicos do sistema.</p></div>
   </div>
 
   <div class="vazio" *ngIf="erro()">

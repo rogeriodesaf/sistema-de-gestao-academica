@@ -13,9 +13,9 @@
 
   <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
 
-  <div class="vazio" *ngIf="carregando()">
-    <h2>Carregando turma</h2>
-    <p>Buscando dados da turma academica e alunos matriculados.</p>
+  <div class="vazio estado-carregando" *ngIf="carregando()" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <div><h2>Carregando turma</h2><p>Buscando dados da turma academica e alunos matriculados.</p></div>
   </div>
 
   <div class="grade-detalhes detalhe-pagina" *ngIf="!carregando() && turma() as turma">
