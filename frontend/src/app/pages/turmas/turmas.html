@@ -69,13 +69,13 @@
 
     <label>
       Situacao
-      <select name="status" [(ngModel)]="formulario['status']">
-        <option value="PLANEJADA">Planejada</option>
+      <select name="status" [(ngModel)]="formulario['status']" [disabled]="!editandoId">
         <option value="ABERTA">Aberta</option>
         <option value="EM_ANDAMENTO">Em andamento</option>
-        <option value="ENCERRADA">Encerrada</option>
+        <option value="ENCERRADA" disabled>Encerrada</option>
         <option value="CANCELADA">Cancelada</option>
       </select>
+      <small *ngIf="!editandoId">Toda nova turma acadêmica inicia com a situação Aberta.</small>
     </label>
 
     <label class="campo-longo">

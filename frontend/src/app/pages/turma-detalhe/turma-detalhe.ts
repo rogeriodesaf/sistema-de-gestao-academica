@@ -95,7 +95,7 @@ export class TurmaDetalhePage implements OnInit {
 
   encerrar() {
     const turma = this.turma();
-    if (!turma || !confirm('Deseja encerrar esta turma?')) return;
+    if (!turma || !confirm('Deseja encerrar esta turma? Todas as ofertas, diários e homologações devem estar concluídos.')) return;
     this.api.atualizar('turmas', turma.id, { ...turma, status: 'ENCERRADA' }).subscribe({
       next: () => {
         this.turma.set({ ...turma, status: 'ENCERRADA' });
