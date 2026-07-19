@@ -1,6 +1,9 @@
 package br.edu.sga.resource;
 
 import br.edu.sga.dto.TurmaOpcaoDTO;
+import br.edu.sga.dto.AlunosTurmaDTO;
+import br.edu.sga.dto.AlunosTurmaDTO.AlunoDTO;
+import br.edu.sga.dto.AlunosTurmaDTO.DisciplinaDTO;
 import br.edu.sga.entity.AnoLetivo;
 import br.edu.sga.entity.Curso;
 import br.edu.sga.entity.PeriodoLetivo;
@@ -11,8 +14,10 @@ import br.edu.sga.entity.AulaMinistrada;
 import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.entity.Nota;
 import br.edu.sga.entity.PlanoEnsino;
+import br.edu.sga.entity.MatriculaDisciplina;
 import br.edu.sga.enums.StatusTurma;
 import br.edu.sga.enums.StatusOfertaDisciplina;
+import br.edu.sga.enums.StatusMatriculaDisciplina;
 import br.edu.sga.exception.ApiException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -25,8 +30,10 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Path("/api/turmas")
 public class TurmaResource extends CadastroResource.Crud<Turma> {
@@ -59,6 +66,62 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
         consulta.append(" order by nome");
         return Turma.<Turma>find(consulta.toString(), parametros)
                 .list().stream().map(TurmaOpcaoDTO::de).toList();
+    }
+
+    @GET
+    @Path("/{id}/alunos")
+    public AlunosTurmaDTO listarAlunos(@PathParam("id") Long id) {
+        exigirGestaoAcademica();
+        buscar(id);
+        List<StatusMatriculaDisciplina> vigentes = List.of(
+                StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO);
+        List<MatriculaDisciplina> matriculas = getEntityManager().createQuery("""
+                select md from MatriculaDisciplina md
+                join fetch md.aluno aluno
+                left join fetch aluno.curso
+                left join fetch md.curso
+                join fetch md.ofertaDisciplina oferta
+                join fetch oferta.disciplina
+                left join fetch oferta.curso
+                where oferta.turma.id = :turmaId and md.status in :status
+                order by aluno.nome, oferta.disciplina.nome, md.id
+                """, MatriculaDisciplina.class)
+                .setParameter("turmaId", id)
+                .setParameter("status", vigentes)
+                .getResultList();
+
+        Map<Long, List<MatriculaDisciplina>> porAluno = matriculas.stream().collect(Collectors.groupingBy(
+                matricula -> matricula.aluno.id, LinkedHashMap::new, Collectors.toList()));
+        List<AlunoDTO> alunos = porAluno.values().stream().map(vinculosAluno -> {
+            MatriculaDisciplina primeiro = vinculosAluno.getFirst();
+            Map<Long, List<MatriculaDisciplina>> porOferta = vinculosAluno.stream().collect(Collectors.groupingBy(
+                    matricula -> matricula.ofertaDisciplina.id, LinkedHashMap::new, Collectors.toList()));
+            List<DisciplinaDTO> disciplinas = porOferta.values().stream().map(vinculosOferta -> {
+                MatriculaDisciplina matricula = vinculosOferta.getFirst();
+                OfertaDisciplina oferta = matricula.ofertaDisciplina;
+                return new DisciplinaDTO(
+                        matricula.id,
+                        oferta.id,
+                        oferta.disciplina.id,
+                        oferta.disciplina.nome,
+                        oferta.horario,
+                        matricula.status,
+                        matricula.resultadoAcademico,
+                        matricula.dataMatricula,
+                        vinculosOferta.size());
+            }).toList();
+            String curso = primeiro.aluno.curso != null ? primeiro.aluno.curso.nome
+                    : primeiro.curso != null ? primeiro.curso.nome
+                    : primeiro.ofertaDisciplina.curso != null ? primeiro.ofertaDisciplina.curso.nome
+                    : "Disciplina avulsa";
+            return new AlunoDTO(
+                    primeiro.aluno.id,
+                    primeiro.aluno.nome,
+                    curso,
+                    disciplinas.size(),
+                    disciplinas);
+        }).toList();
+        return new AlunosTurmaDTO(alunos.size(), matriculas.size(), alunos);
     }
 
     @POST
