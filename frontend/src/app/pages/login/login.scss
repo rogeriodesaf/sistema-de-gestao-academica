@@ -46,9 +46,11 @@ form {
 }
 
 input {
-  border: 1px solid #dfe7ef;
+  border: 1px solid var(--borda);
   border-radius: 6px;
   padding: 12px;
+  background: var(--fundo-input);
+  color: var(--texto-principal);
 }
 
 button {
@@ -62,11 +64,11 @@ button {
 }
 
 .erro {
-  color: #b42318;
+  color: var(--erro-texto);
 }
 
 .recuperar-senha {
-  color: #256fa8;
+  color: var(--azul-600);
   font-weight: 700;
   text-align: center;
 }

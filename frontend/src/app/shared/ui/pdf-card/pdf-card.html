@@ -13,7 +13,7 @@
     <ng-template #botaoAbrir><button type="button" class="acao-primaria" (click)="abrir.emit()">Abrir</button></ng-template>
     <button type="button" class="acao-secundaria" (click)="baixar.emit()">Baixar</button>
     <div class="menu-pdf">
-      <button type="button" class="acao-menu" aria-label="Mais acoes do PDF" (click)="menuAberto = !menuAberto">...</button>
+      <button type="button" class="acao-menu" aria-label="Mais ações do PDF" (click)="menuAberto = !menuAberto">...</button>
       <div class="menu-lista" *ngIf="menuAberto">
         <label>
           Substituir PDF
@@ -33,7 +33,7 @@
 
   <div class="confirmacao" *ngIf="confirmandoRemocao">
     <strong>Deseja remover este PDF?</strong>
-    <p>Esta acao nao podera ser desfeita.</p>
+    <p>Esta ação não poderá ser desfeita.</p>
     <div>
       <button type="button" class="acao-secundaria" (click)="confirmandoRemocao = false">Cancelar</button>
       <button type="button" class="acao-destrutiva destaque" (click)="confirmarRemocao()">Remover PDF</button>

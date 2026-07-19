@@ -17,12 +17,13 @@ public class ErroMapper implements ExceptionMapper<Throwable> {
         }
         if (erro instanceof ConstraintViolationException validacao) {
             return resposta(Response.Status.BAD_REQUEST, validacao.getConstraintViolations().stream()
-                    .map(v -> v.getPropertyPath() + ": " + v.getMessage()).toList());
+                    .map(v -> v.getMessage()).distinct().toList());
         }
         if (erro instanceof WebApplicationException web) {
             return resposta(Response.Status.fromStatusCode(web.getResponse().getStatus()), web.getMessage());
         }
-        return resposta(Response.Status.INTERNAL_SERVER_ERROR, "Erro interno no servidor");
+        return resposta(Response.Status.INTERNAL_SERVER_ERROR,
+                "Ocorreu um erro ao processar a solicitação. Tente novamente.");
     }
 
     private Response resposta(Response.Status status, Object mensagem) {

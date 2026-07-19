@@ -2,7 +2,7 @@
 
 <aside *ngIf="atualizacaoApp.novaVersaoDisponivel()" class="aviso-atualizacao" role="status" aria-live="polite">
   <div>
-    <strong>Nova versao disponivel</strong>
+    <strong>Nova versão disponível</strong>
     <span>Atualize para carregar a versao mais recente do SGA.</span>
   </div>
   <button type="button" [disabled]="atualizacaoApp.atualizando()" (click)="atualizacaoApp.atualizarAgora()">

@@ -63,8 +63,8 @@
 
       <div class="paginacao paginacao-matriz" *ngIf="totalPaginasMatriz() > 1">
         <button type="button" class="secundario" [disabled]="paginaMatriz === 1" (click)="mudarPaginaMatriz(-1)">Anterior</button>
-        <span>Pagina {{ paginaMatriz }} de {{ totalPaginasMatriz() }} - {{ totalDisciplinasMatriz() }} disciplinas</span>
-        <button type="button" class="secundario" [disabled]="paginaMatriz === totalPaginasMatriz()" (click)="mudarPaginaMatriz(1)">Proxima</button>
+        <span>Página {{ paginaMatriz }} de {{ totalPaginasMatriz() }} - {{ totalDisciplinasMatriz() }} disciplinas</span>
+        <button type="button" class="secundario" [disabled]="paginaMatriz === totalPaginasMatriz()" (click)="mudarPaginaMatriz(1)">Próxima</button>
       </div>
     </div>
   </div>
@@ -73,7 +73,7 @@
     <div class="card-cabecalho">
       <div>
         <h2>{{ tituloFormulario() | titlecase }}</h2>
-        <p>{{ registroEditandoId ? 'Atualize as informacoes abaixo e salve as alteracoes.' : 'Preencha as informacoes abaixo para salvar o registro.' }}</p>
+        <p>{{ registroEditandoId ? 'Atualize as informações abaixo e salve as alterações.' : 'Preencha as informações abaixo para salvar o registro.' }}</p>
       </div>
     </div>
 
@@ -122,8 +122,8 @@
     </ng-container>
 
     <div class="acoes-form">
-      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alteracoes' : 'Salvar') }}</button>
-      <button type="button" class="secundario" (click)="cancelarEdicao()">{{ registroEditandoId ? 'Cancelar edicao' : 'Cancelar' }}</button>
+      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alterações' : 'Salvar') }}</button>
+      <button type="button" class="secundario" (click)="cancelarEdicao()">{{ registroEditandoId ? 'Cancelar edição' : 'Cancelar' }}</button>
     </div>
   </form>
 
@@ -339,9 +339,19 @@
 
     <div class="paginacao" *ngIf="endpoint === 'disciplinas'">
       <button type="button" class="secundario" [disabled]="paginaAtual === 1" (click)="mudarPagina(-1)">Anterior</button>
-      <span>Pagina {{ paginaAtual }} de {{ totalPaginas() }}</span>
-      <button type="button" class="secundario" [disabled]="paginaAtual === totalPaginas()" (click)="mudarPagina(1)">Proxima</button>
+      <span>Página {{ paginaAtual }} de {{ totalPaginas() }}</span>
+      <button type="button" class="secundario" [disabled]="paginaAtual === totalPaginas()" (click)="mudarPagina(1)">Próxima</button>
     </div>
+  </div>
+
+  <div class="vazio" *ngIf="carregandoLista">
+    <h2>Carregando registros</h2>
+    <p>Aguarde enquanto as informações são consultadas.</p>
+  </div>
+
+  <div class="vazio" *ngIf="!carregandoLista && !mensagem && campos.length && !registros.length && endpoint !== 'historicos'">
+    <h2>Nenhum registro cadastrado</h2>
+    <p>Os registros cadastrados serão exibidos aqui.</p>
   </div>
 
   <div class="vazio" *ngIf="endpoint === 'disciplinas' && registros.length && !registrosFiltrados().length">
@@ -416,7 +426,7 @@
 
       <div class="modal-acoes">
         <button type="button" class="secundario" (click)="fecharGerenciamentoDisciplinas()">Cancelar</button>
-        <button type="button" (click)="salvarDisciplinasModulo(moduloGerenciado)">Salvar vinculos</button>
+        <button type="button" (click)="salvarDisciplinasModulo(moduloGerenciado)">Salvar vínculos</button>
       </div>
     </section>
   </div>

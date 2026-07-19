@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, HostListener, Inject, Input, OnDestroy, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Inject, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { MenuGrupo, SidebarComponent } from '../sidebar/sidebar';
@@ -13,6 +13,7 @@ import { TopbarComponent } from '../topbar/topbar';
   styleUrl: './app-layout.scss'
 })
 export class AppLayoutComponent implements OnDestroy {
+  @ViewChild('menuMobile') menuMobile?: ElementRef<HTMLElement>;
   @Input() menuGrupos: MenuGrupo[] = [];
   @Input() usuario: any;
   @Output() sair = new EventEmitter<void>();
@@ -34,6 +35,7 @@ export class AppLayoutComponent implements OnDestroy {
   abrirMenu() {
     this.menuAberto = true;
     this.document.body.style.overflow = 'hidden';
+    setTimeout(() => this.menuMobile?.nativeElement.focus());
   }
 
   fecharMenu() {

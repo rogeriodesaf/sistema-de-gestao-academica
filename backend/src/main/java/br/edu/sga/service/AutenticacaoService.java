@@ -110,14 +110,14 @@ public class AutenticacaoService {
 
         String link = frontendUrl.replaceAll("/+$", "") + "/redefinir-senha?token=" + tokenPuro;
         String html = """
-                <h2>Redefinicao de senha - SGA</h2>
-                <p>Foi solicitada uma redefinicao de senha para sua conta.</p>
+                <h2>Redefinição de senha - SGA</h2>
+                <p>Foi solicitada uma redefinição de senha para sua conta.</p>
                 <p><a href="%s">Redefinir minha senha</a></p>
                 <p>Este link expira em %d minutos e pode ser utilizado apenas uma vez.</p>
-                <p>Se voce nao fez esta solicitacao, ignore este e-mail.</p>
+                <p>Se você não fez esta solicitação, ignore este e-mail.</p>
                 """.formatted(link, expiracaoMinutos);
         try {
-            mailer.send(Mail.withHtml(usuario.email, "Redefinicao de senha - SGA", html));
+            mailer.send(Mail.withHtml(usuario.email, "Redefinição de senha - SGA", html));
             if (registrarLink) LOG.infof("Link de redefinicao para teste local: %s", link);
         } catch (RuntimeException erro) {
             token.situacao = "INVALIDADO";
@@ -128,22 +128,22 @@ public class AutenticacaoService {
     @Transactional(dontRollbackOn = ApiException.class)
     public void redefinirSenha(String tokenPuro, String novaSenha, String confirmacaoSenha) {
         if (novaSenha == null || novaSenha.length() < 8) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "A senha deve ter no minimo 8 caracteres");
+            throw new ApiException(Response.Status.BAD_REQUEST, "A senha deve ter no mínimo 8 caracteres");
         }
         if (confirmacaoSenha == null || !novaSenha.equals(confirmacaoSenha)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "A confirmacao de senha nao confere");
+            throw new ApiException(Response.Status.BAD_REQUEST, "A confirmação de senha não confere");
         }
 
         TokenRedefinicaoSenha token = TokenRedefinicaoSenha.find("tokenHash", hashToken(tokenPuro)).firstResult();
         if (token == null || "INVALIDADO".equals(token.situacao)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Token de redefinicao invalido");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Token de redefinição inválido");
         }
         if ("UTILIZADO".equals(token.situacao)) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Este token de redefinicao ja foi utilizado");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Este token de redefinição já foi utilizado");
         }
         if (!"ATIVO".equals(token.situacao) || token.dataExpiracao.isBefore(LocalDateTime.now())) {
             token.situacao = "EXPIRADO";
-            throw new ApiException(Response.Status.BAD_REQUEST, "O token de redefinicao expirou");
+            throw new ApiException(Response.Status.BAD_REQUEST, "O token de redefinição expirou");
         }
 
         token.usuario.senhaHash = senhaService.criptografar(novaSenha);

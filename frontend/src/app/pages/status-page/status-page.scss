@@ -1,0 +1,20 @@
+.status-pagina {
+  min-height: calc(100vh - 170px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+section {
+  width: min(100%, 560px);
+  padding: clamp(28px, 6vw, 52px);
+  border: 1px solid var(--borda);
+  border-radius: 18px;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+  text-align: center;
+}
+
+span { color: var(--primaria); font-size: 1rem; font-weight: 800; }
+h1 { margin: 8px 0 12px; color: var(--texto-principal); }
+p { margin: 0 0 24px; color: var(--texto-secundario); }

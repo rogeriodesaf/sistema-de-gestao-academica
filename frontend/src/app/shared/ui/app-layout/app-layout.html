@@ -9,7 +9,7 @@
     (click)="fecharMenu()"
   ></button>
 
-  <div *ngIf="usuario" class="menu-mobile" [class.aberto]="menuAberto" role="dialog" aria-label="Menu principal">
+  <div #menuMobile *ngIf="usuario" class="menu-mobile" [class.aberto]="menuAberto" role="dialog" aria-modal="true" [attr.aria-hidden]="!menuAberto" aria-label="Menu principal" tabindex="-1">
     <app-sidebar [grupos]="menuGrupos" [mobile]="true" (navegar)="fecharMenu()" />
   </div>
 

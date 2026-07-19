@@ -19,6 +19,7 @@ export class CadastroPage implements OnInit {
   endpoint = '';
   campos: string[] = [];
   registros: any[] = [];
+  carregandoLista = false;
   formulario: Record<string, any> = {};
   opcoes: Record<string, any[]> = {};
   cursos: any[] = [];
@@ -104,43 +105,43 @@ export class CadastroPage implements OnInit {
     dataInicio: 'Data de início',
     dataMatricula: 'Data da matricula',
     dataNascimento: 'Data de nascimento',
-    dataTermino: 'Data de termino',
-    descricao: 'Descricao',
+    dataTermino: 'Data de término',
+    descricao: 'Descrição',
     ementaResumo: 'Resumo da ementa',
     ementaStatus: 'Ementa',
     email: 'E-mail',
-    endereco: 'Endereco',
-    formacao: 'Formacao',
-    frequenciaFinal: 'Frequencia final',
-    horario: 'Horario',
+    endereco: 'Endereço',
+    formacao: 'Formação',
+    frequenciaFinal: 'Frequência final',
+    horario: 'Horário',
     justificativa: 'Justificativa',
     metodologia: 'Metodologia',
-    moduloAtual: 'Modulo atual',
-    moduloOriginalOferta: 'Modulo original',
+    moduloAtual: 'Módulo atual',
+    moduloOriginalOferta: 'Módulo original',
     nome: 'Nome',
     notaFinal: 'Nota final',
     nota1: 'Nota 1',
     nota2: 'Nota 2',
-    observacoes: 'Observacoes',
-    observacao: 'Observacao',
+    observacoes: 'Observações',
+    observacao: 'Observação',
     objetivos: 'Objetivos',
     ordem: 'Ordem',
-    periodoCursado: 'Modulo cursado',
-    presente: 'Presenca',
-    quantidadeMaximaAlunos: 'Quantidade maxima de alunos',
+    periodoCursado: 'Módulo cursado',
+    presente: 'Presença',
+    quantidadeMaximaAlunos: 'Quantidade máxima de alunos',
     sala: 'Sala',
-    situacao: 'Situacao',
-    status: 'Situacao',
+    situacao: 'Situação',
+    status: 'Situação',
     telefone: 'Telefone',
     trabalho: 'Trabalho',
     turno: 'Turno',
     vagas: 'Vagas',
     dataHora: 'Data e hora',
-    usuarioNome: 'Usuario',
+    usuarioNome: 'Usuário',
     usuarioEmail: 'E-mail',
     perfil: 'Perfil',
-    acao: 'Acao',
-    metodo: 'Metodo',
+    acao: 'Ação',
+    metodo: 'Método',
     rota: 'Rota',
     statusHttp: 'Status HTTP',
     sucesso: 'Sucesso'
@@ -152,7 +153,7 @@ export class CadastroPage implements OnInit {
     this.route.data.subscribe(data => {
       this.titulo = data['titulo'];
       this.endpoint = data['endpoint'];
-      if (this.endpoint === 'historicos') this.titulo = 'Historico escolar';
+      if (this.endpoint === 'historicos') this.titulo = 'Histórico escolar';
       if (this.endpoint === 'planos-ensino') this.titulo = 'Plano de Ensino';
       if (this.endpoint === 'matriculas-disciplinas') this.titulo = 'Matrículas em Disciplinas';
       this.campos = data['campos'];
@@ -196,9 +197,13 @@ export class CadastroPage implements OnInit {
       this.registros = [];
       return;
     }
-    this.api.listar(this.endpoint).subscribe(registros => {
-      this.registros = registros;
-      if (this.endpoint === 'matriculas-disciplinas') this.carregarOfertasAgrupadas();
+    this.carregandoLista = true;
+    this.api.listar(this.endpoint).pipe(finalize(() => this.carregandoLista = false)).subscribe({
+      next: registros => {
+        this.registros = registros;
+        if (this.endpoint === 'matriculas-disciplinas') this.carregarOfertasAgrupadas();
+      },
+      error: err => this.mensagem = err?.error?.mensagem || 'Não foi possível carregar os registros. Tente novamente.'
     });
   }
 
@@ -230,7 +235,7 @@ export class CadastroPage implements OnInit {
       : this.api.salvar(this.endpoint, dados);
     requisicao.subscribe({
       next: (registro: any) => {
-        this.mensagem = this.registroEditandoId ? 'Registro atualizado com sucesso' : 'Registro salvo com sucesso';
+        this.mensagem = this.registroEditandoId ? 'Registro atualizado com sucesso.' : 'Registro salvo com sucesso.';
         if (this.endpoint === 'planos-ensino' && this.ementaPlanoPendente) {
           this.enviarEmentaAposSalvar(registro);
           return;
@@ -240,7 +245,7 @@ export class CadastroPage implements OnInit {
         this.carregando = false;
       },
       error: err => {
-        this.mensagem = err?.error?.mensagem || 'Nao foi possivel salvar';
+        this.mensagem = err?.error?.mensagem || 'Não foi possível salvar. Verifique os campos e tente novamente.';
         this.carregando = false;
       }
     });

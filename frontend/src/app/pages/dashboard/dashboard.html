@@ -1,22 +1,22 @@
 <section class="painel">
   <app-page-header
     titulo="Dashboard"
-    subtitulo="Visao geral dos cadastros, ofertas, matriculas e andamento academico."
+    subtitulo="Visão geral dos cadastros, ofertas, matrículas e andamento acadêmico."
   />
 
   <div class="vazio" *ngIf="carregando()">
     <h2>Carregando dashboard</h2>
-    <p>Buscando os indicadores academicos do sistema.</p>
+    <p>Buscando os indicadores acadêmicos do sistema.</p>
   </div>
 
   <div class="vazio" *ngIf="erro()">
-    <h2>Dashboard indisponivel</h2>
+    <h2>Dashboard indisponível</h2>
     <p>{{ erro() }}</p>
   </div>
 
   <div class="vazio" *ngIf="vazio()">
     <h2>Nenhum indicador encontrado</h2>
-    <p>Cadastre cursos, disciplinas, ofertas e matriculas para alimentar o dashboard.</p>
+    <p>Cadastre cursos, disciplinas, ofertas e matrículas para alimentar o dashboard.</p>
   </div>
 
   <div class="metricas" *ngIf="!carregando() && !erro()">

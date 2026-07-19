@@ -15,5 +15,11 @@ export const authGuard: CanActivateFn = route => {
     return true;
   }
 
-  return router.parseUrl(auth.rotaInicial(perfil));
+  return router.parseUrl('/acesso-negado');
+};
+
+export const inicioGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return router.parseUrl(auth.logado() ? auth.rotaInicial() : '/login');
 };

@@ -8,3 +8,10 @@
 .cabecalho p {
   max-width: 760px;
 }
+
+@media (max-width: 720px) {
+  .cabecalho {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
