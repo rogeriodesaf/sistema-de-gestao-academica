@@ -233,6 +233,10 @@ export class PlanejamentoAcademicoPage implements OnInit {
     return ['PLANEJADA', 'ABERTA', 'EM_ANDAMENTO', 'ENCERRADA', 'CANCELADA'];
   }
 
+  ofertaEditavel(oferta: any) {
+    return !['AGUARDANDO_HOMOLOGACAO', 'CONCLUIDA', 'ENCERRADA'].includes(oferta?.status);
+  }
+
   private formularioVazio() {
     return {
       'anoLetivo.id': '',
@@ -291,6 +295,7 @@ export class PlanejamentoAcademicoPage implements OnInit {
 
   private validarFormulario() {
     if (!this.formulario['anoLetivo.id']) return 'Ano letivo obrigatorio.';
+    if (!this.formulario['periodoLetivo.id']) return 'Periodo letivo obrigatorio.';
     if (!this.formulario['disciplina.id']) return 'Disciplina obrigatoria.';
     if (!this.formulario['modulo.id']) return 'Modulo de oferta obrigatorio.';
     if (!this.formulario['professor.id']) return 'Professor obrigatorio.';
@@ -301,6 +306,10 @@ export class PlanejamentoAcademicoPage implements OnInit {
     if (!this.formulario['sala']) return 'Sala obrigatoria.';
     if (!this.formulario['vagas'] || Number(this.formulario['vagas']) <= 0) return 'Vagas obrigatorias.';
     if (!this.formulario['status']) return 'Situacao obrigatoria.';
+    if (this.formulario['dataInicio'] && this.formulario['dataFim']
+        && this.formulario['dataFim'] < this.formulario['dataInicio']) {
+      return 'A data de término não pode ser anterior à data de início.';
+    }
     return '';
   }
 

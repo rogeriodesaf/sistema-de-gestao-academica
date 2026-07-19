@@ -30,6 +30,7 @@ public class AcademicoResource {
     @GET
     @Path("/matriculas")
     public Object matriculas() {
+        permissaoService.exigir(contexto, Perfil.COORDENADOR, Perfil.SECRETARIA);
         return Matricula.listAll();
     }
 
@@ -43,6 +44,7 @@ public class AcademicoResource {
     @GET
     @Path("/notas")
     public Object notas() {
+        permissaoService.exigir(contexto, Perfil.COORDENADOR, Perfil.SECRETARIA);
         return Nota.listAll();
     }
 
@@ -56,12 +58,14 @@ public class AcademicoResource {
     @GET
     @Path("/frequencias")
     public Object frequencias() {
+        permissaoService.exigir(contexto, Perfil.COORDENADOR, Perfil.SECRETARIA);
         return Frequencia.listAll();
     }
 
     @GET
     @Path("/encerramentos/{turmaId}/{disciplinaId}/pendencias")
     public Object pendencias(@PathParam("turmaId") Long turmaId, @PathParam("disciplinaId") Long disciplinaId) {
+        permissaoService.exigir(contexto, Perfil.COORDENADOR);
         return Map.of("pendencias", academicoService.pendenciasEncerramento(turmaId, disciplinaId));
     }
 

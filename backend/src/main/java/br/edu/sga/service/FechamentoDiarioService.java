@@ -17,6 +17,8 @@ import br.edu.sga.enums.ResultadoAcademico;
 import br.edu.sga.exception.ApiException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDateTime;
@@ -36,6 +38,7 @@ public class FechamentoDiarioService {
     @Inject FrequenciaAcademicaService frequenciaService;
     @Inject ResultadoAcademicoService resultadoService;
     @Inject IntegralizacaoCursoService integralizacaoCursoService;
+    @Inject EntityManager entityManager;
 
     public record OperacaoDTO(String mensagem, String status, List<String> pendencias) {}
 
@@ -102,6 +105,7 @@ public class FechamentoDiarioService {
 
     @Transactional
     public OperacaoDTO encerrar(OfertaDisciplina oferta, Professor professor) {
+        oferta = bloquear(oferta);
         if (oferta.status != StatusOfertaDisciplina.EM_ANDAMENTO) {
             throw new ApiException(Response.Status.CONFLICT, "Somente uma oferta em andamento pode ser encerrada");
         }
@@ -119,6 +123,7 @@ public class FechamentoDiarioService {
 
     @Transactional
     public OperacaoDTO reabrir(OfertaDisciplina oferta, Usuario coordenador, String motivo) {
+        oferta = bloquear(oferta);
         if (oferta.status != StatusOfertaDisciplina.AGUARDANDO_HOMOLOGACAO) {
             throw new ApiException(Response.Status.CONFLICT, "Somente um diario aguardando homologacao pode ser reaberto");
         }
@@ -134,6 +139,7 @@ public class FechamentoDiarioService {
 
     @Transactional
     public OperacaoDTO homologar(OfertaDisciplina oferta, Usuario coordenador) {
+        oferta = bloquear(oferta);
         if (oferta.status != StatusOfertaDisciplina.AGUARDANDO_HOMOLOGACAO) {
             throw new ApiException(Response.Status.CONFLICT, "Somente um diario aguardando homologacao pode ser homologado");
         }
@@ -170,8 +176,14 @@ public class FechamentoDiarioService {
 
     private void consolidarHistorico(MatriculaDisciplina matricula, String situacao) {
         OfertaDisciplina oferta = matricula.ofertaDisciplina;
-        HistoricoEscolar historico = HistoricoEscolar.find(
-                "aluno = ?1 and ofertaDisciplina = ?2", matricula.aluno, oferta).firstResult();
+        List<HistoricoEscolar> historicos = HistoricoEscolar.<HistoricoEscolar>find(
+                "matriculaDisciplina = ?1 or (matriculaDisciplina is null and aluno = ?2 and ofertaDisciplina = ?3)",
+                matricula, matricula.aluno, oferta).page(0, 2).list();
+        if (historicos.size() > 1) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Existem históricos duplicados para esta matrícula; corrija a pendência antes de homologar");
+        }
+        HistoricoEscolar historico = historicos.isEmpty() ? null : historicos.getFirst();
         if (historico == null) {
             historico = new HistoricoEscolar();
             historico.aluno = matricula.aluno;
@@ -207,5 +219,14 @@ public class FechamentoDiarioService {
     private List<MatriculaDisciplina> matriculasAtivas(OfertaDisciplina oferta) {
         return MatriculaDisciplina.list(
                 "ofertaDisciplina = ?1 and status in ?2 order by aluno.nome", oferta, STATUS_ATIVOS);
+    }
+
+    private OfertaDisciplina bloquear(OfertaDisciplina oferta) {
+        OfertaDisciplina bloqueada = oferta == null || oferta.id == null ? null
+                : entityManager.find(OfertaDisciplina.class, oferta.id, LockModeType.PESSIMISTIC_WRITE);
+        if (bloqueada == null) {
+            throw new ApiException(Response.Status.NOT_FOUND, "Oferta de disciplina não encontrada");
+        }
+        return bloqueada;
     }
 }

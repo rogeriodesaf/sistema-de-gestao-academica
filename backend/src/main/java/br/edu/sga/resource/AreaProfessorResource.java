@@ -21,6 +21,7 @@ import br.edu.sga.service.FrequenciaAcademicaService;
 import br.edu.sga.service.ResultadoAcademicoService;
 import br.edu.sga.service.FechamentoDiarioService;
 import br.edu.sga.service.ProfessorUsuarioService;
+import br.edu.sga.service.IntegridadeAcademicaService;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -60,6 +61,7 @@ public class AreaProfessorResource {
     @Inject ResultadoAcademicoService resultadoAcademicoService;
     @Inject FechamentoDiarioService fechamentoDiarioService;
     @Inject ProfessorUsuarioService professorUsuarioService;
+    @Inject IntegridadeAcademicaService integridadeAcademicaService;
     @Inject EntityManager entityManager;
     @Context ContainerRequestContext contexto;
 
@@ -167,6 +169,7 @@ public class AreaProfessorResource {
         OfertaDisciplina oferta = ofertaPermitida(ofertaId);
         exigirEdicaoLiberada(oferta);
         validarAula(dto);
+        integridadeAcademicaService.validarDataNaOferta(dto.dataAula(), oferta, "da aula");
         String conteudo = dto.conteudoMinistrado().trim();
         if (AulaMinistrada.count("ofertaDisciplina = ?1 and dataAula = ?2 and conteudoMinistrado = ?3",
                 oferta, dto.dataAula(), conteudo) > 0) {
@@ -457,7 +460,7 @@ public class AreaProfessorResource {
     }
 
     private Professor professorLogadoObrigatorio() {
-        permissaoService.exigir(contexto, Perfil.PROFESSOR, Perfil.COORDENADOR, Perfil.SECRETARIA);
+        permissaoService.exigir(contexto, Perfil.PROFESSOR);
         return professorUsuarioService.identificarProfessor(permissaoService.usuarioId(contexto));
     }
 
@@ -672,6 +675,7 @@ public class AreaProfessorResource {
         if (dto.peso() == null || dto.peso().signum() <= 0) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Peso deve ser maior que zero");
         }
+        integridadeAcademicaService.validarDataNaOferta(dto.data(), oferta, "da avaliação");
         long mesmaOrdem = idAtual == null
                 ? Avaliacao.count("ofertaDisciplina = ?1 and ordem = ?2", oferta, dto.ordem())
                 : Avaliacao.count("ofertaDisciplina = ?1 and ordem = ?2 and id <> ?3", oferta, dto.ordem(), idAtual);

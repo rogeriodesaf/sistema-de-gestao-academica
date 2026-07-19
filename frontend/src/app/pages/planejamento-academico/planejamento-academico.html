@@ -31,7 +31,7 @@
       <label>
         Periodo letivo
         <select name="periodoLetivo" [(ngModel)]="formulario['periodoLetivo.id']" (ngModelChange)="filtrosTurmaAlterados()">
-          <option value="">Sem periodo especifico</option>
+          <option value="">Selecione</option>
           <option *ngFor="let periodo of periodosLetivos" [ngValue]="periodo.id">{{ rotulo(periodo) }}</option>
         </select>
       </label>
@@ -185,7 +185,7 @@
 
       <div class="grupo-acoes compacto">
         <button type="button" class="secundario" (click)="visualizar(oferta)">Visualizar</button>
-        <button type="button" class="secundario" (click)="editar(oferta)">Editar</button>
+        <button type="button" class="secundario" (click)="editar(oferta)" [disabled]="!ofertaEditavel(oferta)">Editar</button>
       </div>
     </article>
   </section>

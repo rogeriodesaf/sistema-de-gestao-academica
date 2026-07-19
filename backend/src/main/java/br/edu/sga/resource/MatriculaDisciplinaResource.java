@@ -5,6 +5,7 @@ import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.enums.StatusMatriculaDisciplina;
 import br.edu.sga.enums.ResultadoAcademico;
 import br.edu.sga.enums.Perfil;
+import br.edu.sga.enums.StatusOfertaDisciplina;
 import br.edu.sga.service.AcademicoService;
 import br.edu.sga.service.FrequenciaAcademicaService;
 import br.edu.sga.service.ResultadoAcademicoService;
@@ -73,6 +74,7 @@ public class MatriculaDisciplinaResource {
         if (atual.dataConsolidacao != null) {
             throw new ApiException(Response.Status.CONFLICT, "Matricula consolidada nao pode ser alterada");
         }
+        exigirOfertaEditavel(atual);
         if (statusAdministrativo(entrada.status)) atual.status = entrada.status;
         if (entrada.dataMatricula != null) atual.dataMatricula = entrada.dataMatricula;
         atual.observacoes = entrada.observacoes;
@@ -89,6 +91,7 @@ public class MatriculaDisciplinaResource {
             throw new ApiException(Response.Status.CONFLICT,
                     "Matricula consolidada nao pode ser cancelada ou excluida");
         }
+        exigirOfertaEditavel(matricula);
         matricula.status = StatusMatriculaDisciplina.CANCELADO;
     }
 
@@ -127,6 +130,14 @@ public class MatriculaDisciplinaResource {
         return status == StatusMatriculaDisciplina.ATIVA
                 || status == StatusMatriculaDisciplina.TRANCADO
                 || status == StatusMatriculaDisciplina.CANCELADO;
+    }
+
+    private void exigirOfertaEditavel(MatriculaDisciplina matricula) {
+        if (!List.of(StatusOfertaDisciplina.PLANEJADA, StatusOfertaDisciplina.ABERTA,
+                StatusOfertaDisciplina.EM_ANDAMENTO).contains(matricula.ofertaDisciplina.status)) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "A matrícula não pode ser alterada após o encerramento do diário");
+        }
     }
 
     private MatriculaDisciplina comResultado(MatriculaDisciplina matricula) {

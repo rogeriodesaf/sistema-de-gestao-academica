@@ -2,6 +2,8 @@ package br.edu.sga.resource;
 
 import br.edu.sga.enums.StatusHistorico;
 import br.edu.sga.exception.ApiException;
+import br.edu.sga.enums.Perfil;
+import br.edu.sga.service.PermissaoService;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.DELETE;
@@ -11,6 +13,8 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import java.math.BigDecimal;
 import java.util.List;
 import java.time.LocalDateTime;
@@ -18,6 +22,8 @@ import java.time.LocalDateTime;
 @Path("/api/historicos")
 public class HistoricoResource {
     @Inject EntityManager entityManager;
+    @Inject PermissaoService permissaoService;
+    @Context ContainerRequestContext contexto;
 
     public record HistoricoConsultaDTO(Long id, String aluno, String curso, String disciplina,
                                        String codigo, String modulo, String periodoCursado,
@@ -27,6 +33,7 @@ public class HistoricoResource {
 
     @GET
     public List<HistoricoConsultaDTO> listar() {
+        permissaoService.exigir(contexto, Perfil.COORDENADOR, Perfil.SECRETARIA);
         return entityManager.createQuery("""
                 select h.id, a.nome, c.nome, coalesce(h.disciplinaNome, d.nome),
                        coalesce(h.disciplinaCodigo, d.codigo), coalesce(h.moduloNome, m.nome), h.periodoCursado,
@@ -65,6 +72,7 @@ public class HistoricoResource {
     }
 
     private void somenteLeitura() {
+        permissaoService.exigir(contexto, Perfil.COORDENADOR, Perfil.SECRETARIA);
         throw new ApiException(Response.Status.METHOD_NOT_ALLOWED,
                 "O historico escolar e alimentado exclusivamente pela homologacao");
     }

@@ -1,6 +1,15 @@
 package br.edu.sga.resource;
 
 import br.edu.sga.entity.Disciplina;
+import br.edu.sga.entity.AulaMinistrada;
+import br.edu.sga.entity.HistoricoEscolar;
+import br.edu.sga.entity.Matricula;
+import br.edu.sga.entity.Nota;
+import br.edu.sga.entity.OfertaDisciplina;
+import br.edu.sga.entity.PlanoEnsino;
+import br.edu.sga.entity.Turma;
+import br.edu.sga.entity.VinculoProfessorDisciplinaTurma;
+import br.edu.sga.exception.ApiException;
 import br.edu.sga.service.ArquivoPdfService;
 import br.edu.sga.service.IntegralizacaoCursoService;
 import jakarta.inject.Inject;
@@ -61,8 +70,19 @@ public class DisciplinaResource extends CadastroResource.Crud<Disciplina> {
     @Transactional
     @Override
     public void excluir(@PathParam("id") Long id) {
-        var curso = buscar(id).curso;
-        super.excluir(id);
+        exigirGestaoAcademica();
+        Disciplina disciplina = buscar(id);
+        if (disciplina.curso != null || disciplina.modulo != null || disciplina.moduloOriginal != null
+                || OfertaDisciplina.count("disciplina", disciplina) > 0 || PlanoEnsino.count("disciplina", disciplina) > 0
+                || HistoricoEscolar.count("disciplina", disciplina) > 0 || Matricula.count("disciplina", disciplina) > 0
+                || Nota.count("disciplina", disciplina) > 0 || AulaMinistrada.count("disciplina", disciplina) > 0
+                || Turma.count("disciplina", disciplina) > 0
+                || VinculoProfessorDisciplinaTurma.count("disciplina", disciplina) > 0) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "A disciplina possui vínculos acadêmicos e não pode ser excluída; utilize a inativação");
+        }
+        var curso = disciplina.curso;
+        getEntityManager().remove(disciplina);
         integralizacaoCursoService.recalcularCurso(curso);
     }
 

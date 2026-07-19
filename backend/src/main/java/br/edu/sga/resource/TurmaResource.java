@@ -5,11 +5,18 @@ import br.edu.sga.entity.AnoLetivo;
 import br.edu.sga.entity.Curso;
 import br.edu.sga.entity.PeriodoLetivo;
 import br.edu.sga.entity.Turma;
+import br.edu.sga.entity.OfertaDisciplina;
+import br.edu.sga.entity.Matricula;
+import br.edu.sga.entity.AulaMinistrada;
+import br.edu.sga.entity.HistoricoEscolar;
+import br.edu.sga.entity.Nota;
+import br.edu.sga.entity.PlanoEnsino;
 import br.edu.sga.enums.StatusTurma;
 import br.edu.sga.exception.ApiException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -81,6 +88,22 @@ public class TurmaResource extends CadastroResource.Crud<Turma> {
         turma.sala = existente.sala;
         turma.id = id;
         return getEntityManager().merge(turma);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Transactional
+    @Override
+    public void excluir(@PathParam("id") Long id) {
+        exigirGestaoAcademica();
+        Turma turma = buscar(id);
+        if (OfertaDisciplina.count("turma", turma) > 0 || Matricula.count("turma", turma) > 0
+                || AulaMinistrada.count("turma", turma) > 0 || HistoricoEscolar.count("turma", turma) > 0
+                || Nota.count("turma", turma) > 0 || PlanoEnsino.count("turma", turma) > 0) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "A turma possui ofertas ou registros acadêmicos vinculados");
+        }
+        getEntityManager().remove(turma);
     }
 
     private void validarTurma(Turma turma, Long idAtual) {

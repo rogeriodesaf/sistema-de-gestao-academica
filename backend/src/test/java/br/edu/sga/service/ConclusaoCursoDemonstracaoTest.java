@@ -76,7 +76,7 @@ class ConclusaoCursoDemonstracaoTest {
         duplicada.ofertaDisciplina = oferta;
         ApiException conflitoDuplicidade = assertThrows(ApiException.class,
                 () -> academicoService.matricularEmDisciplina(duplicada));
-        assertTrue(conflitoDuplicidade.getMessage().contains("ja possui matricula"));
+        assertTrue(conflitoDuplicidade.getMessage().contains("já está matriculado"));
 
         oferta.vagas = 1;
         Aluno outroAluno = Aluno.find("email", "aluno@sga.local").firstResult();
@@ -85,6 +85,6 @@ class ConclusaoCursoDemonstracaoTest {
         excedente.ofertaDisciplina = oferta;
         ApiException conflitoVagas = assertThrows(ApiException.class,
                 () -> academicoService.matricularEmDisciplina(excedente));
-        assertTrue(conflitoVagas.getMessage().contains("sem vagas"));
+        assertTrue(conflitoVagas.getMessage().contains("Não há vagas"));
     }
 }

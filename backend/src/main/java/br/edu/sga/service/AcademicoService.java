@@ -5,6 +5,8 @@ import br.edu.sga.enums.*;
 import br.edu.sga.exception.ApiException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
@@ -16,12 +18,15 @@ import java.util.List;
 public class AcademicoService {
     @Inject FrequenciaAcademicaService frequenciaAcademicaService;
     @Inject ProfessorUsuarioService professorUsuarioService;
+    @Inject IntegridadeAcademicaService integridadeAcademicaService;
+    @Inject EntityManager entityManager;
     @Transactional
     public MatriculaDisciplina matricularEmDisciplina(MatriculaDisciplina matricula) {
         if (matricula.aluno == null || matricula.ofertaDisciplina == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aluno e oferta de disciplina sao obrigatorios");
         }
-        OfertaDisciplina oferta = OfertaDisciplina.findById(matricula.ofertaDisciplina.id);
+        OfertaDisciplina oferta = entityManager.find(OfertaDisciplina.class,
+                matricula.ofertaDisciplina.id, LockModeType.PESSIMISTIC_WRITE);
         Aluno aluno = Aluno.findById(matricula.aluno.id);
         if (oferta == null || aluno == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aluno ou oferta de disciplina nao encontrados");
@@ -31,19 +36,26 @@ public class AcademicoService {
         if (existente != null) {
             String orientacao = existente.status == StatusMatriculaDisciplina.CANCELADO
                     || existente.status == StatusMatriculaDisciplina.TRANCADO
-                    ? " Reative o registro existente para preservar o historico."
+                    ? " Reative o registro existente explicitamente para preservar o histórico."
                     : "";
             throw new ApiException(Response.Status.CONFLICT,
-                    "O aluno ja possui matricula nesta oferta de disciplina." + orientacao);
+                    "O aluno já está matriculado nesta oferta de disciplina." + orientacao);
+        }
+        if (!List.of(StatusOfertaDisciplina.PLANEJADA, StatusOfertaDisciplina.ABERTA,
+                StatusOfertaDisciplina.EM_ANDAMENTO).contains(oferta.status)) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Não é possível matricular alunos nesta situação da oferta");
         }
         Integer limiteVagas = oferta.vagas;
         if (limiteVagas != null) {
             long ocupadas = MatriculaDisciplina.count("ofertaDisciplina = ?1 and status in ?2",
                     oferta, List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO));
             if (ocupadas >= limiteVagas) {
-                throw new ApiException(Response.Status.CONFLICT, "Oferta de disciplina sem vagas disponiveis");
+                throw new ApiException(Response.Status.CONFLICT,
+                        "Não há vagas disponíveis nesta oferta de disciplina");
             }
         }
+        integridadeAcademicaService.validarConflitoAluno(aluno, oferta);
         matricula.aluno = aluno;
         matricula.ofertaDisciplina = oferta;
         matricula.curso = aluno.curso != null ? aluno.curso : oferta.curso;
@@ -114,6 +126,31 @@ public class AcademicoService {
         exigirOfertaEmAndamento(aula.ofertaDisciplina);
         frequencia.aula = aula;
         validarProfessorVinculado(perfil, usuarioId, aula.ofertaDisciplina, aula.disciplina, aula.turma);
+        if (aula.ofertaDisciplina != null) {
+            MatriculaDisciplina matricula = frequencia.matriculaDisciplina == null
+                    || frequencia.matriculaDisciplina.id == null ? null
+                    : MatriculaDisciplina.findById(frequencia.matriculaDisciplina.id);
+            if (matricula == null && frequencia.aluno != null && frequencia.aluno.id != null) {
+                matricula = MatriculaDisciplina.find(
+                        "aluno.id = ?1 and ofertaDisciplina = ?2 and status in ?3",
+                        frequencia.aluno.id, aula.ofertaDisciplina,
+                        List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO)).firstResult();
+            }
+            if (matricula == null || !aula.ofertaDisciplina.id.equals(matricula.ofertaDisciplina.id)
+                    || !List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO)
+                    .contains(matricula.status)) {
+                throw new ApiException(Response.Status.BAD_REQUEST,
+                        "A frequência deve pertencer a um aluno matriculado nesta oferta");
+            }
+            if (frequencia.id == null && Frequencia.count(
+                    "aula = ?1 and aluno = ?2", aula, matricula.aluno) > 0) {
+                throw new ApiException(Response.Status.CONFLICT,
+                        "A frequência deste aluno já foi registrada para esta aula");
+            }
+            frequencia.matriculaDisciplina = matricula;
+            frequencia.aluno = matricula.aluno;
+            frequencia.presente = frequencia.status == StatusFrequencia.PRESENTE;
+        }
         if (frequencia.id == null) {
             frequencia.persist();
         }
