@@ -1,5 +1,7 @@
 <main class="login">
-  <button type="button" class="alternar-tema" (click)="tema.alternar()">Modo {{ tema.tema === 'claro' ? 'escuro' : 'claro' }}</button>
+  <button type="button" class="alternar-tema" (click)="tema.alternar()" [attr.aria-label]="tema.tema === 'claro' ? 'Ativar modo escuro' : 'Ativar modo claro'" [attr.title]="tema.tema === 'claro' ? 'Ativar modo escuro' : 'Ativar modo claro'">
+    <span aria-hidden="true">{{ tema.tema === 'claro' ? '☾' : '☀' }}</span>
+  </button>
   <section>
     <div class="marca">
       <img src="/logo-seminario.webp" alt="Seminário Teológico Congregacional de João Pessoa" (error)="$any($event.target).style.display='none'">
