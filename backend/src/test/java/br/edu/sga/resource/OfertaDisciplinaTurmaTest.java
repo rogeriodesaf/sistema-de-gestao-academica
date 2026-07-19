@@ -45,6 +45,16 @@ class OfertaDisciplinaTurmaTest {
         AnoLetivo ano = AnoLetivo.find("ano", 2026).firstResult();
         PeriodoLetivo periodo = PeriodoLetivo.find("anoLetivo", ano).firstResult();
         Professor professor = Professor.find("email", "professor@sga.local").firstResult();
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .queryParam("cursoId", turma.curso.id)
+                .queryParam("anoLetivoId", ano.id)
+                .queryParam("periodoLetivoId", periodo.id)
+                .when().get("/api/turmas/opcoes")
+                .then().statusCode(200)
+                .body("find { it.id == " + turma.id + " }.nome", equalTo("Turma Teologia 2026"));
+
         List<OfertaDisciplina> ofertasAnteriores = OfertaDisciplina.list("turma", turma);
         Set<Long> idsAnteriores = ofertasAnteriores.stream().map(oferta -> oferta.id).collect(Collectors.toSet());
 
