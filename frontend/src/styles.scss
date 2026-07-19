@@ -947,9 +947,16 @@ tbody tr:hover {
   z-index: 2;
   top: 16px;
   right: 16px;
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--borda);
   background: var(--fundo-card);
   color: var(--texto-principal);
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 :root[data-theme="escuro"] {
