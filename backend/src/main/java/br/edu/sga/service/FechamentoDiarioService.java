@@ -7,14 +7,18 @@ import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.entity.MatriculaDisciplina;
 import br.edu.sga.entity.NotaAvaliacao;
 import br.edu.sga.entity.OfertaDisciplina;
+import br.edu.sga.entity.PlanoEnsino;
 import br.edu.sga.entity.Professor;
 import br.edu.sga.entity.Usuario;
 import br.edu.sga.enums.StatusHistorico;
 import br.edu.sga.enums.StatusMatriculaDisciplina;
 import br.edu.sga.enums.StatusOfertaDisciplina;
+import br.edu.sga.enums.ResultadoAcademico;
 import br.edu.sga.exception.ApiException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDateTime;
@@ -34,6 +38,7 @@ public class FechamentoDiarioService {
     @Inject FrequenciaAcademicaService frequenciaService;
     @Inject ResultadoAcademicoService resultadoService;
     @Inject IntegralizacaoCursoService integralizacaoCursoService;
+    @Inject EntityManager entityManager;
 
     public record OperacaoDTO(String mensagem, String status, List<String> pendencias) {}
 
@@ -45,8 +50,20 @@ public class FechamentoDiarioService {
         List<Avaliacao> avaliacoes = Avaliacao.list(
                 "ofertaDisciplina = ?1 order by ordem, id", oferta);
 
+        if (PlanoEnsino.count("ofertaDisciplina = ?1 or (ofertaDisciplina is null and disciplina = ?2)",
+                oferta, oferta.disciplina) == 0) {
+            pendencias.add("Plano de ensino nao cadastrado para a disciplina.");
+        }
         if (matriculas.isEmpty()) pendencias.add("Nao ha alunos ativos matriculados.");
         if (aulas.isEmpty()) pendencias.add("Nao ha aulas registradas.");
+        int cargaMinistrada = aulas.stream().mapToInt(aula -> aula.cargaHorariaAula == null
+                ? 0 : aula.cargaHorariaAula).sum();
+        int cargaPrevista = oferta.cargaHorariaPrevista != null ? oferta.cargaHorariaPrevista
+                : oferta.disciplina.cargaHoraria == null ? 0 : oferta.disciplina.cargaHoraria;
+        if (cargaPrevista > 0 && cargaMinistrada < cargaPrevista) {
+            pendencias.add("Carga horaria ministrada de " + cargaMinistrada
+                    + "h e menor que a prevista de " + cargaPrevista + "h.");
+        }
         for (AulaMinistrada aula : aulas) {
             long chamadas = matriculas.isEmpty() ? 0
                     : Frequencia.count("aula = ?1 and matriculaDisciplina in ?2", aula, matriculas);
@@ -70,11 +87,25 @@ public class FechamentoDiarioService {
                 pendencias.add("A avaliacao " + avaliacao.nome + " possui " + invalidas + " notas invalidas.");
             }
         }
+        Map<Long, FrequenciaAcademicaService.ResumoFrequencia> frequencias = frequenciaService
+                .resumirOferta(oferta).stream().collect(Collectors.toMap(
+                        FrequenciaAcademicaService.ResumoFrequencia::matriculaId, Function.identity()));
+        for (MatriculaDisciplina matricula : matriculas) {
+            var frequencia = frequencias.get(matricula.id);
+            var resultado = resultadoService.calcularPreliminar(matricula, frequencia);
+            if (!resultado.completo() || resultado.media() == null) {
+                pendencias.add("A media final de " + matricula.aluno.nome + " nao pode ser calculada.");
+            }
+            if (frequencia == null || frequencia.percentualPresenca() == null) {
+                pendencias.add("A frequencia final de " + matricula.aluno.nome + " nao pode ser calculada.");
+            }
+        }
         return pendencias;
     }
 
     @Transactional
     public OperacaoDTO encerrar(OfertaDisciplina oferta, Professor professor) {
+        oferta = bloquear(oferta);
         if (oferta.status != StatusOfertaDisciplina.EM_ANDAMENTO) {
             throw new ApiException(Response.Status.CONFLICT, "Somente uma oferta em andamento pode ser encerrada");
         }
@@ -82,6 +113,8 @@ public class FechamentoDiarioService {
         if (!pendencias.isEmpty()) return new OperacaoDTO(
                 "O diario possui pendencias.", oferta.status.name(), pendencias);
 
+        resultadoService.atualizarMedias(oferta);
+        frequenciaService.recalcularOferta(oferta);
         oferta.status = StatusOfertaDisciplina.AGUARDANDO_HOMOLOGACAO;
         oferta.dataEncerramento = LocalDateTime.now();
         oferta.encerradoPor = professor;
@@ -90,6 +123,7 @@ public class FechamentoDiarioService {
 
     @Transactional
     public OperacaoDTO reabrir(OfertaDisciplina oferta, Usuario coordenador, String motivo) {
+        oferta = bloquear(oferta);
         if (oferta.status != StatusOfertaDisciplina.AGUARDANDO_HOMOLOGACAO) {
             throw new ApiException(Response.Status.CONFLICT, "Somente um diario aguardando homologacao pode ser reaberto");
         }
@@ -105,6 +139,7 @@ public class FechamentoDiarioService {
 
     @Transactional
     public OperacaoDTO homologar(OfertaDisciplina oferta, Usuario coordenador) {
+        oferta = bloquear(oferta);
         if (oferta.status != StatusOfertaDisciplina.AGUARDANDO_HOMOLOGACAO) {
             throw new ApiException(Response.Status.CONFLICT, "Somente um diario aguardando homologacao pode ser homologado");
         }
@@ -128,11 +163,7 @@ public class FechamentoDiarioService {
             matricula.notaFinal = resultado.media();
             matricula.frequenciaFinal = frequencia.percentualPresenca();
             matricula.dataConsolidacao = agora;
-            matricula.status = switch (situacao) {
-                case "APROVADO" -> StatusMatriculaDisciplina.CONCLUIDA;
-                case "REPROVADO_POR_FREQUENCIA" -> StatusMatriculaDisciplina.REPROVADO_POR_FREQUENCIA;
-                default -> StatusMatriculaDisciplina.REPROVADO_POR_NOTA;
-            };
+            matricula.resultadoAcademico = ResultadoAcademico.valueOf(situacao);
             consolidarHistorico(matricula, situacao);
             var integralizacao = integralizacaoCursoService.recalcular(matricula.aluno);
             if (integralizacao.concluidoNestaVerificacao()) concluintes.add(matricula.aluno.nome);
@@ -145,8 +176,14 @@ public class FechamentoDiarioService {
 
     private void consolidarHistorico(MatriculaDisciplina matricula, String situacao) {
         OfertaDisciplina oferta = matricula.ofertaDisciplina;
-        HistoricoEscolar historico = HistoricoEscolar.find(
-                "aluno = ?1 and ofertaDisciplina = ?2", matricula.aluno, oferta).firstResult();
+        List<HistoricoEscolar> historicos = HistoricoEscolar.<HistoricoEscolar>find(
+                "matriculaDisciplina = ?1 or (matriculaDisciplina is null and aluno = ?2 and ofertaDisciplina = ?3)",
+                matricula, matricula.aluno, oferta).page(0, 2).list();
+        if (historicos.size() > 1) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Existem históricos duplicados para esta matrícula; corrija a pendência antes de homologar");
+        }
+        HistoricoEscolar historico = historicos.isEmpty() ? null : historicos.getFirst();
         if (historico == null) {
             historico = new HistoricoEscolar();
             historico.aluno = matricula.aluno;
@@ -161,11 +198,20 @@ public class FechamentoDiarioService {
             historico.periodoCursado = oferta.periodoLetivo == null ? null : oferta.periodoLetivo.nome;
             historico.persist();
         }
+        historico.matriculaDisciplina = matricula;
+        historico.ofertaDisciplina = oferta;
         historico.notaFinal = matricula.notaFinal;
         historico.frequenciaFinal = matricula.frequenciaFinal;
+        historico.disciplinaNome = oferta.disciplina.nome;
+        historico.disciplinaCodigo = oferta.disciplina.codigo;
+        historico.moduloNome = oferta.modulo == null ? null : oferta.modulo.nome;
+        historico.creditos = oferta.disciplina.creditos;
+        historico.professorNome = oferta.professor == null ? null : oferta.professor.nome;
+        historico.dataHomologacao = oferta.dataHomologacao;
         historico.situacao = switch (situacao) {
             case "APROVADO" -> StatusHistorico.APROVADO;
             case "REPROVADO_POR_FREQUENCIA" -> StatusHistorico.REPROVADO_POR_FREQUENCIA;
+            case "REPROVADO_POR_NOTA_E_FREQUENCIA" -> StatusHistorico.REPROVADO_POR_NOTA_E_FREQUENCIA;
             default -> StatusHistorico.REPROVADO_POR_NOTA;
         };
     }
@@ -173,5 +219,14 @@ public class FechamentoDiarioService {
     private List<MatriculaDisciplina> matriculasAtivas(OfertaDisciplina oferta) {
         return MatriculaDisciplina.list(
                 "ofertaDisciplina = ?1 and status in ?2 order by aluno.nome", oferta, STATUS_ATIVOS);
+    }
+
+    private OfertaDisciplina bloquear(OfertaDisciplina oferta) {
+        OfertaDisciplina bloqueada = oferta == null || oferta.id == null ? null
+                : entityManager.find(OfertaDisciplina.class, oferta.id, LockModeType.PESSIMISTIC_WRITE);
+        if (bloqueada == null) {
+            throw new ApiException(Response.Status.NOT_FOUND, "Oferta de disciplina não encontrada");
+        }
+        return bloqueada;
     }
 }

@@ -8,13 +8,13 @@
     <form (ngSubmit)="entrar()" autocomplete="on">
       <label>
         E-mail
-        <input name="email" type="email" [(ngModel)]="email" autocomplete="username" required>
+        <input name="email" type="email" [(ngModel)]="email" autocomplete="username" aria-describedby="erro-login" autofocus required>
       </label>
       <label>
         Senha
-        <input name="senha" type="password" [(ngModel)]="senha" autocomplete="current-password" required>
+        <input name="senha" type="password" [(ngModel)]="senha" autocomplete="current-password" aria-describedby="erro-login" required>
       </label>
-      <p class="erro" *ngIf="erro">{{ erro }}</p>
+      <p id="erro-login" class="erro" role="alert" *ngIf="erro">{{ erro }}</p>
       <button type="submit" [disabled]="carregando">{{ carregando ? 'Entrando...' : 'Entrar' }}</button>
       <a class="recuperar-senha" routerLink="/esqueci-senha">Esqueci minha senha</a>
     </form>

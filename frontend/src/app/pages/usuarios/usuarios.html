@@ -51,8 +51,8 @@
     </label>
 
     <div class="acoes-form">
-      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alteracoes' : 'Cadastrar usuario') }}</button>
-      <button type="button" class="secundario" (click)="cancelarEdicao()">{{ registroEditandoId ? 'Cancelar edicao' : 'Cancelar' }}</button>
+      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alterações' : 'Cadastrar usuário') }}</button>
+      <button type="button" class="secundario" (click)="cancelarEdicao()">{{ registroEditandoId ? 'Cancelar edição' : 'Cancelar' }}</button>
     </div>
   </form>
 
@@ -139,8 +139,8 @@
 
     <div class="paginacao">
       <button type="button" class="secundario" [disabled]="paginaAtual === 1" (click)="mudarPagina(-1)">Anterior</button>
-      <span>Pagina {{ paginaAtual }} de {{ totalPaginas() }}</span>
-      <button type="button" class="secundario" [disabled]="paginaAtual === totalPaginas()" (click)="mudarPagina(1)">Proxima</button>
+      <span>Página {{ paginaAtual }} de {{ totalPaginas() }}</span>
+      <button type="button" class="secundario" [disabled]="paginaAtual === totalPaginas()" (click)="mudarPagina(1)">Próxima</button>
     </div>
   </div>
 

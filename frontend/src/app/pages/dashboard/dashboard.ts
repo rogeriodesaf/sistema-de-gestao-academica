@@ -28,7 +28,7 @@ export class DashboardPage implements OnInit {
         this.dados.set(dados || {});
       },
       error: err => {
-        this.erro.set(err?.error?.mensagem || 'Nao foi possivel carregar o dashboard. Entre novamente e tente outra vez.');
+        this.erro.set(err?.error?.mensagem || 'Não foi possível carregar o dashboard. Tente novamente.');
       }
     });
   }
@@ -44,12 +44,39 @@ export class DashboardPage implements OnInit {
       .filter(([, valor]) => valor && typeof valor === 'object' && !Array.isArray(valor))
       .map(([chave, valor]) => ({
         chave,
-        itens: Object.entries(valor as Record<string, number>).map(([rotulo, total]) => ({ rotulo, total }))
+        itens: Object.entries(valor as Record<string, number>).map(([rotulo, total]) => ({
+          rotulo: this.enumTexto(rotulo),
+          total
+        }))
       }));
   }
 
   label(chave: string) {
-    return chave.replace(/([A-Z])/g, ' $1').replaceAll('-', ' ').trim();
+    const labels: Record<string, string> = {
+      alunos: 'Alunos',
+      alunosAtivos: 'Alunos ativos',
+      professores: 'Professores',
+      professoresAtivos: 'Professores ativos',
+      cursos: 'Cursos',
+      cursosAtivos: 'Cursos ativos',
+      disciplinas: 'Disciplinas',
+      ofertas: 'Ofertas de disciplinas',
+      matriculas: 'Matrículas',
+      matriculasAtivas: 'Matrículas ativas',
+      turmas: 'Turmas acadêmicas',
+      ofertasPorStatus: 'Ofertas por situação',
+      matriculasPorStatus: 'Matrículas por situação'
+    };
+    return labels[chave] || chave.replace(/([A-Z])/g, ' $1').replaceAll('-', ' ').trim();
+  }
+
+  enumTexto(valor: string) {
+    const textos: Record<string, string> = {
+      PLANEJADA: 'Planejada', ABERTA: 'Aberta', EM_ANDAMENTO: 'Em andamento',
+      ENCERRADA: 'Encerrada', CANCELADA: 'Cancelada', ATIVA: 'Ativa',
+      INATIVA: 'Inativa', TRANCADA: 'Trancada', CONCLUIDA: 'Concluída'
+    };
+    return textos[valor] || valor.replaceAll('_', ' ').toLowerCase().replace(/^./, letra => letra.toUpperCase());
   }
 
   maior(itens: { total: number }[]) {

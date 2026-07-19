@@ -48,15 +48,15 @@ from cursos c cross join lateral (
 where lower(c.nome) = 'curso de teologia'
   and not exists (select 1 from modulos where nome = 'Modulo de Conclusao 2026');
 
-insert into turmas (id, nome, curso_id, disciplina_id, professor_id, descricao, turno,
-                    horario, sala, quantidade_maxima_alunos, data_inicio, data_termino, status)
-select 900001, 'Conclusao Teologia 2026', c.id, d.id, p.id,
-       'Agrupamento administrativo do cenario de conclusao', 'NOITE',
-       'Segunda-feira, 19h', 'Sala Conclusao', 10,
+insert into turmas (id, nome, curso_id, ano_letivo_id, descricao, turno,
+                    quantidade_maxima_alunos, data_inicio, data_termino, status)
+select 900001, 'Conclusao Teologia 2026', c.id, a.id,
+       'Agrupamento administrativo do cenario de conclusao', 'NOITE', 10,
        date '2026-07-01', date '2026-08-31', 'EM_ANDAMENTO'
 from cursos c
-join disciplinas d on d.curso_id = c.id and d.codigo = 'STCJP-M01-01'
-join professores p on p.email = 'professor@seminario.local'
+cross join lateral (
+    select id from anos_letivos where turma_id is null and ano = 2026 order by id limit 1
+) a
 where lower(c.nome) = 'curso de teologia'
   and not exists (select 1 from turmas where id = 900001);
 

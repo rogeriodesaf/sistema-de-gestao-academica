@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { finalize, forkJoin } from 'rxjs';
+import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 
-type Aba = 'resumo' | 'frequencia' | 'avaliacoes' | 'materiais';
+type Aba = 'resumo' | 'plano' | 'frequencia' | 'avaliacoes' | 'materiais';
 
 @Component({
   selector: 'app-area-aluno',
@@ -19,6 +19,7 @@ export class AreaAlunoPage implements OnInit {
   frequencia?: any;
   aulas: any[] = [];
   resultado?: any;
+  plano?: any;
   arquivos: any[] = [];
   historico?: any;
   aba: Aba = 'resumo';
@@ -31,59 +32,47 @@ export class AreaAlunoPage implements OnInit {
 
   ngOnInit() {
     this.carregando = true;
-    forkJoin({
-      perfil: this.api.buscar('aluno', 'me'),
-      disciplinas: this.api.listar('aluno/disciplinas')
-    }).pipe(finalize(() => {
+    this.api.buscar('aluno', 'portal').pipe(finalize(() => {
       this.carregando = false;
       this.cd.detectChanges();
     })).subscribe({
       next: dados => {
-        this.perfil = dados.perfil;
-        this.disciplinas = Array.isArray(dados.disciplinas) ? dados.disciplinas : [];
+        this.perfil = (dados as any)?.perfil;
+        this.disciplinas = Array.isArray((dados as any)?.disciplinas) ? (dados as any).disciplinas : [];
       },
-      error: erro => this.erro(erro, 'Nao foi possivel carregar o portal do aluno.')
+      error: erro => this.erro(erro, 'Não foi possível carregar o Portal do Aluno.')
     });
+  }
+
+  get disciplinasEmAndamento() {
+    return this.disciplinas.filter(item => !item.resultadoDefinitivo);
+  }
+
+  get disciplinasConcluidas() {
+    return this.disciplinas.filter(item => item.resultadoDefinitivo);
   }
 
   selecionar(item: any) {
     this.limparDetalhe();
     this.carregandoDetalhe = true;
-    this.api.buscar('aluno/disciplinas', item.ofertaId).pipe(finalize(() => {
+    this.api.buscarAcao('aluno/disciplinas', item.ofertaId, 'detalhes').pipe(finalize(() => {
       this.carregandoDetalhe = false;
       this.cd.detectChanges();
     })).subscribe({
-      next: detalhe => this.disciplina = detalhe,
-      error: erro => this.erro(erro, 'Nao foi possivel abrir a disciplina.')
+      next: (detalhes: any) => {
+        this.disciplina = detalhes?.disciplina;
+        this.frequencia = detalhes?.frequencia;
+        this.aulas = Array.isArray(detalhes?.aulas) ? detalhes.aulas : [];
+        this.resultado = detalhes?.resultado;
+        this.plano = detalhes?.plano;
+        this.arquivos = Array.isArray(detalhes?.arquivos) ? detalhes.arquivos : [];
+      },
+      error: erro => this.erro(erro, 'Não foi possível abrir a disciplina.')
     });
   }
 
   trocarAba(aba: Aba) {
     this.aba = aba;
-    if (!this.disciplina || aba === 'resumo') return;
-    const id = this.disciplina.ofertaId;
-    this.carregandoDetalhe = true;
-    const requisicao = aba === 'frequencia'
-      ? forkJoin({ frequencia: this.api.buscarAcao('aluno/disciplinas', id, 'frequencia'), aulas: this.api.buscarAcao('aluno/disciplinas', id, 'aulas') })
-      : aba === 'avaliacoes'
-        ? this.api.buscarAcao('aluno/disciplinas', id, 'avaliacoes')
-        : this.api.buscarAcao('aluno/disciplinas', id, 'arquivos');
-    requisicao.pipe(finalize(() => {
-      this.carregandoDetalhe = false;
-      this.cd.detectChanges();
-    })).subscribe({
-      next: (dados: any) => {
-        if (aba === 'frequencia') {
-          this.frequencia = dados.frequencia;
-          this.aulas = dados.aulas || [];
-        } else if (aba === 'avaliacoes') {
-          this.resultado = dados;
-        } else {
-          this.arquivos = Array.isArray(dados) ? dados : [];
-        }
-      },
-      error: erro => this.erro(erro, 'Nao foi possivel carregar esta secao.')
-    });
   }
 
   carregarHistorico() {
@@ -94,7 +83,7 @@ export class AreaAlunoPage implements OnInit {
       this.cd.detectChanges();
     })).subscribe({
       next: dados => this.historico = dados,
-      error: erro => this.erro(erro, 'Nao foi possivel carregar o historico.')
+      error: erro => this.erro(erro, 'Não foi possível carregar o histórico.')
     });
   }
 
@@ -105,7 +94,7 @@ export class AreaAlunoPage implements OnInit {
       this.cd.detectChanges();
     })).subscribe({
       next: blob => this.salvarBlob(blob, 'historico-escolar.pdf'),
-      error: erro => this.erro(erro, 'Nao foi possivel gerar o historico em PDF.')
+      error: erro => this.erro(erro, 'Não foi possível gerar o histórico em PDF.')
     });
   }
 
@@ -120,7 +109,23 @@ export class AreaAlunoPage implements OnInit {
           setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
       },
-      error: erro => this.erro(erro, 'Nao foi possivel abrir o PDF.')
+      error: erro => this.erro(erro, 'Arquivo indisponível no momento.')
+    });
+  }
+
+  abrirPlano(download = false) {
+    if (!this.disciplina?.ofertaId) return;
+    const sufixo = download ? '/download' : '';
+    this.api.baixar(`aluno/disciplinas/${this.disciplina.ofertaId}/plano/pdf${sufixo}`).subscribe({
+      next: blob => {
+        if (download) this.salvarBlob(blob, this.plano?.arquivoNome || 'plano-de-ensino.pdf');
+        else {
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank', 'noopener');
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
+      },
+      error: erro => this.erro(erro, 'Plano de ensino em PDF indisponível no momento.')
     });
   }
 
@@ -132,11 +137,33 @@ export class AreaAlunoPage implements OnInit {
     return valor === null || valor === undefined || valor === '' ? '-' : String(valor);
   }
 
+  percentual(valor: any): string {
+    return valor === null || valor === undefined ? 'Frequência ainda não disponível.' : `${valor}%`;
+  }
+
+  enumTexto(valor: string): string {
+    if (!valor) return '-';
+    return ({
+      ATIVA: 'Ativa', MATRICULADO: 'Ativa', TRANCADO: 'Trancada', CANCELADO: 'Cancelada',
+      EM_ANDAMENTO: 'Em andamento', APROVADO: 'Aprovado',
+      REPROVADO_POR_NOTA: 'Reprovado por nota',
+      REPROVADO_POR_FREQUENCIA: 'Reprovado por frequência',
+      REPROVADO_POR_NOTA_E_FREQUENCIA: 'Reprovado por nota e frequência',
+      PLANEJADA: 'Planejada', ABERTA: 'Aberta', AGUARDANDO_HOMOLOGACAO: 'Aguardando homologação',
+      ENCERRADA: 'Encerrada', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada',
+      HOMOLOGADO: 'Homologado', ENCERRADO: 'Encerrado',
+      PRESENTE: 'Presente', AUSENTE: 'Ausente', JUSTIFICADO: 'Justificada',
+      NAO_REGISTRADA: 'Ainda não registrada', LANCADA: 'Lançada', NAO_LANCADA: 'Ainda não lançada',
+      CONCLUIDO: 'Concluído', CURSANDO: 'Cursando', PENDENTE: 'Pendente'
+    } as Record<string, string>)[valor] || valor.replaceAll('_', ' ').toLowerCase();
+  }
+
   private limparDetalhe() {
     this.disciplina = undefined;
     this.frequencia = undefined;
     this.aulas = [];
     this.resultado = undefined;
+    this.plano = undefined;
     this.arquivos = [];
     this.aba = 'resumo';
     this.mensagem = '';

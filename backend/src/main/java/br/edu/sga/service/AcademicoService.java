@@ -5,6 +5,8 @@ import br.edu.sga.enums.*;
 import br.edu.sga.exception.ApiException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
@@ -15,37 +17,55 @@ import java.util.List;
 @ApplicationScoped
 public class AcademicoService {
     @Inject FrequenciaAcademicaService frequenciaAcademicaService;
+    @Inject ProfessorUsuarioService professorUsuarioService;
+    @Inject IntegridadeAcademicaService integridadeAcademicaService;
+    @Inject EntityManager entityManager;
     @Transactional
     public MatriculaDisciplina matricularEmDisciplina(MatriculaDisciplina matricula) {
         if (matricula.aluno == null || matricula.ofertaDisciplina == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aluno e oferta de disciplina sao obrigatorios");
         }
-        OfertaDisciplina oferta = OfertaDisciplina.findById(matricula.ofertaDisciplina.id);
+        OfertaDisciplina oferta = entityManager.find(OfertaDisciplina.class,
+                matricula.ofertaDisciplina.id, LockModeType.PESSIMISTIC_WRITE);
         Aluno aluno = Aluno.findById(matricula.aluno.id);
         if (oferta == null || aluno == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Aluno ou oferta de disciplina nao encontrados");
         }
-        long jaMatriculado = MatriculaDisciplina.count("aluno = ?1 and ofertaDisciplina.disciplina = ?2 and status not in ?3",
-                aluno, oferta.disciplina, List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO));
-        if (jaMatriculado > 0) {
-            throw new ApiException(Response.Status.CONFLICT, "Aluno ja matriculado nesta disciplina");
+        MatriculaDisciplina existente = MatriculaDisciplina.find(
+                "aluno = ?1 and ofertaDisciplina = ?2 order by id", aluno, oferta).firstResult();
+        if (existente != null) {
+            String orientacao = existente.status == StatusMatriculaDisciplina.CANCELADO
+                    || existente.status == StatusMatriculaDisciplina.TRANCADO
+                    ? " Reative o registro existente explicitamente para preservar o histórico."
+                    : "";
+            throw new ApiException(Response.Status.CONFLICT,
+                    "O aluno já está matriculado nesta oferta de disciplina." + orientacao);
         }
-        Integer limiteVagas = oferta.vagas != null ? oferta.vagas
-                : oferta.turma == null ? null : oferta.turma.quantidadeMaximaAlunos;
+        if (!List.of(StatusOfertaDisciplina.PLANEJADA, StatusOfertaDisciplina.ABERTA,
+                StatusOfertaDisciplina.EM_ANDAMENTO).contains(oferta.status)) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Não é possível matricular alunos nesta situação da oferta");
+        }
+        Integer limiteVagas = oferta.vagas;
         if (limiteVagas != null) {
             long ocupadas = MatriculaDisciplina.count("ofertaDisciplina = ?1 and status in ?2",
                     oferta, List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO));
             if (ocupadas >= limiteVagas) {
-                throw new ApiException(Response.Status.CONFLICT, "Oferta de disciplina sem vagas disponiveis");
+                throw new ApiException(Response.Status.CONFLICT,
+                        "Não há vagas disponíveis nesta oferta de disciplina");
             }
         }
+        integridadeAcademicaService.validarConflitoAluno(aluno, oferta);
         matricula.aluno = aluno;
         matricula.ofertaDisciplina = oferta;
-        matricula.curso = aluno.curso != null ? aluno.curso : (oferta.curso != null ? oferta.curso : oferta.turma == null ? null : oferta.turma.curso);
+        matricula.curso = aluno.curso != null ? aluno.curso : oferta.curso;
         matricula.periodoLetivo = oferta.periodoLetivo;
-        matricula.status = matricula.status == null ? StatusMatriculaDisciplina.ATIVA : matricula.status;
+        matricula.status = StatusMatriculaDisciplina.ATIVA;
+        matricula.resultadoAcademico = ResultadoAcademico.EM_ANDAMENTO;
+        matricula.notaFinal = null;
+        matricula.frequenciaFinal = null;
+        matricula.dataConsolidacao = null;
         matricula.persist();
-        criarOuAtualizarHistorico(matricula);
         return matricula;
     }
 
@@ -85,7 +105,7 @@ public class AcademicoService {
         if (nota.id == null) {
             nota.persist();
         }
-        atualizarHistoricoPorNota(nota);
+        if (nota.ofertaDisciplina == null) atualizarHistoricoPorNota(nota);
         return nota;
     }
 
@@ -106,6 +126,31 @@ public class AcademicoService {
         exigirOfertaEmAndamento(aula.ofertaDisciplina);
         frequencia.aula = aula;
         validarProfessorVinculado(perfil, usuarioId, aula.ofertaDisciplina, aula.disciplina, aula.turma);
+        if (aula.ofertaDisciplina != null) {
+            MatriculaDisciplina matricula = frequencia.matriculaDisciplina == null
+                    || frequencia.matriculaDisciplina.id == null ? null
+                    : MatriculaDisciplina.findById(frequencia.matriculaDisciplina.id);
+            if (matricula == null && frequencia.aluno != null && frequencia.aluno.id != null) {
+                matricula = MatriculaDisciplina.find(
+                        "aluno.id = ?1 and ofertaDisciplina = ?2 and status in ?3",
+                        frequencia.aluno.id, aula.ofertaDisciplina,
+                        List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO)).firstResult();
+            }
+            if (matricula == null || !aula.ofertaDisciplina.id.equals(matricula.ofertaDisciplina.id)
+                    || !List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO)
+                    .contains(matricula.status)) {
+                throw new ApiException(Response.Status.BAD_REQUEST,
+                        "A frequência deve pertencer a um aluno matriculado nesta oferta");
+            }
+            if (frequencia.id == null && Frequencia.count(
+                    "aula = ?1 and aluno = ?2", aula, matricula.aluno) > 0) {
+                throw new ApiException(Response.Status.CONFLICT,
+                        "A frequência deste aluno já foi registrada para esta aula");
+            }
+            frequencia.matriculaDisciplina = matricula;
+            frequencia.aluno = matricula.aluno;
+            frequencia.presente = frequencia.status == StatusFrequencia.PRESENTE;
+        }
         if (frequencia.id == null) {
             frequencia.persist();
         }
@@ -121,30 +166,15 @@ public class AcademicoService {
         if (perfil != Perfil.PROFESSOR) {
             return;
         }
-        Professor professor = Professor.find("usuario.id", usuarioId).firstResult();
-        if (professor == null) {
-            throw new ApiException(Response.Status.FORBIDDEN, "Professor nao encontrado para o usuario logado");
+        Professor professor = professorUsuarioService.identificarProfessor(usuarioId);
+        if (oferta == null || oferta.id == null) {
+            throw new ApiException(Response.Status.FORBIDDEN,
+                    "Acesso docente exige uma oferta de disciplina vinculada ao professor");
         }
-        if (oferta != null) {
-            OfertaDisciplina ofertaCompleta = OfertaDisciplina.findById(oferta.id);
-            if (ofertaCompleta != null && mesmoProfessor(professor, ofertaCompleta.professor)) {
-                return;
-            }
-            if (ofertaCompleta != null && ofertaCompleta.disciplina != null && mesmoProfessor(professor, ofertaCompleta.disciplina.professorResponsavel)) {
-                return;
-            }
+        OfertaDisciplina ofertaCompleta = OfertaDisciplina.findById(oferta.id);
+        if (ofertaCompleta == null || !mesmoProfessor(professor, ofertaCompleta.professor)) {
+            throw new ApiException(Response.Status.FORBIDDEN, "Professor nao vinculado a esta oferta de disciplina");
         }
-        if (disciplina != null) {
-            Disciplina disciplinaCompleta = Disciplina.findById(disciplina.id);
-            if (disciplinaCompleta != null && mesmoProfessor(professor, disciplinaCompleta.professorResponsavel)) {
-                return;
-            }
-        }
-        if (disciplina != null && turma != null && VinculoProfessorDisciplinaTurma.count(
-                "professor = ?1 and disciplina.id = ?2 and turma.id = ?3", professor, disciplina.id, turma.id) > 0) {
-            return;
-        }
-        throw new ApiException(Response.Status.FORBIDDEN, "Professor nao vinculado a esta disciplina");
     }
 
     private boolean mesmoProfessor(Professor logado, Professor vinculado) {
@@ -207,36 +237,6 @@ public class AcademicoService {
             historico.cargaHoraria = matricula.disciplina.cargaHoraria;
             historico.periodoCursado = matricula.turma.anoPeriodo;
             historico.persist();
-        }
-    }
-
-    private void criarOuAtualizarHistorico(MatriculaDisciplina matricula) {
-        OfertaDisciplina oferta = matricula.ofertaDisciplina;
-        HistoricoEscolar historico = HistoricoEscolar.find("matriculaDisciplina = ?1", matricula).firstResult();
-        if (historico == null) {
-            historico = HistoricoEscolar.find("aluno = ?1 and ofertaDisciplina = ?2", matricula.aluno, oferta).firstResult();
-        }
-        if (historico == null) {
-            historico = new HistoricoEscolar();
-            historico.aluno = matricula.aluno;
-            historico.matriculaDisciplina = matricula;
-            historico.ofertaDisciplina = oferta;
-            historico.turma = oferta.turma;
-            historico.curso = matricula.curso != null ? matricula.curso : oferta.curso != null ? oferta.curso : oferta.turma == null ? null : oferta.turma.curso;
-            historico.disciplina = oferta.disciplina;
-            historico.professorResponsavel = oferta.professor;
-            historico.cargaHoraria = oferta.cargaHorariaPrevista != null ? oferta.cargaHorariaPrevista : oferta.disciplina.cargaHoraria;
-            historico.periodoCursado = oferta.periodoLetivo == null ? null : oferta.periodoLetivo.nome;
-            historico.situacao = StatusHistorico.CURSANDO;
-            historico.notaFinal = matricula.notaFinal;
-            historico.frequenciaFinal = matricula.frequenciaFinal;
-            historico.persist();
-        } else {
-            historico.matriculaDisciplina = matricula;
-            historico.ofertaDisciplina = oferta;
-            historico.professorResponsavel = oferta.professor;
-            historico.notaFinal = matricula.notaFinal;
-            historico.frequenciaFinal = matricula.frequenciaFinal;
         }
     }
 

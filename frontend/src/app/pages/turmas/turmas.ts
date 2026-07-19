@@ -15,8 +15,6 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 })
 export class TurmasPage implements OnInit {
   turmas: any[] = [];
-  disciplinas: any[] = [];
-  professores: any[] = [];
   cursos: any[] = [];
   anosLetivos: any[] = [];
   periodosLetivos: any[] = [];
@@ -40,8 +38,6 @@ export class TurmasPage implements OnInit {
     this.erroCarregamento = '';
     forkJoin({
       turmas: this.api.listar('turmas'),
-      disciplinas: this.api.listar('disciplinas'),
-      professores: this.api.listar('professores'),
       cursos: this.api.listar('cursos'),
       anosLetivos: this.api.listar('anos-letivos'),
       periodosLetivos: this.api.listar('periodos-letivos'),
@@ -49,8 +45,6 @@ export class TurmasPage implements OnInit {
     }).subscribe({
       next: dados => {
         this.turmas = dados.turmas || [];
-        this.disciplinas = dados.disciplinas || [];
-        this.professores = dados.professores || [];
         this.cursos = dados.cursos || [];
         this.anosLetivos = dados.anosLetivos || [];
         this.periodosLetivos = dados.periodosLetivos || [];
@@ -96,14 +90,10 @@ export class TurmasPage implements OnInit {
     this.editandoId = turma.id;
     this.formulario = {
       nome: turma.nome || '',
-      'disciplina.id': turma.disciplina?.id || '',
-      'professor.id': turma.professor?.id || '',
       'anoLetivo.id': turma.anoLetivo?.id || '',
       'periodoLetivo.id': turma.periodoLetivo?.id || '',
       'curso.id': turma.curso?.id || '',
       turno: turma.turno || '',
-      horario: turma.horario || '',
-      sala: turma.sala || '',
       quantidadeMaximaAlunos: turma.quantidadeMaximaAlunos || '',
       dataInicio: turma.dataInicio || '',
       dataTermino: turma.dataTermino || '',
@@ -122,14 +112,10 @@ export class TurmasPage implements OnInit {
     this.editandoId = undefined;
     this.formulario = {
       nome: '',
-      'disciplina.id': '',
-      'professor.id': '',
       'anoLetivo.id': '',
       'periodoLetivo.id': '',
       'curso.id': '',
       turno: '',
-      horario: '',
-      sala: '',
       quantidadeMaximaAlunos: 30,
       dataInicio: '',
       dataTermino: '',
@@ -147,10 +133,9 @@ export class TurmasPage implements OnInit {
 
   sugerirNome() {
     if (this.editandoId || this.formulario['nome']) return;
-    const disciplina = this.disciplinas.find(item => item.id === Number(this.formulario['disciplina.id']));
     const ano = this.anoSelecionado();
-    if (!disciplina?.nome || !this.formulario['turno'] || !ano) return;
-    this.formulario['nome'] = [disciplina.nome, this.formulario['turno'], ano].join(' - ');
+    if (!this.formulario['turno'] || !ano) return;
+    this.formulario['nome'] = ['Turma', this.formulario['turno'], ano].join(' - ');
   }
 
   alunosAtivos(turma: any) {
@@ -198,11 +183,8 @@ export class TurmasPage implements OnInit {
   }
 
   private validarFormulario() {
-    if (!this.formulario['disciplina.id']) return 'Selecione a disciplina.';
-    if (!this.formulario['professor.id']) return 'Selecione o professor.';
     if (!this.formulario['nome']) return 'Informe o nome da turma.';
-    if (!this.formulario['horario']) return 'Informe o dia e horario da turma.';
-    if (!this.formulario['sala']) return 'Informe a sala.';
+    if (!this.formulario['anoLetivo.id']) return 'Selecione o ano letivo.';
     if (!this.formulario['quantidadeMaximaAlunos'] || Number(this.formulario['quantidadeMaximaAlunos']) <= 0) return 'Informe a quantidade maxima de alunos.';
     return '';
   }
@@ -210,14 +192,10 @@ export class TurmasPage implements OnInit {
   private montarPayload() {
     return {
       nome: this.formulario['nome'],
-      disciplina: { id: Number(this.formulario['disciplina.id']) },
-      professor: { id: Number(this.formulario['professor.id']) },
       anoLetivo: this.formulario['anoLetivo.id'] ? { id: Number(this.formulario['anoLetivo.id']) } : null,
       periodoLetivo: this.formulario['periodoLetivo.id'] ? { id: Number(this.formulario['periodoLetivo.id']) } : null,
       curso: this.formulario['curso.id'] ? { id: Number(this.formulario['curso.id']) } : null,
       turno: this.formulario['turno'] || null,
-      horario: this.formulario['horario'],
-      sala: this.formulario['sala'],
       quantidadeMaximaAlunos: Number(this.formulario['quantidadeMaximaAlunos']),
       dataInicio: this.formulario['dataInicio'] || null,
       dataTermino: this.formulario['dataTermino'] || null,

@@ -11,7 +11,7 @@ public record TurmaOpcaoDTO(
         Integer ano,
         String anoPeriodo,
         Long cursoId,
-        Long moduloId
+        Long periodoLetivoId
 ) {
     public static TurmaOpcaoDTO de(Turma turma) {
         return new TurmaOpcaoDTO(
@@ -22,7 +22,7 @@ public record TurmaOpcaoDTO(
                 turma.anoLetivo == null ? null : turma.anoLetivo.ano,
                 turma.anoPeriodo,
                 turma.curso == null ? null : turma.curso.id,
-                null
+                turma.periodoLetivo == null ? null : turma.periodoLetivo.id
         );
     }
 }

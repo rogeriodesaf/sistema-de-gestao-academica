@@ -10,7 +10,7 @@
   <nav aria-label="Menu principal">
     <section *ngFor="let grupo of grupos" class="menu-grupo">
       <h2>{{ grupo.titulo }}</h2>
-      <a *ngFor="let item of grupo.itens" [routerLink]="item.path" routerLinkActive="ativo" (click)="navegar.emit()">
+      <a *ngFor="let item of grupo.itens" [routerLink]="item.path" routerLinkActive="ativo" ariaCurrentWhenActive="page" (click)="navegar.emit()">
         <span class="menu-icone" aria-hidden="true"><app-menu-icon [nome]="item.icone" /></span>
         {{ item.label }}
       </a>

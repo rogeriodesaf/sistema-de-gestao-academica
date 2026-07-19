@@ -63,8 +63,8 @@
 
       <div class="paginacao paginacao-matriz" *ngIf="totalPaginasMatriz() > 1">
         <button type="button" class="secundario" [disabled]="paginaMatriz === 1" (click)="mudarPaginaMatriz(-1)">Anterior</button>
-        <span>Pagina {{ paginaMatriz }} de {{ totalPaginasMatriz() }} - {{ totalDisciplinasMatriz() }} disciplinas</span>
-        <button type="button" class="secundario" [disabled]="paginaMatriz === totalPaginasMatriz()" (click)="mudarPaginaMatriz(1)">Proxima</button>
+        <span>Página {{ paginaMatriz }} de {{ totalPaginasMatriz() }} - {{ totalDisciplinasMatriz() }} disciplinas</span>
+        <button type="button" class="secundario" [disabled]="paginaMatriz === totalPaginasMatriz()" (click)="mudarPaginaMatriz(1)">Próxima</button>
       </div>
     </div>
   </div>
@@ -73,7 +73,7 @@
     <div class="card-cabecalho">
       <div>
         <h2>{{ tituloFormulario() | titlecase }}</h2>
-        <p>{{ registroEditandoId ? 'Atualize as informacoes abaixo e salve as alteracoes.' : 'Preencha as informacoes abaixo para salvar o registro.' }}</p>
+        <p>{{ registroEditandoId ? 'Atualize as informações abaixo e salve as alterações.' : 'Preencha as informações abaixo para salvar o registro.' }}</p>
       </div>
     </div>
 
@@ -92,7 +92,7 @@
           <input type="checkbox" [name]="'oferta-' + oferta.id" [(ngModel)]="ofertasSelecionadas[oferta.id]">
           <span>
             <strong>{{ oferta.disciplina?.nome }}</strong>
-            <small>{{ oferta.professor?.nome || oferta.disciplina?.professorResponsavel?.nome || 'Professor nao definido' }} - {{ oferta.horario || 'Horario nao definido' }} - {{ oferta.sala || 'Sala nao definida' }}</small>
+            <small>{{ oferta.turma?.nome || 'Turma não informada' }} — {{ oferta.professor?.nome || 'Professor não definido' }} — {{ oferta.horario || 'Horário não definido' }}</small>
           </span>
         </label>
       </section>
@@ -106,6 +106,9 @@
         <option value="">Selecione</option>
         <option *ngFor="let opcao of opcoesCampo(campo)" [ngValue]="opcao.id">{{ rotuloOpcao(opcao, campo) }}</option>
       </select>
+      <small *ngIf="endpoint === 'ofertas-disciplinas' && campo === 'turma.id' && turmasCarregadas && !opcoesCampo(campo).length">
+        Nenhuma turma cadastrada. Cadastre uma Turma Acadêmica antes de criar ofertas.
+      </small>
 
       <textarea *ngIf="!isSelect(campo) && isTextoLongo(campo)" [name]="campo" [(ngModel)]="formulario[campo]"></textarea>
 
@@ -119,8 +122,8 @@
     </ng-container>
 
     <div class="acoes-form">
-      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alteracoes' : 'Salvar') }}</button>
-      <button type="button" class="secundario" (click)="cancelarEdicao()">{{ registroEditandoId ? 'Cancelar edicao' : 'Cancelar' }}</button>
+      <button type="submit" [disabled]="carregando">{{ carregando ? 'Salvando...' : (registroEditandoId ? 'Salvar alterações' : 'Salvar') }}</button>
+      <button type="button" class="secundario" (click)="cancelarEdicao()">{{ registroEditandoId ? 'Cancelar edição' : 'Cancelar' }}</button>
     </div>
   </form>
 
@@ -336,9 +339,19 @@
 
     <div class="paginacao" *ngIf="endpoint === 'disciplinas'">
       <button type="button" class="secundario" [disabled]="paginaAtual === 1" (click)="mudarPagina(-1)">Anterior</button>
-      <span>Pagina {{ paginaAtual }} de {{ totalPaginas() }}</span>
-      <button type="button" class="secundario" [disabled]="paginaAtual === totalPaginas()" (click)="mudarPagina(1)">Proxima</button>
+      <span>Página {{ paginaAtual }} de {{ totalPaginas() }}</span>
+      <button type="button" class="secundario" [disabled]="paginaAtual === totalPaginas()" (click)="mudarPagina(1)">Próxima</button>
     </div>
+  </div>
+
+  <div class="vazio" *ngIf="carregandoLista">
+    <h2>Carregando registros</h2>
+    <p>Aguarde enquanto as informações são consultadas.</p>
+  </div>
+
+  <div class="vazio" *ngIf="!carregandoLista && !mensagem && campos.length && !registros.length && endpoint !== 'historicos'">
+    <h2>Nenhum registro cadastrado</h2>
+    <p>Os registros cadastrados serão exibidos aqui.</p>
   </div>
 
   <div class="vazio" *ngIf="endpoint === 'disciplinas' && registros.length && !registrosFiltrados().length">
@@ -364,19 +377,23 @@
       </header>
       <div class="grade-detalhes">
         <article><strong>Situação da Matrícula</strong><span>{{ valor(matriculaVisualizada, 'status') }}</span></article>
-        <article><strong>Resultado Acadêmico</strong><span>{{ matriculaVisualizada.resultadoAcademico }}</span></article>
+        <article><strong>Resultado Acadêmico</strong><span>{{ valor(matriculaVisualizada, 'resultadoAcademico') }}</span></article>
         <article><strong>Data da Matrícula</strong><span>{{ matriculaVisualizada.dataMatricula | date:'dd/MM/yyyy' }}</span></article>
         <article><strong>Observações</strong><span>{{ matriculaVisualizada.observacoes || '-' }}</span></article>
       </div>
       <div *ngIf="desempenhoMatricula" class="card-bloco">
         <h2>Desempenho Acadêmico</h2>
+        <p><strong>Oferta:</strong> {{ desempenhoMatricula.oferta?.disciplina }} — {{ desempenhoMatricula.oferta?.turma }} — {{ desempenhoMatricula.oferta?.horario }}</p>
+        <p><strong>Professor:</strong> {{ desempenhoMatricula.professor || '-' }}</p>
         <p><strong>Média Final:</strong> {{ desempenhoMatricula.mediaFinal || '-' }}</p>
         <p><strong>Frequência:</strong> {{ desempenhoMatricula.frequenciaFinal === '' ? '-' : desempenhoMatricula.frequenciaFinal + '%' }}</p>
-        <p><strong>Situação:</strong> {{ desempenhoMatricula.situacao }}</p>
+        <p><strong>Resultado Acadêmico:</strong> {{ rotuloSituacao(desempenhoMatricula.resultadoAcademico) }}</p>
+        <p><strong>Situação do Diário:</strong> {{ rotuloSituacao(desempenhoMatricula.statusDiario) }}</p>
+        <p><strong>Homologação:</strong> {{ rotuloSituacao(desempenhoMatricula.statusHomologacao) }}</p>
         <h3>Avaliações</h3>
         <ul><li *ngFor="let avaliacao of desempenhoMatricula.avaliacoes">{{ avaliacao.nome }}: {{ avaliacao.nota ?? '-' }}</li></ul>
         <h3>Histórico da Disciplina</h3>
-        <p>{{ desempenhoMatricula.historico?.situacao || 'EM_ANDAMENTO' }} — {{ desempenhoMatricula.historico?.periodo || 'Período não informado' }}</p>
+        <p>{{ rotuloSituacao(desempenhoMatricula.historico?.situacao || 'EM_ANDAMENTO') }} — {{ desempenhoMatricula.historico?.periodo || 'Período não informado' }}</p>
       </div>
     </section>
   </div>
@@ -409,7 +426,7 @@
 
       <div class="modal-acoes">
         <button type="button" class="secundario" (click)="fecharGerenciamentoDisciplinas()">Cancelar</button>
-        <button type="button" (click)="salvarDisciplinasModulo(moduloGerenciado)">Salvar vinculos</button>
+        <button type="button" (click)="salvarDisciplinasModulo(moduloGerenciado)">Salvar vínculos</button>
       </div>
     </section>
   </div>

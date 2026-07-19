@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth.guard';
+import { authGuard, inicioGuard } from './core/auth.guard';
 import { AreaProfessorPage } from './pages/area-professor/area-professor';
 import { AreaAlunoPage } from './pages/area-aluno/area-aluno';
 import { DiariosPendentesPage } from './pages/diarios-pendentes/diarios-pendentes';
@@ -15,6 +15,9 @@ import { PlanejamentoAcademicoPage } from './pages/planejamento-academico/planej
 import { PerfisPage } from './pages/perfis/perfis';
 import { UsuarioDetalhePage } from './pages/usuario-detalhe/usuario-detalhe';
 import { UsuariosPage } from './pages/usuarios/usuarios';
+import { TurmasPage } from './pages/turmas/turmas';
+import { TurmaDetalhePage } from './pages/turma-detalhe/turma-detalhe';
+import { StatusPage } from './pages/status-page/status-page';
 
 const camposBase = {
   alunos: ['curso.id', 'nome', 'cpf', 'email', 'telefone', 'dataNascimento', 'endereco', 'status', 'dataIngresso', 'observacoes'],
@@ -48,6 +51,26 @@ export const routes: Routes = [
   { path: 'login', component: LoginPage },
   { path: 'esqueci-senha', component: RecuperacaoSenhaPage },
   { path: 'redefinir-senha', component: RecuperacaoSenhaPage },
+  {
+    path: 'acesso-negado',
+    component: StatusPage,
+    data: {
+      codigo: 403,
+      titulo: 'Acesso não autorizado',
+      mensagem: 'Você não possui permissão para acessar esta página.',
+      botao: 'Voltar ao painel'
+    }
+  },
+  {
+    path: 'pagina-nao-encontrada',
+    component: StatusPage,
+    data: {
+      codigo: 404,
+      titulo: 'Página não encontrada',
+      mensagem: 'Página não encontrada.',
+      botao: 'Voltar ao início'
+    }
+  },
   { path: 'dashboard', component: DashboardPage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'area-professor', component: AreaProfessorPage, canActivate: [authGuard], data: { perfis: perfisProfessor } },
   { path: 'area-aluno', component: AreaAlunoPage, canActivate: [authGuard], data: { perfis: perfisAluno } },
@@ -55,6 +78,8 @@ export const routes: Routes = [
   { path: 'aulas', component: ConsultaAulasPage, canActivate: [authGuard], data: { perfis: perfisCoordenacao } },
   { path: 'disciplinas/:id', component: DisciplinaDetalhePage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'modulos/:id', component: ModuloDetalhePage, canActivate: [authGuard], data: { perfis: perfisGestao } },
+  { path: 'turmas', component: TurmasPage, canActivate: [authGuard], data: { perfis: perfisGestao } },
+  { path: 'turmas/:id', component: TurmaDetalhePage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'montagem-periodo', component: PlanejamentoAcademicoPage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'ofertas-disciplinas/:id', component: OfertaDetalhePage, canActivate: [authGuard], data: { perfis: perfisGestao } },
   { path: 'usuarios', component: UsuariosPage, canActivate: [authGuard], data: { perfis: perfisAdministracao } },
@@ -71,6 +96,6 @@ export const routes: Routes = [
       perfis: path === 'auditoria' ? perfisAdministracao : perfisGestao
     }
   })),
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '', pathMatch: 'full', component: StatusPage, canActivate: [inicioGuard] },
+  { path: '**', redirectTo: 'pagina-nao-encontrada' }
 ];

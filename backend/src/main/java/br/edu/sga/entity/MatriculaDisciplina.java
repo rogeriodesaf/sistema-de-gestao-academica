@@ -1,6 +1,8 @@
 package br.edu.sga.entity;
 
 import br.edu.sga.enums.StatusMatriculaDisciplina;
+import br.edu.sga.enums.ResultadoAcademico;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,7 +11,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,8 +37,11 @@ public class MatriculaDisciplina extends PanacheEntity {
     @NotNull
     @Enumerated(EnumType.STRING)
     public StatusMatriculaDisciplina status = StatusMatriculaDisciplina.ATIVA;
-    @Transient
-    public String resultadoAcademico = "EM_ANDAMENTO";
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resultado_academico")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public ResultadoAcademico resultadoAcademico = ResultadoAcademico.EM_ANDAMENTO;
     @Column(name = "nota_final")
     public java.math.BigDecimal notaFinal;
     @Column(name = "frequencia_final")

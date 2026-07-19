@@ -19,6 +19,7 @@ export class CadastroPage implements OnInit {
   endpoint = '';
   campos: string[] = [];
   registros: any[] = [];
+  carregandoLista = false;
   formulario: Record<string, any> = {};
   opcoes: Record<string, any[]> = {};
   cursos: any[] = [];
@@ -34,6 +35,7 @@ export class CadastroPage implements OnInit {
   ofertasSelecionadas: Record<number, boolean> = {};
   disciplinasModulo: Record<number, Record<number, boolean>> = {};
   mensagem = '';
+  turmasCarregadas = false;
   buscaHistorico = '';
   carregando = false;
   carregandoMatriz = signal(false);
@@ -103,43 +105,43 @@ export class CadastroPage implements OnInit {
     dataInicio: 'Data de início',
     dataMatricula: 'Data da matricula',
     dataNascimento: 'Data de nascimento',
-    dataTermino: 'Data de termino',
-    descricao: 'Descricao',
+    dataTermino: 'Data de término',
+    descricao: 'Descrição',
     ementaResumo: 'Resumo da ementa',
     ementaStatus: 'Ementa',
     email: 'E-mail',
-    endereco: 'Endereco',
-    formacao: 'Formacao',
-    frequenciaFinal: 'Frequencia final',
-    horario: 'Horario',
+    endereco: 'Endereço',
+    formacao: 'Formação',
+    frequenciaFinal: 'Frequência final',
+    horario: 'Horário',
     justificativa: 'Justificativa',
     metodologia: 'Metodologia',
-    moduloAtual: 'Modulo atual',
-    moduloOriginalOferta: 'Modulo original',
+    moduloAtual: 'Módulo atual',
+    moduloOriginalOferta: 'Módulo original',
     nome: 'Nome',
     notaFinal: 'Nota final',
     nota1: 'Nota 1',
     nota2: 'Nota 2',
-    observacoes: 'Observacoes',
-    observacao: 'Observacao',
+    observacoes: 'Observações',
+    observacao: 'Observação',
     objetivos: 'Objetivos',
     ordem: 'Ordem',
-    periodoCursado: 'Modulo cursado',
-    presente: 'Presenca',
-    quantidadeMaximaAlunos: 'Quantidade maxima de alunos',
+    periodoCursado: 'Módulo cursado',
+    presente: 'Presença',
+    quantidadeMaximaAlunos: 'Quantidade máxima de alunos',
     sala: 'Sala',
-    situacao: 'Situacao',
-    status: 'Situacao',
+    situacao: 'Situação',
+    status: 'Situação',
     telefone: 'Telefone',
     trabalho: 'Trabalho',
     turno: 'Turno',
     vagas: 'Vagas',
     dataHora: 'Data e hora',
-    usuarioNome: 'Usuario',
+    usuarioNome: 'Usuário',
     usuarioEmail: 'E-mail',
     perfil: 'Perfil',
-    acao: 'Acao',
-    metodo: 'Metodo',
+    acao: 'Ação',
+    metodo: 'Método',
     rota: 'Rota',
     statusHttp: 'Status HTTP',
     sucesso: 'Sucesso'
@@ -151,7 +153,7 @@ export class CadastroPage implements OnInit {
     this.route.data.subscribe(data => {
       this.titulo = data['titulo'];
       this.endpoint = data['endpoint'];
-      if (this.endpoint === 'historicos') this.titulo = 'Historico escolar';
+      if (this.endpoint === 'historicos') this.titulo = 'Histórico escolar';
       if (this.endpoint === 'planos-ensino') this.titulo = 'Plano de Ensino';
       if (this.endpoint === 'matriculas-disciplinas') this.titulo = 'Matrículas em Disciplinas';
       this.campos = data['campos'];
@@ -195,9 +197,13 @@ export class CadastroPage implements OnInit {
       this.registros = [];
       return;
     }
-    this.api.listar(this.endpoint).subscribe(registros => {
-      this.registros = registros;
-      if (this.endpoint === 'matriculas-disciplinas') this.carregarOfertasAgrupadas();
+    this.carregandoLista = true;
+    this.api.listar(this.endpoint).pipe(finalize(() => this.carregandoLista = false)).subscribe({
+      next: registros => {
+        this.registros = registros;
+        if (this.endpoint === 'matriculas-disciplinas') this.carregarOfertasAgrupadas();
+      },
+      error: err => this.mensagem = err?.error?.mensagem || 'Não foi possível carregar os registros. Tente novamente.'
     });
   }
 
@@ -229,7 +235,7 @@ export class CadastroPage implements OnInit {
       : this.api.salvar(this.endpoint, dados);
     requisicao.subscribe({
       next: (registro: any) => {
-        this.mensagem = this.registroEditandoId ? 'Registro atualizado com sucesso' : 'Registro salvo com sucesso';
+        this.mensagem = this.registroEditandoId ? 'Registro atualizado com sucesso.' : 'Registro salvo com sucesso.';
         if (this.endpoint === 'planos-ensino' && this.ementaPlanoPendente) {
           this.enviarEmentaAposSalvar(registro);
           return;
@@ -239,7 +245,7 @@ export class CadastroPage implements OnInit {
         this.carregando = false;
       },
       error: err => {
-        this.mensagem = err?.error?.mensagem || 'Nao foi possivel salvar';
+        this.mensagem = err?.error?.mensagem || 'Não foi possível salvar. Verifique os campos e tente novamente.';
         this.carregando = false;
       }
     });
@@ -305,11 +311,12 @@ export class CadastroPage implements OnInit {
       return ['disciplina', 'professor', 'moduloOriginalOferta', 'modulo', 'turma', 'vagas', 'horario', 'sala', 'status'];
     }
     if (this.endpoint === 'matriculas-disciplinas') {
-      return ['aluno', 'curso', 'periodoLetivo', 'moduloOferta', 'ofertaDisciplina', 'dataMatricula', 'status', 'resultadoAcademico', 'observacoes'];
+      return ['aluno', 'curso', 'periodoLetivo', 'moduloOferta', 'turmaOferta', 'ofertaDisciplina',
+        'professorOferta', 'dataMatricula', 'status', 'resultadoAcademico', 'observacoes'];
     }
     if (this.endpoint === 'historicos') {
       return ['aluno', 'curso', 'disciplina', 'codigo', 'modulo', 'periodoCursado', 'cargaHoraria',
-        'creditos', 'notaFinal', 'frequenciaFinal', 'situacao', 'professor'];
+        'creditos', 'notaFinal', 'frequenciaFinal', 'situacao', 'professor', 'dataHomologacao'];
     }
     return Object.keys(registro).filter(chave => {
       const normalizada = chave.toLowerCase();
@@ -322,10 +329,19 @@ export class CadastroPage implements OnInit {
   }
 
   label(campo: string) {
+    if (this.endpoint === 'historicos') {
+      const labelsHistorico: Record<string, string> = {
+        periodoCursado: 'Período cursado', cargaHoraria: 'Carga horária', creditos: 'Créditos',
+        notaFinal: 'Média final', frequenciaFinal: 'Frequência final', situacao: 'Resultado acadêmico',
+        dataHomologacao: 'Data da homologação'
+      };
+      if (labelsHistorico[campo]) return labelsHistorico[campo];
+    }
     if (this.endpoint === 'matriculas-disciplinas') {
       const labelsMatricula: Record<string, string> = {
         aluno: 'Aluno', curso: 'Curso', periodoLetivo: 'Período Letivo', moduloOferta: 'Módulo',
-        ofertaDisciplina: 'Oferta da Disciplina', dataMatricula: 'Data da Matrícula',
+        turmaOferta: 'Turma', ofertaDisciplina: 'Oferta da Disciplina', professorOferta: 'Professor',
+        dataMatricula: 'Data da Matrícula',
         status: 'Situação da Matrícula', resultadoAcademico: 'Resultado Acadêmico', observacoes: 'Observações'
       };
       if (labelsMatricula[campo]) return labelsMatricula[campo];
@@ -435,6 +451,11 @@ export class CadastroPage implements OnInit {
     if (campo === 'status') return this.opcoesStatus();
     if (campo === 'tipo') return [{ id: 'MODULO', nome: 'Modulo' }, { id: 'SEMESTRE', nome: 'Semestre' }, { id: 'BIMESTRE', nome: 'Bimestre' }];
     if (campo === 'turma.id' && this.endpoint === 'ofertas-disciplinas') return this.turmasCompativeis();
+    if (campo === 'disciplina.id' && this.endpoint === 'ofertas-disciplinas') {
+      const moduloId = Number(this.formulario['modulo.id']);
+      return (this.opcoes[campo] || []).filter(disciplina => !moduloId
+        || disciplina.modulo?.id === moduloId || disciplina.moduloOriginal?.id === moduloId);
+    }
     return this.opcoes[campo] || [];
   }
 
@@ -446,10 +467,8 @@ export class CadastroPage implements OnInit {
       return complemento && !opcao.nome?.includes(complemento) ? `${opcao.nome} - ${complemento}` : opcao.nome;
     }
     if (opcao.disciplina && (opcao.modulo || opcao.anoLetivo || opcao.horario)) {
-      const modulo = opcao.modulo?.nome || 'Sem módulo';
-      const ano = opcao.anoLetivo?.ano || opcao.periodoLetivo?.anoLetivo?.ano || '';
-      const horario = opcao.horario ? ` — ${opcao.horario}` : '';
-      return `${opcao.disciplina.nome} — ${modulo}${ano ? '/' + ano : ''}${horario}`;
+      return [opcao.disciplina.nome, opcao.turma?.nome, opcao.horario]
+        .filter(Boolean).join(' — ');
     }
     const partes = [
       opcao.nome,
@@ -464,19 +483,22 @@ export class CadastroPage implements OnInit {
   }
 
   campoOpcaoAlterado(campo: string) {
-    if (this.endpoint !== 'ofertas-disciplinas'
-        || !['anoLetivo.id', 'curso.id', 'modulo.id'].includes(campo)
-        || !this.formulario['turma.id']) return;
-    const turmaSelecionada = Number(this.formulario['turma.id']);
-    if (!this.turmasCompativeis().some(turma => turma.id === turmaSelecionada)) {
-      this.formulario['turma.id'] = '';
+    if (this.endpoint !== 'ofertas-disciplinas') return;
+    if (campo === 'modulo.id') {
+      const disponiveis = this.opcoesCampo('disciplina.id');
+      if (this.formulario['disciplina.id']
+          && !disponiveis.some(item => item.id === Number(this.formulario['disciplina.id']))) {
+        this.formulario['disciplina.id'] = '';
+      }
+      return;
     }
+    if (['anoLetivo.id', 'periodoLetivo.id', 'curso.id'].includes(campo)) this.carregarTurmas();
   }
 
   private turmasCompativeis() {
     const anoId = Number(this.formulario['anoLetivo.id']);
     const cursoId = Number(this.formulario['curso.id']);
-    const moduloId = Number(this.formulario['modulo.id']);
+    const periodoId = Number(this.formulario['periodoLetivo.id']);
     const anoSelecionado = (this.opcoes['anoLetivo.id'] || []).find(ano => ano.id === anoId)?.ano;
     return (this.opcoes['turma.id'] || []).filter(turma => {
       const anoCompativel = !anoId
@@ -484,8 +506,8 @@ export class CadastroPage implements OnInit {
         || (!turma.anoLetivoId && (!turma.ano && !turma.anoPeriodo
           || String(turma.ano || turma.anoPeriodo).includes(String(anoSelecionado))));
       const cursoCompativel = !cursoId || !turma.cursoId || turma.cursoId === cursoId;
-      const moduloCompativel = !moduloId || !turma.moduloId || turma.moduloId === moduloId;
-      return anoCompativel && cursoCompativel && moduloCompativel;
+      const periodoCompativel = !periodoId || turma.periodoLetivoId === periodoId;
+      return anoCompativel && cursoCompativel && periodoCompativel;
     });
   }
 
@@ -512,13 +534,53 @@ export class CadastroPage implements OnInit {
     if (this.endpoint === 'matriculas-disciplinas' && chave === 'moduloOferta') {
       return registro.ofertaDisciplina?.modulo?.nome || 'Sem módulo';
     }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'curso') {
+      return registro.ofertaDisciplina?.curso?.nome || registro.aluno?.curso?.nome || 'Aluno avulso';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'periodoLetivo') {
+      return registro.ofertaDisciplina?.periodoLetivo?.nome || 'Sem período específico';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'turmaOferta') {
+      return registro.ofertaDisciplina?.turma?.nome || 'Turma não informada';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'professorOferta') {
+      return registro.ofertaDisciplina?.professor?.nome || 'Professor não informado';
+    }
     if (this.endpoint === 'matriculas-disciplinas' && chave === 'status') {
-      return registro.status === 'TRANCADO' ? 'TRANCADA' : registro.status === 'CANCELADO' ? 'CANCELADA' : registro.status;
+      return registro.status === 'TRANCADO' ? 'Trancada' : registro.status === 'CANCELADO' ? 'Cancelada' : 'Ativa';
+    }
+    if (this.endpoint === 'matriculas-disciplinas' && chave === 'resultadoAcademico') {
+      const resultados: Record<string, string> = {
+        EM_ANDAMENTO: 'Em andamento', APROVADO: 'Aprovado',
+        REPROVADO_POR_NOTA: 'Reprovado por nota',
+        REPROVADO_POR_FREQUENCIA: 'Reprovado por frequência',
+        REPROVADO_POR_NOTA_E_FREQUENCIA: 'Reprovado por nota e frequência'
+      };
+      return resultados[registro.resultadoAcademico] || registro.resultadoAcademico || 'Em andamento';
+    }
+    if (this.endpoint === 'historicos' && chave === 'situacao') {
+      return this.rotuloSituacao(registro.situacao);
+    }
+    if (this.endpoint === 'historicos' && chave === 'dataHomologacao') {
+      return registro.dataHomologacao ? new Date(registro.dataHomologacao).toLocaleString('pt-BR') : '-';
     }
     const valor = registro[chave];
     if (valor && typeof valor === 'object') return this.rotuloOpcao(valor);
     if (typeof valor === 'boolean') return valor ? 'Sim' : 'Nao';
     return valor ?? '';
+  }
+
+  rotuloSituacao(valor: string) {
+    if (!valor) return '-';
+    const rotulos: Record<string, string> = {
+      EM_ANDAMENTO: 'Em andamento', APROVADO: 'Aprovado',
+      REPROVADO_POR_NOTA: 'Reprovado por nota',
+      REPROVADO_POR_FREQUENCIA: 'Reprovado por frequência',
+      REPROVADO_POR_NOTA_E_FREQUENCIA: 'Reprovado por nota e frequência',
+      AGUARDANDO_HOMOLOGACAO: 'Aguardando homologação', CONCLUIDA: 'Homologado',
+      NAO_HOMOLOGADO: 'Não homologado', HOMOLOGADO: 'Homologado'
+    };
+    return rotulos[valor] || valor.replaceAll('_', ' ').toLowerCase();
   }
 
   enviarPdf(registro: any, event: Event) {
@@ -975,9 +1037,11 @@ export class CadastroPage implements OnInit {
   private carregarOpcoes() {
     for (const campo of this.campos.filter(campo => campo.endsWith('.id'))) {
       const chave = campo.split('.')[0];
-      const endpoint = campo === 'turma.id' && this.endpoint === 'ofertas-disciplinas'
-        ? 'turmas/opcoes'
-        : this.selects[chave];
+      if (campo === 'turma.id' && this.endpoint === 'ofertas-disciplinas') {
+        this.carregarTurmas();
+        continue;
+      }
+      const endpoint = this.selects[chave];
       if (!endpoint || this.opcoes[campo]) continue;
       this.api.listar(endpoint).subscribe(opcoes => this.opcoes[campo] = opcoes);
     }
@@ -987,6 +1051,35 @@ export class CadastroPage implements OnInit {
     if (this.endpoint === 'modulos') {
       this.api.listar('disciplinas').subscribe(opcoes => this.opcoes['disciplina.id'] = opcoes);
     }
+  }
+
+  private carregarTurmas() {
+    const parametros = new URLSearchParams();
+    const filtros: Record<string, string> = {
+      anoLetivoId: 'anoLetivo.id',
+      cursoId: 'curso.id',
+      periodoLetivoId: 'periodoLetivo.id'
+    };
+    for (const [parametro, campo] of Object.entries(filtros)) {
+      const valor = this.formulario[campo];
+      if (valor !== undefined && valor !== '') parametros.set(parametro, String(valor));
+    }
+    const turmaSelecionada = Number(this.formulario['turma.id']);
+    const sufixo = parametros.size ? `?${parametros.toString()}` : '';
+    this.turmasCarregadas = false;
+    this.api.obter(`turmas/opcoes${sufixo}`).subscribe({
+      next: turmas => {
+        this.opcoes['turma.id'] = turmas;
+        this.turmasCarregadas = true;
+        if (turmaSelecionada && !turmas.some((turma: any) => turma.id === turmaSelecionada)) {
+          this.formulario['turma.id'] = '';
+        }
+      },
+      error: () => {
+        this.opcoes['turma.id'] = [];
+        this.mensagem = 'Nao foi possivel carregar as turmas cadastradas.';
+      }
+    });
   }
 
   private opcoesStatus() {

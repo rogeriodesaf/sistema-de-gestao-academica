@@ -272,7 +272,7 @@ button:hover {
 
 button:disabled {
   opacity: .65;
-  cursor: wait;
+  cursor: not-allowed;
 }
 
 button.secundario {
@@ -311,12 +311,29 @@ button.perigo-suave {
 
 .tabela {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   min-width: 860px;
+}
+
+th {
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 th,

@@ -13,9 +13,9 @@
   <div class="usuario-topbar">
     <span>{{ perfilDescricao }}</span>
     <strong>{{ usuario?.nome }}</strong>
-    <span>{{ usuario?.perfil }}</span>
+    <span>{{ usuario?.email }}</span>
   </div>
-  <button type="button" class="botao-tema" (click)="tema.alternar()" [attr.aria-label]="tema.tema === 'claro' ? 'Ativar modo escuro' : 'Ativar modo claro'">
+  <button type="button" class="botao-tema" (click)="tema.alternar()" [attr.aria-pressed]="tema.tema === 'escuro'" [attr.aria-label]="tema.tema === 'claro' ? 'Ativar modo escuro' : 'Ativar modo claro'">
     {{ tema.tema === 'claro' ? 'Escuro' : 'Claro' }}
   </button>
   <button type="button" class="botao-sair" (click)="sair.emit()">Sair</button>

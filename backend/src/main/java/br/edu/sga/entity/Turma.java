@@ -1,6 +1,7 @@
 package br.edu.sga.entity;
 
 import br.edu.sga.enums.StatusTurma;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,9 +24,13 @@ public class Turma extends PanacheEntity {
     public Curso curso;
     @ManyToOne
     @JoinColumn(name = "disciplina_id")
+    @JsonIgnore
+    @Deprecated(forRemoval = false)
     public Disciplina disciplina;
     @ManyToOne
     @JoinColumn(name = "professor_id")
+    @JsonIgnore
+    @Deprecated(forRemoval = false)
     public Professor professor;
     @ManyToOne
     @JoinColumn(name = "ano_letivo_id")
@@ -35,7 +40,11 @@ public class Turma extends PanacheEntity {
     public PeriodoLetivo periodoLetivo;
     public String descricao;
     public String turno;
+    @JsonIgnore
+    @Deprecated(forRemoval = false)
     public String horario;
+    @JsonIgnore
+    @Deprecated(forRemoval = false)
     public String sala;
     @Column(name = "quantidade_maxima_alunos")
     public Integer quantidadeMaximaAlunos;

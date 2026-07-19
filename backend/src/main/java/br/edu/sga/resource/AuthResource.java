@@ -42,7 +42,7 @@ public class AuthResource {
     public Map<String, String> esqueciSenha(@Valid EsqueciSenhaDTO dto) {
         autenticacaoService.solicitarRedefinicao(dto.email());
         return Map.of("mensagem",
-                "Se o e-mail estiver cadastrado, voce recebera as instrucoes para redefinir sua senha.");
+                "Se o e-mail estiver cadastrado, você receberá as instruções para redefinir a senha.");
     }
 
     @POST

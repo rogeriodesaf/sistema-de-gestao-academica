@@ -44,10 +44,13 @@ export class AuthService {
     );
   }
 
-  sair() {
+  sair(motivo?: string) {
     localStorage.removeItem(this.chave);
     this.usuario.set(null);
-    this.router.navigateByUrl('/login');
+    this.router.navigate(['/login'], {
+      queryParams: motivo ? { motivo } : undefined,
+      replaceUrl: true
+    });
   }
 
   private lerSessao(): UsuarioSessao | null {

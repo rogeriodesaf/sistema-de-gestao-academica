@@ -8,7 +8,7 @@ import br.edu.sga.entity.Matricula;
 import br.edu.sga.entity.MatriculaDisciplina;
 import br.edu.sga.enums.StatusHistorico;
 import br.edu.sga.enums.StatusMatricula;
-import br.edu.sga.enums.StatusMatriculaDisciplina;
+import br.edu.sga.enums.ResultadoAcademico;
 import br.edu.sga.enums.StatusOfertaDisciplina;
 import br.edu.sga.enums.TipoComponenteCurricular;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,9 +23,6 @@ import java.util.Map;
 
 @ApplicationScoped
 public class IntegralizacaoCursoService {
-    private static final List<StatusMatriculaDisciplina> APROVADAS = List.of(
-            StatusMatriculaDisciplina.CONCLUIDA, StatusMatriculaDisciplina.CONCLUIDO);
-
     public record IntegralizacaoDTO(int cargaHorariaTotal, int cargaHorariaCumprida,
                                     int cargaHorariaRestante, int creditosTotais,
                                     int creditosCumpridos, int creditosRestantes,
@@ -64,7 +61,8 @@ public class IntegralizacaoCursoService {
         List<Disciplina> optativas = matriz.stream()
                 .filter(item -> tipo(item) == TipoComponenteCurricular.OPTATIVA).toList();
         Map<Long, Disciplina> aprovadas = new LinkedHashMap<>();
-        MatriculaDisciplina.<MatriculaDisciplina>list("aluno = ?1 and status in ?2", aluno, APROVADAS)
+        MatriculaDisciplina.<MatriculaDisciplina>list(
+                        "aluno = ?1 and resultadoAcademico = ?2", aluno, ResultadoAcademico.APROVADO)
                 .forEach(item -> adicionarSeDaMatriz(aprovadas, matriz,
                         item.ofertaDisciplina == null ? null : item.ofertaDisciplina.disciplina));
         HistoricoEscolar.<HistoricoEscolar>list("aluno = ?1 and situacao = ?2", aluno, StatusHistorico.APROVADO)

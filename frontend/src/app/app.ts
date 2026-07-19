@@ -16,19 +16,20 @@ import { MenuGrupo } from './shared/ui/sidebar/sidebar';
 export class App implements OnDestroy {
   private readonly navegacaoSubscription: Subscription;
   private readonly menuProfessor: MenuGrupo[] = [
-    { titulo: 'Professor', itens: [{ path: '/area-professor', label: 'Area do professor', icone: 'teacher' }] }
+    { titulo: 'Professor', itens: [{ path: '/area-professor', label: 'Área do professor', icone: 'teacher' }] }
   ];
   private readonly menuAluno: MenuGrupo[] = [
     { titulo: 'Aluno', itens: [{ path: '/area-aluno', label: 'Portal do aluno', icone: 'student' }] }
   ];
   private readonly menuCompleto: MenuGrupo[] = [
     { titulo: 'Principal', itens: [{ path: '/dashboard', label: 'Dashboard', icone: 'dashboard' }] },
-    { titulo: 'Academico', itens: [
+    { titulo: 'Acadêmico', itens: [
       { path: '/cursos', label: 'Cursos', icone: 'course' },
       { path: '/matriz-curricular', label: 'Matriz curricular', icone: 'matrix' },
       { path: '/disciplinas', label: 'Disciplinas', icone: 'book' },
-      { path: '/modulos', label: 'Modulos', icone: 'layers' },
-      { path: '/montagem-periodo', label: 'Oferta por modulo', icone: 'calendar' },
+      { path: '/modulos', label: 'Módulos', icone: 'layers' },
+      { path: '/turmas', label: 'Turmas Acadêmicas', icone: 'users' },
+      { path: '/montagem-periodo', label: 'Oferta por módulo', icone: 'calendar' },
       { path: '/ofertas-disciplinas', label: 'Ofertas de disciplinas', icone: 'checklist' },
       { path: '/anos-letivos', label: 'Anos letivos', icone: 'calendar' },
       { path: '/planos-ensino', label: 'Plano de Ensino', icone: 'plan' },
@@ -38,19 +39,19 @@ export class App implements OnDestroy {
       { path: '/alunos', label: 'Alunos', icone: 'student' },
       { path: '/professores', label: 'Professores', icone: 'teacher' }
     ] },
-    { titulo: 'Avaliacao', itens: [
-      { path: '/diarios-pendentes', label: 'Diarios pendentes', icone: 'checklist' },
+    { titulo: 'Avaliação', itens: [
+      { path: '/diarios-pendentes', label: 'Diários pendentes', icone: 'checklist' },
       { path: '/matriculas-disciplinas', label: 'Matrículas em Disciplinas', icone: 'document-check' }
     ] },
     { titulo: 'Consultas', itens: [
-      { path: '/historicos', label: 'Historico escolar', icone: 'history' },
-      { path: '/relatorios', label: 'Relatorios', icone: 'chart' }
+      { path: '/historicos', label: 'Histórico escolar', icone: 'history' },
+      { path: '/relatorios', label: 'Relatórios', icone: 'chart' }
     ] },
-    { titulo: 'Administracao', itens: [
-      { path: '/usuarios', label: 'Usuarios', icone: 'user' },
+    { titulo: 'Administração', itens: [
+      { path: '/usuarios', label: 'Usuários', icone: 'user' },
       { path: '/perfis', label: 'Perfis', icone: 'shield' },
       { path: '/auditoria', label: 'Auditoria', icone: 'history' },
-      { path: '/configuracoes', label: 'Configuracoes', icone: 'settings' }
+      { path: '/configuracoes', label: 'Configurações', icone: 'settings' }
     ] }
   ];
   private readonly menuCoordenador: MenuGrupo[] = this.menuCompleto.map(grupo => ({
@@ -91,7 +92,8 @@ export class App implements OnDestroy {
   }
 
   private redirecionarPerfil() {
-    if (this.router.url.startsWith('/login')) {
+    const rotasLivres = ['/login', '/esqueci-senha', '/redefinir-senha', '/acesso-negado', '/pagina-nao-encontrada'];
+    if (rotasLivres.some(rota => this.router.url.startsWith(rota))) {
       return;
     }
     if (this.auth.usuario()?.perfil === 'PROFESSOR' && !this.router.url.startsWith('/area-professor')) {

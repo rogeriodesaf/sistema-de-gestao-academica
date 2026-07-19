@@ -25,6 +25,6 @@ export class TopbarComponent {
       ALUNO: 'Aluno'
     };
 
-    return descricoes[this.usuario?.perfil] || 'Usuario';
+    return descricoes[this.usuario?.perfil] || 'Usuário';
   }
 }

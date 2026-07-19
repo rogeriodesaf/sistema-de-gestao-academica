@@ -5,9 +5,7 @@ import br.edu.sga.entity.ArquivoProfessor;
 import br.edu.sga.entity.Avaliacao;
 import br.edu.sga.entity.AulaMinistrada;
 import br.edu.sga.entity.Frequencia;
-import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.entity.MatriculaDisciplina;
-import br.edu.sga.entity.Nota;
 import br.edu.sga.entity.NotaAvaliacao;
 import br.edu.sga.entity.OfertaDisciplina;
 import br.edu.sga.entity.Professor;
@@ -17,12 +15,13 @@ import br.edu.sga.enums.StatusFrequencia;
 import br.edu.sga.enums.StatusOfertaDisciplina;
 import br.edu.sga.enums.TipoVinculoArquivo;
 import br.edu.sga.exception.ApiException;
-import br.edu.sga.service.AcademicoService;
 import br.edu.sga.service.ArquivoPdfService;
 import br.edu.sga.service.PermissaoService;
 import br.edu.sga.service.FrequenciaAcademicaService;
 import br.edu.sga.service.ResultadoAcademicoService;
 import br.edu.sga.service.FechamentoDiarioService;
+import br.edu.sga.service.ProfessorUsuarioService;
+import br.edu.sga.service.IntegridadeAcademicaService;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -44,7 +43,7 @@ import java.math.BigDecimal;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
@@ -56,32 +55,28 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class AreaProfessorResource {
-    @Inject AcademicoService academicoService;
     @Inject ArquivoPdfService arquivoPdfService;
     @Inject PermissaoService permissaoService;
     @Inject FrequenciaAcademicaService frequenciaAcademicaService;
     @Inject ResultadoAcademicoService resultadoAcademicoService;
     @Inject FechamentoDiarioService fechamentoDiarioService;
+    @Inject ProfessorUsuarioService professorUsuarioService;
+    @Inject IntegridadeAcademicaService integridadeAcademicaService;
     @Inject EntityManager entityManager;
     @Context ContainerRequestContext contexto;
 
-    public record AulaDTO(Long ofertaDisciplinaId, LocalDate dataAula, String conteudoMinistrado, String observacoes, Integer cargaHorariaAula) {}
-    public record PresencaAlunoDTO(Long alunoId, boolean presente, String justificativa, String observacao) {}
-    public record FrequenciaDTO(Long aulaId, List<PresencaAlunoDTO> presencas) {}
-    public record NotaAlunoDTO(Long alunoId, BigDecimal nota1, BigDecimal nota2, BigDecimal trabalho, BigDecimal avaliacaoFinal) {}
-    public record NotasDTO(Long ofertaDisciplinaId, List<NotaAlunoDTO> notas) {}
+    public record AulaDTO(LocalDate dataAula, String conteudoMinistrado, String observacoes, Integer cargaHorariaAula) {}
     public record PessoaResumoDTO(Long id, String nome, String email) {}
     public record ModuloResumoDTO(Long id, String nome) {}
     public record PeriodoResumoDTO(Long id, String nome) {}
-    public record TurmaResumoDTO(Long id, String nome, String turno, String horario, String sala) {}
-    public record DisciplinaResumoDTO(Long id, String nome, String codigo, Integer cargaHoraria, PessoaResumoDTO professorResponsavel) {}
+    public record TurmaResumoDTO(Long id, String nome, String turno) {}
+    public record DisciplinaResumoDTO(Long id, String nome, String codigo, Integer cargaHoraria) {}
     public record OfertaProfessorDTO(Long id, TurmaResumoDTO turma, DisciplinaResumoDTO disciplina, ModuloResumoDTO modulo,
                                      PeriodoResumoDTO periodoLetivo, PessoaResumoDTO professor, String horario, String sala,
                                      Integer cargaHorariaPrevista, Integer cargaHorariaMinistrada, String status,
                                      Long alunosMatriculados, String motivoReabertura, LocalDateTime dataEncerramento) {}
     public record AlunoResumoDTO(Long id, String nome, String email, String cpf) {}
     public record MatriculaResumoDTO(Long id, AlunoResumoDTO aluno, String status, BigDecimal notaFinal, BigDecimal frequenciaFinal, String observacoes) {}
-    public record AulaResumoDTO(Long id, LocalDate dataAula, String conteudoMinistrado, String observacoes, Integer cargaHorariaAula) {}
     public record AulaProfessorDTO(Long id, LocalDate dataAula, String conteudoMinistrado, String observacoes,
                                    Integer cargaHorariaAula, boolean chamadaPreenchida, long quantidadeArquivos) {}
     public record ChamadaItemDTO(Long matriculaId, String status, String observacao) {}
@@ -102,15 +97,8 @@ public class AreaProfessorResource {
                                     FrequenciaAcademicaService.ResumoFrequencia frequencia) {}
     public record ArquivoResumoDTO(Long id, String titulo, String nomeOriginal, String tipoVinculo,
                                    Long aulaId, Long avaliacaoId, Long tamanho, LocalDateTime dataEnvio) {}
-    public record AulaRefDTO(Long id) {}
-    public record FrequenciaResumoDTO(Long id, AulaRefDTO aula, AlunoResumoDTO aluno, boolean presente, String justificativa, String observacao) {}
-    public record NotaResumoDTO(Long id, AlunoResumoDTO aluno, BigDecimal nota1, BigDecimal nota2, BigDecimal trabalho,
-                                BigDecimal avaliacaoFinal, BigDecimal mediaFinal, String situacao) {}
-    public record HistoricoResumoDTO(Long id, AlunoResumoDTO aluno, BigDecimal notaFinal, BigDecimal frequenciaFinal,
-                                     String situacao, String periodoCursado) {}
     public record DiarioProfessorDTO(OfertaProfessorDTO oferta, List<MatriculaResumoDTO> matriculas,
-                                     List<AulaResumoDTO> aulas, List<FrequenciaResumoDTO> frequencias,
-                                     List<NotaResumoDTO> notas, List<HistoricoResumoDTO> historicos) {}
+                                     List<AulaProfessorDTO> aulas) {}
 
     @GET
     @Path("/ofertas")
@@ -118,26 +106,24 @@ public class AreaProfessorResource {
         Professor professor = professorLogadoObrigatorio();
         List<Object[]> linhas = entityManager.createQuery("""
                 select o.id,
-                       t.id, t.nome, t.turno, t.horario, t.sala,
+                       t.id, t.nome, t.turno,
                        d.id, d.nome, d.codigo, d.cargaHoraria,
-                       dr.id, dr.nome, dr.email,
-                       coalesce(op.id, dr.id), coalesce(op.nome, dr.nome), coalesce(op.email, dr.email),
+                       op.id, op.nome, op.email,
                        mo.id, mo.nome, pe.id, pe.nome,
                        o.horario, o.sala, o.cargaHorariaPrevista, o.cargaHorariaMinistrada, o.status,
                        o.motivoReabertura, o.dataEncerramento,
                        count(m.id)
                 from OfertaDisciplina o
-                join o.turma t
+                left join o.turma t
                 join o.disciplina d
-                left join d.professorResponsavel dr
-                left join o.professor op
+                join o.professor op
                 left join o.modulo mo
                 left join o.periodoLetivo pe
                 left join MatriculaDisciplina m on m.ofertaDisciplina = o and m.status in :statusMatricula
-                where (op.id = :professorId or dr.id = :professorId) and o.status in :statusOferta
-                group by o.id, t.id, t.nome, t.turno, t.horario, t.sala,
+                where op.id = :professorId
+                group by o.id, t.id, t.nome, t.turno,
                          d.id, d.nome, d.codigo, d.cargaHoraria,
-                         dr.id, dr.nome, dr.email, op.id, op.nome, op.email,
+                         op.id, op.nome, op.email,
                          mo.id, mo.nome, pe.id, pe.nome,
                          o.horario, o.sala, o.cargaHorariaPrevista, o.cargaHorariaMinistrada, o.status,
                          o.motivoReabertura, o.dataEncerramento
@@ -145,12 +131,6 @@ public class AreaProfessorResource {
                 """, Object[].class)
                 .setParameter("professorId", professor.id)
                 .setParameter("statusMatricula", List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO))
-                .setParameter("statusOferta", List.of(
-                        br.edu.sga.enums.StatusOfertaDisciplina.PLANEJADA,
-                        br.edu.sga.enums.StatusOfertaDisciplina.ABERTA,
-                        br.edu.sga.enums.StatusOfertaDisciplina.EM_ANDAMENTO,
-                        br.edu.sga.enums.StatusOfertaDisciplina.AGUARDANDO_HOMOLOGACAO,
-                        br.edu.sga.enums.StatusOfertaDisciplina.CONCLUIDA))
                 .getResultList();
         return linhas.stream().map(this::ofertaResumoProjetado).toList();
     }
@@ -168,17 +148,10 @@ public class AreaProfessorResource {
     public DiarioProfessorDTO diario(@PathParam("id") Long id) {
         OfertaDisciplina oferta = ofertaPermitida(id);
         List<MatriculaDisciplina> matriculas = matriculasDaOferta(oferta);
-        List<AulaMinistrada> aulas = AulaMinistrada.list("ofertaDisciplina = ?1 order by dataAula desc, id desc", oferta);
-        List<Frequencia> frequencias = Frequencia.list("aula.ofertaDisciplina = ?1", oferta);
-        List<Nota> notas = Nota.list("ofertaDisciplina = ?1", oferta);
-        List<HistoricoEscolar> historicos = HistoricoEscolar.list("ofertaDisciplina = ?1", oferta);
         return new DiarioProfessorDTO(
                 ofertaResumo(oferta),
                 matriculas.stream().map(this::matriculaResumo).toList(),
-                aulas.stream().map(this::aulaResumo).toList(),
-                frequencias.stream().map(this::frequenciaResumo).toList(),
-                notas.stream().map(this::notaResumo).toList(),
-                historicos.stream().map(this::historicoResumo).toList()
+                aulasDaOferta(oferta, matriculas.size())
         );
     }
 
@@ -186,8 +159,7 @@ public class AreaProfessorResource {
     @Path("/ofertas/{ofertaId}/aulas")
     public List<AulaProfessorDTO> listarAulas(@PathParam("ofertaId") Long ofertaId) {
         OfertaDisciplina oferta = ofertaPermitida(ofertaId);
-        return AulaMinistrada.<AulaMinistrada>list("ofertaDisciplina = ?1 order by dataAula desc, id desc", oferta)
-                .stream().map(this::aulaProfessorResumo).toList();
+        return aulasDaOferta(oferta, alunosMatriculados(oferta));
     }
 
     @POST
@@ -197,6 +169,7 @@ public class AreaProfessorResource {
         OfertaDisciplina oferta = ofertaPermitida(ofertaId);
         exigirEdicaoLiberada(oferta);
         validarAula(dto);
+        integridadeAcademicaService.validarDataNaOferta(dto.dataAula(), oferta, "da aula");
         String conteudo = dto.conteudoMinistrado().trim();
         if (AulaMinistrada.count("ofertaDisciplina = ?1 and dataAula = ?2 and conteudoMinistrado = ?3",
                 oferta, dto.dataAula(), conteudo) > 0) {
@@ -207,7 +180,8 @@ public class AreaProfessorResource {
         aula.persist();
         atualizarCargaMinistrada(oferta);
         frequenciaAcademicaService.recalcularOferta(oferta);
-        return aulaProfessorResumo(aula);
+        return new AulaProfessorDTO(aula.id, aula.dataAula, aula.conteudoMinistrado, aula.observacoes,
+                aula.cargaHorariaAula, false, 0);
     }
 
     @GET
@@ -219,14 +193,13 @@ public class AreaProfessorResource {
         List<Object[]> linhas = entityManager.createQuery("""
                 select m.id, a.id, a.nome, a.email, a.cpf, f.status, f.observacao, f.id
                 from MatriculaDisciplina m join m.aluno a
-                left join Frequencia f on f.aula = :aula and f.aluno = a
-                where m.ofertaDisciplina = :oferta and m.status not in :statusIgnorados
+                left join Frequencia f on f.aula = :aula and f.matriculaDisciplina = m
+                where m.ofertaDisciplina = :oferta and m.status in :statusAtivos
                 order by a.nome
                 """, Object[].class)
                 .setParameter("aula", aula)
                 .setParameter("oferta", oferta)
-                .setParameter("statusIgnorados", List.of(
-                        StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO))
+                .setParameter("statusAtivos", statusMatriculasAtivas())
                 .getResultList();
         return linhas.stream().map(item -> {
             StatusFrequencia status = item[5] == null ? StatusFrequencia.PRESENTE : (StatusFrequencia) item[5];
@@ -248,39 +221,43 @@ public class AreaProfessorResource {
             throw new ApiException(Response.Status.BAD_REQUEST, "A chamada deve conter ao menos um aluno");
         }
 
+        List<MatriculaDisciplina> matriculasAtivas = matriculasDaOferta(oferta);
+        Map<Long, MatriculaDisciplina> matriculasPorId = new HashMap<>();
+        matriculasAtivas.forEach(matricula -> matriculasPorId.put(matricula.id, matricula));
+        Map<Long, Frequencia> frequenciasPorMatricula = new HashMap<>();
+        Map<Long, Frequencia> frequenciasPorAluno = new HashMap<>();
+        Frequencia.<Frequencia>list("aula", aula).forEach(frequencia -> {
+            if (frequencia.matriculaDisciplina != null) {
+                frequenciasPorMatricula.put(frequencia.matriculaDisciplina.id, frequencia);
+            }
+            if (frequencia.aluno != null) frequenciasPorAluno.put(frequencia.aluno.id, frequencia);
+        });
         Set<Long> matriculasRecebidas = new HashSet<>();
         for (ChamadaItemDTO item : dto.presencas()) {
             if (item == null || item.matriculaId() == null || !matriculasRecebidas.add(item.matriculaId())) {
-                throw new ApiException(Response.Status.BAD_REQUEST, "A chamada possui matricula ausente ou duplicada");
+                throw new ApiException(Response.Status.BAD_REQUEST, "A chamada possui matrícula ausente ou duplicada");
             }
-            MatriculaDisciplina matricula = MatriculaDisciplina.findById(item.matriculaId());
-            if (!matriculaAtivaDaOferta(matricula, oferta)) {
-                throw new ApiException(Response.Status.BAD_REQUEST, "Aluno nao matriculado nesta disciplina");
+            MatriculaDisciplina matricula = matriculasPorId.get(item.matriculaId());
+            if (matricula == null) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Aluno não possui matrícula ativa nesta oferta");
             }
             StatusFrequencia status = statusFrequencia(item.status());
-            int atualizadas = entityManager.createQuery("""
-                    update Frequencia f set f.matriculaDisciplina = :matricula, f.status = :status,
-                        f.presente = :presente, f.justificativa = :justificativa, f.observacao = :observacao
-                    where f.aula = :aula and f.aluno = :aluno
-                    """).setParameter("matricula", matricula).setParameter("status", status)
-                    .setParameter("presente", status == StatusFrequencia.PRESENTE)
-                    .setParameter("justificativa", status == StatusFrequencia.JUSTIFICADO ? "JUSTIFICADO" : null)
-                    .setParameter("observacao", textoOpcional(item.observacao()))
-                    .setParameter("aula", aula).setParameter("aluno", matricula.aluno).executeUpdate();
-            if (atualizadas == 0) {
-                Frequencia frequencia = new Frequencia();
+            Frequencia frequencia = frequenciasPorMatricula.get(matricula.id);
+            if (frequencia == null) frequencia = frequenciasPorAluno.get(matricula.aluno.id);
+            if (frequencia == null) {
+                frequencia = new Frequencia();
                 frequencia.aula = aula;
                 frequencia.aluno = matricula.aluno;
-                frequencia.matriculaDisciplina = matricula;
-                frequencia.status = status;
-                frequencia.presente = status == StatusFrequencia.PRESENTE;
-                frequencia.justificativa = status == StatusFrequencia.JUSTIFICADO ? "JUSTIFICADO" : null;
-                frequencia.observacao = textoOpcional(item.observacao());
                 frequencia.persist();
             }
+            frequencia.matriculaDisciplina = matricula;
+            frequencia.status = status;
+            frequencia.presente = status == StatusFrequencia.PRESENTE;
+            frequencia.justificativa = status == StatusFrequencia.JUSTIFICADO ? "JUSTIFICADO" : null;
+            frequencia.observacao = textoOpcional(item.observacao());
         }
         frequenciaAcademicaService.recalcularOferta(oferta);
-        return Map.of("mensagem", "Aula e chamada salvas com sucesso");
+        return Map.of("mensagem", "Chamada salva com sucesso");
     }
 
     @GET
@@ -300,7 +277,7 @@ public class AreaProfessorResource {
         validarAvaliacao(dto, oferta, null);
         Avaliacao avaliacao = new Avaliacao();
         avaliacao.ofertaDisciplina = oferta;
-        avaliacao.professor = professorDaOferta(oferta);
+        avaliacao.professor = oferta.professor;
         preencherAvaliacao(avaliacao, dto);
         avaliacao.persist();
         return avaliacaoResumo(avaliacao);
@@ -314,7 +291,7 @@ public class AreaProfessorResource {
         exigirEdicaoLiberada(avaliacao.ofertaDisciplina);
         validarAvaliacao(dto, avaliacao.ofertaDisciplina, avaliacao.id);
         if (NotaAvaliacao.count("avaliacao = ?1 and nota > ?2", avaliacao, dto.notaMaxima()) > 0) {
-            throw new ApiException(Response.Status.CONFLICT, "A nota maxima e menor que uma nota ja lancada");
+            throw new ApiException(Response.Status.CONFLICT, "A nota máxima é menor que uma nota já lançada");
         }
         preencherAvaliacao(avaliacao, dto);
         return avaliacaoResumo(avaliacao);
@@ -327,7 +304,7 @@ public class AreaProfessorResource {
         Avaliacao avaliacao = avaliacaoPermitida(avaliacaoId);
         exigirEdicaoLiberada(avaliacao.ofertaDisciplina);
         if (NotaAvaliacao.count("avaliacao", avaliacao) > 0 || ArquivoProfessor.count("avaliacao", avaliacao) > 0) {
-            throw new ApiException(Response.Status.CONFLICT, "Avaliacao com notas ou arquivos nao pode ser excluida");
+            throw new ApiException(Response.Status.CONFLICT, "Avaliação com notas ou arquivos não pode ser excluída");
         }
         avaliacao.delete();
     }
@@ -336,8 +313,20 @@ public class AreaProfessorResource {
     @Path("/avaliacoes/{avaliacaoId}/notas")
     public List<NotaLancamentoDTO> buscarNotasAvaliacao(@PathParam("avaliacaoId") Long avaliacaoId) {
         Avaliacao avaliacao = avaliacaoPermitida(avaliacaoId);
-        return matriculasDaOferta(avaliacao.ofertaDisciplina).stream()
-                .map(matricula -> notaLancamento(avaliacao, matricula)).toList();
+        return entityManager.createQuery("""
+                select m.id, a.id, a.nome, a.email, a.cpf, n.nota, n.observacao, n.id
+                from MatriculaDisciplina m join m.aluno a
+                left join NotaAvaliacao n on n.avaliacao = :avaliacao and n.matriculaDisciplina = m
+                where m.ofertaDisciplina = :oferta and m.status in :statusAtivos
+                order by a.nome
+                """, Object[].class)
+                .setParameter("avaliacao", avaliacao)
+                .setParameter("oferta", avaliacao.ofertaDisciplina)
+                .setParameter("statusAtivos", statusMatriculasAtivas())
+                .getResultList().stream().map(item -> new NotaLancamentoDTO(
+                        (Long) item[0], new AlunoResumoDTO((Long) item[1], (String) item[2],
+                        (String) item[3], (String) item[4]), (BigDecimal) item[5],
+                        (String) item[6], item[7] != null)).toList();
     }
 
     @PUT
@@ -349,33 +338,42 @@ public class AreaProfessorResource {
         if (dto == null || dto.notas() == null || dto.notas().isEmpty()) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Informe ao menos uma nota");
         }
+        List<MatriculaDisciplina> matriculasAtivas = matriculasDaOferta(avaliacao.ofertaDisciplina);
+        Map<Long, MatriculaDisciplina> matriculasPorId = new HashMap<>();
+        matriculasAtivas.forEach(matricula -> matriculasPorId.put(matricula.id, matricula));
+        Map<Long, NotaAvaliacao> notasPorMatricula = new HashMap<>();
+        Map<Long, NotaAvaliacao> notasPorAluno = new HashMap<>();
+        NotaAvaliacao.<NotaAvaliacao>list("avaliacao", avaliacao).forEach(nota -> {
+            if (nota.matriculaDisciplina != null) notasPorMatricula.put(nota.matriculaDisciplina.id, nota);
+            if (nota.aluno != null) notasPorAluno.put(nota.aluno.id, nota);
+        });
         Set<Long> matriculasRecebidas = new HashSet<>();
         for (NotaAvaliacaoItemDTO item : dto.notas()) {
             if (item == null || item.matriculaId() == null || item.nota() == null
                     || !matriculasRecebidas.add(item.matriculaId())) {
-                throw new ApiException(Response.Status.BAD_REQUEST, "A lista possui nota ou matricula invalida");
+                throw new ApiException(Response.Status.BAD_REQUEST, "A lista possui nota ou matrícula inválida");
             }
             if (item.nota().signum() < 0 || item.nota().compareTo(avaliacao.notaMaxima) > 0) {
                 throw new ApiException(Response.Status.BAD_REQUEST, "A nota deve estar entre zero e " + avaliacao.notaMaxima);
             }
-            MatriculaDisciplina matricula = MatriculaDisciplina.findById(item.matriculaId());
-            if (!matriculaAtivaDaOferta(matricula, avaliacao.ofertaDisciplina)) {
-                throw new ApiException(Response.Status.BAD_REQUEST, "Aluno nao matriculado nesta disciplina");
+            MatriculaDisciplina matricula = matriculasPorId.get(item.matriculaId());
+            if (matricula == null) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Aluno não possui matrícula ativa nesta oferta");
             }
-            NotaAvaliacao nota = NotaAvaliacao.find("avaliacao = ?1 and aluno = ?2", avaliacao, matricula.aluno).firstResult();
+            NotaAvaliacao nota = notasPorMatricula.get(matricula.id);
+            if (nota == null) nota = notasPorAluno.get(matricula.aluno.id);
             boolean novaNota = nota == null;
             if (nota == null) {
                 nota = new NotaAvaliacao();
                 nota.avaliacao = avaliacao;
                 nota.aluno = matricula.aluno;
-                nota.matriculaDisciplina = matricula;
             }
+            nota.matriculaDisciplina = matricula;
             nota.nota = item.nota();
             nota.observacao = textoOpcional(item.observacao());
             nota.dataAtualizacao = LocalDateTime.now();
             if (novaNota) nota.persist();
         }
-        atualizarMedias(avaliacao.ofertaDisciplina);
         return Map.of("mensagem", "Notas salvas com sucesso");
     }
 
@@ -461,105 +459,19 @@ public class AreaProfessorResource {
         arquivo.delete();
     }
 
-    @POST
-    @Path("/aulas")
-    @Transactional
-    public AulaResumoDTO salvarAula(AulaDTO dto) {
-        if (dto == null || dto.ofertaDisciplinaId() == null) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Oferta de disciplina obrigatoria");
-        }
-        OfertaDisciplina oferta = ofertaPermitida(dto.ofertaDisciplinaId());
-        exigirEdicaoLiberada(oferta);
-        AulaMinistrada aula = novaAula(oferta, dto.dataAula() == null ? LocalDate.now() : dto.dataAula(),
-                dto.conteudoMinistrado(), dto.observacoes(), dto.cargaHorariaAula());
-        aula.persist();
-        atualizarCargaMinistrada(oferta);
-        frequenciaAcademicaService.recalcularOferta(oferta);
-        return aulaResumo(aula);
-    }
-
-    @POST
-    @Path("/frequencias")
-    @Transactional
-    public Map<String, Object> salvarFrequencias(FrequenciaDTO dto) {
-        if (dto == null || dto.aulaId() == null || dto.presencas() == null) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Aula e lista de presencas sao obrigatorias");
-        }
-        AulaMinistrada aula = AulaMinistrada.findById(dto.aulaId());
-        if (aula == null) throw new NotFoundException();
-        ofertaPermitida(aula.ofertaDisciplina.id);
-        exigirEdicaoLiberada(aula.ofertaDisciplina);
-        for (PresencaAlunoDTO item : dto.presencas()) {
-            Aluno aluno = Aluno.findById(item.alunoId());
-            if (aluno == null) continue;
-            Frequencia frequencia = Frequencia.find("aula = ?1 and aluno = ?2", aula, aluno).firstResult();
-            if (frequencia == null) {
-                frequencia = new Frequencia();
-                frequencia.aula = aula;
-                frequencia.aluno = aluno;
-            }
-            frequencia.presente = item.presente();
-            frequencia.justificativa = item.justificativa();
-            frequencia.observacao = item.observacao();
-            frequencia.status = item.presente() ? StatusFrequencia.PRESENTE
-                    : (item.justificativa() == null || item.justificativa().isBlank()
-                    ? StatusFrequencia.AUSENTE : StatusFrequencia.JUSTIFICADO);
-            frequencia.matriculaDisciplina = MatriculaDisciplina.find(
-                    "aluno = ?1 and ofertaDisciplina = ?2", aluno, aula.ofertaDisciplina).firstResult();
-            if (frequencia.id == null) frequencia.persist();
-        }
-        frequenciaAcademicaService.recalcularOferta(aula.ofertaDisciplina);
-        return Map.of("mensagem", "Frequencia salva com sucesso");
-    }
-
-    @POST
-    @Path("/notas")
-    @Transactional
-    public Map<String, Object> salvarNotas(NotasDTO dto) {
-        if (dto == null || dto.ofertaDisciplinaId() == null || dto.notas() == null) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Oferta e lista de notas sao obrigatorias");
-        }
-        OfertaDisciplina oferta = ofertaPermitida(dto.ofertaDisciplinaId());
-        exigirEdicaoLiberada(oferta);
-        for (NotaAlunoDTO item : dto.notas()) {
-            Aluno aluno = Aluno.findById(item.alunoId());
-            if (aluno == null) continue;
-            Nota nota = Nota.find("aluno = ?1 and ofertaDisciplina = ?2", aluno, oferta).firstResult();
-            if (nota == null) {
-                nota = new Nota();
-                nota.aluno = aluno;
-                nota.ofertaDisciplina = oferta;
-            }
-            nota.nota1 = item.nota1();
-            nota.nota2 = item.nota2();
-            nota.trabalho = item.trabalho();
-            nota.avaliacaoFinal = item.avaliacaoFinal();
-            academicoService.salvarNota(nota, permissaoService.perfil(contexto), permissaoService.usuarioId(contexto));
-        }
-        return Map.of("mensagem", "Notas salvas com sucesso");
-    }
-
     private Professor professorLogadoObrigatorio() {
-        permissaoService.exigir(contexto, Perfil.PROFESSOR, Perfil.COORDENADOR, Perfil.SECRETARIA);
-        Professor professor = Professor.find("usuario.id", permissaoService.usuarioId(contexto)).firstResult();
-        if (professor == null) {
-            throw new ApiException(Response.Status.FORBIDDEN, "Professor nao encontrado para o usuario logado");
-        }
-        return professor;
+        permissaoService.exigir(contexto, Perfil.PROFESSOR);
+        return professorUsuarioService.identificarProfessor(permissaoService.usuarioId(contexto));
     }
 
     private OfertaDisciplina ofertaPermitida(Long id) {
         Professor professor = professorLogadoObrigatorio();
         OfertaDisciplina oferta = OfertaDisciplina.findById(id);
         if (oferta == null) throw new NotFoundException();
-        if (!mesmoProfessor(professor, oferta.professor) && !mesmoProfessor(professor, oferta.disciplina.professorResponsavel)) {
-            throw new ApiException(Response.Status.FORBIDDEN, "Professor nao vinculado a esta disciplina");
+        if (!mesmoProfessor(professor, oferta.professor)) {
+            throw new ApiException(Response.Status.FORBIDDEN, "Professor não vinculado a esta oferta");
         }
         return oferta;
-    }
-
-    private Professor professorDaOferta(OfertaDisciplina oferta) {
-        return oferta.professor != null ? oferta.professor : oferta.disciplina.professorResponsavel;
     }
 
     private boolean mesmoProfessor(Professor logado, Professor vinculado) {
@@ -567,14 +479,13 @@ public class AreaProfessorResource {
     }
 
     private OfertaProfessorDTO ofertaResumo(OfertaDisciplina oferta) {
-        Professor professor = professorDaOferta(oferta);
         return new OfertaProfessorDTO(
                 oferta.id,
                 turmaResumo(oferta.turma),
                 disciplinaResumo(oferta.disciplina),
                 oferta.modulo == null ? null : new ModuloResumoDTO(oferta.modulo.id, oferta.modulo.nome),
                 oferta.periodoLetivo == null ? null : new PeriodoResumoDTO(oferta.periodoLetivo.id, oferta.periodoLetivo.nome),
-                pessoaResumo(professor),
+                pessoaResumo(oferta.professor),
                 oferta.horario,
                 oferta.sala,
                 oferta.cargaHorariaPrevista,
@@ -587,43 +498,40 @@ public class AreaProfessorResource {
     }
 
     private OfertaProfessorDTO ofertaResumoProjetado(Object[] linha) {
-        PessoaResumoDTO responsavel = linha[10] == null ? null
-                : new PessoaResumoDTO((Long) linha[10], (String) linha[11], (String) linha[12]);
-        PessoaResumoDTO professor = linha[13] == null ? null
-                : new PessoaResumoDTO((Long) linha[13], (String) linha[14], (String) linha[15]);
+        PessoaResumoDTO professor = new PessoaResumoDTO((Long) linha[8], (String) linha[9], (String) linha[10]);
         return new OfertaProfessorDTO(
                 (Long) linha[0],
-                new TurmaResumoDTO((Long) linha[1], (String) linha[2], (String) linha[3], (String) linha[4], (String) linha[5]),
-                new DisciplinaResumoDTO((Long) linha[6], (String) linha[7], (String) linha[8], (Integer) linha[9], responsavel),
-                linha[16] == null ? null : new ModuloResumoDTO((Long) linha[16], (String) linha[17]),
-                linha[18] == null ? null : new PeriodoResumoDTO((Long) linha[18], (String) linha[19]),
+                linha[1] == null ? null : new TurmaResumoDTO((Long) linha[1], (String) linha[2], (String) linha[3]),
+                new DisciplinaResumoDTO((Long) linha[4], (String) linha[5], (String) linha[6], (Integer) linha[7]),
+                linha[11] == null ? null : new ModuloResumoDTO((Long) linha[11], (String) linha[12]),
+                linha[13] == null ? null : new PeriodoResumoDTO((Long) linha[13], (String) linha[14]),
                 professor,
+                (String) linha[15],
+                (String) linha[16],
+                (Integer) linha[17],
+                (Integer) linha[18],
+                linha[19] == null ? null : linha[19].toString(),
+                ((Number) linha[22]).longValue(),
                 (String) linha[20],
-                (String) linha[21],
-                (Integer) linha[22],
-                (Integer) linha[23],
-                linha[24] == null ? null : linha[24].toString(),
-                ((Number) linha[27]).longValue(),
-                (String) linha[25],
-                (LocalDateTime) linha[26]
+                (LocalDateTime) linha[21]
         );
     }
 
     private void exigirEdicaoLiberada(OfertaDisciplina oferta) {
         if (oferta.status != StatusOfertaDisciplina.EM_ANDAMENTO) {
             throw new ApiException(Response.Status.CONFLICT,
-                    "O diario esta bloqueado para edicao enquanto nao estiver EM_ANDAMENTO");
+                    "O diário está bloqueado para edição enquanto não estiver em andamento");
         }
     }
 
     private Long alunosMatriculados(OfertaDisciplina oferta) {
-        return MatriculaDisciplina.count("ofertaDisciplina = ?1 and status not in ?2", oferta,
-                List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO));
+        return MatriculaDisciplina.count("ofertaDisciplina = ?1 and status in ?2", oferta,
+                List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO));
     }
 
     private TurmaResumoDTO turmaResumo(br.edu.sga.entity.Turma turma) {
         if (turma == null) return null;
-        return new TurmaResumoDTO(turma.id, turma.nome, turma.turno, turma.horario, turma.sala);
+        return new TurmaResumoDTO(turma.id, turma.nome, turma.turno);
     }
 
     private DisciplinaResumoDTO disciplinaResumo(br.edu.sga.entity.Disciplina disciplina) {
@@ -632,8 +540,7 @@ public class AreaProfessorResource {
                 disciplina.id,
                 disciplina.nome,
                 disciplina.codigo,
-                disciplina.cargaHoraria,
-                pessoaResumo(disciplina.professorResponsavel)
+                disciplina.cargaHoraria
         );
     }
 
@@ -658,24 +565,25 @@ public class AreaProfessorResource {
         );
     }
 
-    private AulaResumoDTO aulaResumo(AulaMinistrada aula) {
-        return new AulaResumoDTO(aula.id, aula.dataAula, aula.conteudoMinistrado, aula.observacoes, aula.cargaHorariaAula);
-    }
-
-    private AulaProfessorDTO aulaProfessorResumo(AulaMinistrada aula) {
-        long matriculados = alunosMatriculados(aula.ofertaDisciplina);
-        long frequencias = Frequencia.count("aula = ?1", aula);
-        return new AulaProfessorDTO(aula.id, aula.dataAula, aula.conteudoMinistrado, aula.observacoes,
-                aula.cargaHorariaAula, matriculados > 0 && frequencias >= matriculados,
-                ArquivoProfessor.count("aula", aula));
-    }
-
-    private FrequenciaChamadaDTO frequenciaChamada(AulaMinistrada aula, MatriculaDisciplina matricula) {
-        Frequencia frequencia = Frequencia.find("aula = ?1 and aluno = ?2", aula, matricula.aluno).firstResult();
-        StatusFrequencia status = frequencia == null || frequencia.status == null
-                ? StatusFrequencia.PRESENTE : frequencia.status;
-        return new FrequenciaChamadaDTO(matricula.id, alunoResumo(matricula.aluno), status.name(),
-                frequencia == null ? null : frequencia.observacao, frequencia != null);
+    private List<AulaProfessorDTO> aulasDaOferta(OfertaDisciplina oferta, long matriculados) {
+        return entityManager.createQuery("""
+                select a.id, a.dataAula, a.conteudoMinistrado, a.observacoes, a.cargaHorariaAula,
+                       count(distinct f.id), count(distinct ar.id)
+                from AulaMinistrada a
+                left join Frequencia f on f.aula = a and f.matriculaDisciplina.status in :statusAtivos
+                left join ArquivoProfessor ar on ar.aula = a
+                where a.ofertaDisciplina = :oferta
+                group by a.id, a.dataAula, a.conteudoMinistrado, a.observacoes, a.cargaHorariaAula
+                order by a.dataAula desc, a.id desc
+                """, Object[].class)
+                .setParameter("oferta", oferta)
+                .setParameter("statusAtivos", statusMatriculasAtivas())
+                .getResultList().stream().map(item -> {
+                    long frequencias = ((Number) item[5]).longValue();
+                    return new AulaProfessorDTO((Long) item[0], (LocalDate) item[1], (String) item[2],
+                            (String) item[3], (Integer) item[4], matriculados > 0 && frequencias >= matriculados,
+                            ((Number) item[6]).longValue());
+                }).toList();
     }
 
     private AulaMinistrada aulaPermitida(Long aulaId) {
@@ -697,7 +605,7 @@ public class AreaProfessorResource {
         aula.ofertaDisciplina = oferta;
         aula.disciplina = oferta.disciplina;
         aula.turma = oferta.turma;
-        aula.professor = professorDaOferta(oferta);
+        aula.professor = oferta.professor;
         aula.dataAula = data;
         aula.conteudoMinistrado = conteudo;
         aula.observacoes = textoOpcional(observacoes);
@@ -707,28 +615,21 @@ public class AreaProfessorResource {
 
     private void validarAula(AulaDTO dto) {
         if (dto == null || dto.dataAula() == null) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Data da aula obrigatoria");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Data da aula obrigatória");
         }
         if (dto.conteudoMinistrado() == null || dto.conteudoMinistrado().isBlank()) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Conteudo ministrado obrigatorio");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Conteúdo ministrado obrigatório");
         }
         if (dto.cargaHorariaAula() == null || dto.cargaHorariaAula() <= 0) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Carga horaria deve ser maior que zero");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Carga horária deve ser maior que zero");
         }
-    }
-
-    private boolean matriculaAtivaDaOferta(MatriculaDisciplina matricula, OfertaDisciplina oferta) {
-        if (matricula == null || matricula.ofertaDisciplina == null || oferta == null
-                || !oferta.id.equals(matricula.ofertaDisciplina.id)) return false;
-        return matricula.status == StatusMatriculaDisciplina.ATIVA
-                || matricula.status == StatusMatriculaDisciplina.MATRICULADO;
     }
 
     private StatusFrequencia statusFrequencia(String valor) {
         try {
             return StatusFrequencia.valueOf(valor == null ? "" : valor.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Status de frequencia invalido");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Situação de frequência inválida");
         }
     }
 
@@ -752,8 +653,7 @@ public class AreaProfessorResource {
 
     private AvaliacaoResumoDTO avaliacaoResumo(Avaliacao avaliacao) {
         return new AvaliacaoResumoDTO(avaliacao.id, avaliacao.nome, avaliacao.descricao, avaliacao.ordem,
-                avaliacao.data, avaliacao.notaMaxima, avaliacao.peso,
-                ArquivoProfessor.count("avaliacao", avaliacao));
+                avaliacao.data, avaliacao.notaMaxima, avaliacao.peso, 0);
     }
 
     private ArquivoResumoDTO arquivoResumo(ArquivoProfessor arquivo) {
@@ -762,25 +662,20 @@ public class AreaProfessorResource {
                 arquivo.avaliacao == null ? null : arquivo.avaliacao.id, arquivo.tamanho, arquivo.dataEnvio);
     }
 
-    private NotaLancamentoDTO notaLancamento(Avaliacao avaliacao, MatriculaDisciplina matricula) {
-        NotaAvaliacao nota = NotaAvaliacao.find("avaliacao = ?1 and aluno = ?2", avaliacao, matricula.aluno).firstResult();
-        return new NotaLancamentoDTO(matricula.id, alunoResumo(matricula.aluno),
-                nota == null ? null : nota.nota, nota == null ? null : nota.observacao, nota != null);
-    }
-
     private void validarAvaliacao(AvaliacaoDTO dto, OfertaDisciplina oferta, Long idAtual) {
         if (dto == null || dto.nome() == null || dto.nome().isBlank()) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Nome da avaliacao obrigatorio");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Nome da avaliação obrigatório");
         }
         if (dto.ordem() == null || dto.ordem() <= 0) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Ordem da avaliacao deve ser maior que zero");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Ordem da avaliação deve ser maior que zero");
         }
         if (dto.notaMaxima() == null || dto.notaMaxima().signum() <= 0) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Nota maxima deve ser maior que zero");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Nota máxima deve ser maior que zero");
         }
         if (dto.peso() == null || dto.peso().signum() <= 0) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Peso deve ser maior que zero");
         }
+        integridadeAcademicaService.validarDataNaOferta(dto.data(), oferta, "da avaliação");
         long mesmaOrdem = idAtual == null
                 ? Avaliacao.count("ofertaDisciplina = ?1 and ordem = ?2", oferta, dto.ordem())
                 : Avaliacao.count("ofertaDisciplina = ?1 and ordem = ?2 and id <> ?3", oferta, dto.ordem(), idAtual);
@@ -789,7 +684,7 @@ public class AreaProfessorResource {
                 : Avaliacao.count("ofertaDisciplina = ?1 and lower(nome) = ?2 and id <> ?3",
                         oferta, dto.nome().trim().toLowerCase(), idAtual);
         if (mesmaOrdem > 0 || mesmoNome > 0) {
-            throw new ApiException(Response.Status.CONFLICT, "Ja existe avaliacao com este nome ou ordem");
+            throw new ApiException(Response.Status.CONFLICT, "Já existe avaliação com este nome ou ordem");
         }
     }
 
@@ -803,68 +698,28 @@ public class AreaProfessorResource {
     }
 
     private List<MatriculaDisciplina> matriculasDaOferta(OfertaDisciplina oferta) {
-        return MatriculaDisciplina.list("ofertaDisciplina = ?1 and status not in ?2 order by aluno.nome", oferta,
-                List.of(StatusMatriculaDisciplina.CANCELADO, StatusMatriculaDisciplina.TRANCADO));
+        return MatriculaDisciplina.list("ofertaDisciplina = ?1 and status in ?2 order by aluno.nome", oferta,
+                statusMatriculasAtivas());
+    }
+
+    private List<StatusMatriculaDisciplina> statusMatriculasAtivas() {
+        return List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO);
     }
 
     private ResultadoAlunoDTO resultadoAluno(MatriculaDisciplina matricula,
                                               FrequenciaAcademicaService.ResumoFrequencia frequencia) {
-        List<Avaliacao> avaliacoes = Avaliacao.list("ofertaDisciplina = ?1 order by ordem, id", matricula.ofertaDisciplina);
-        List<ResultadoNotaDTO> notas = avaliacoes.stream().map(avaliacao -> {
-            NotaAvaliacao nota = NotaAvaliacao.find("avaliacao = ?1 and aluno = ?2", avaliacao, matricula.aluno).firstResult();
-            return new ResultadoNotaDTO(avaliacao.id, avaliacao.nome, nota == null ? null : nota.nota);
-        }).toList();
         var resultado = resultadoAcademicoService.calcularPreliminar(matricula, frequencia);
-        String situacao = matricula.ofertaDisciplina.status == StatusOfertaDisciplina.CONCLUIDA
-                ? resultadoAcademicoService.calcular(matricula, frequencia).situacao()
-                : resultado.situacao();
+        List<ResultadoNotaDTO> notas = resultado.avaliacoes().stream()
+                .map(item -> new ResultadoNotaDTO(item.avaliacaoId(), item.nome(), item.nota())).toList();
         return new ResultadoAlunoDTO(matricula.id, alunoResumo(matricula.aluno), notas,
-                resultado.media(), situacao, frequencia);
-    }
-
-    private void atualizarMedias(OfertaDisciplina oferta) {
-        resultadoAcademicoService.atualizarMedias(oferta);
-    }
-
-    private FrequenciaResumoDTO frequenciaResumo(Frequencia frequencia) {
-        return new FrequenciaResumoDTO(
-                frequencia.id,
-                frequencia.aula == null ? null : new AulaRefDTO(frequencia.aula.id),
-                alunoResumo(frequencia.aluno),
-                frequencia.presente,
-                frequencia.justificativa,
-                frequencia.observacao
-        );
-    }
-
-    private NotaResumoDTO notaResumo(Nota nota) {
-        return new NotaResumoDTO(
-                nota.id,
-                alunoResumo(nota.aluno),
-                nota.nota1,
-                nota.nota2,
-                nota.trabalho,
-                nota.avaliacaoFinal,
-                nota.mediaFinal,
-                nota.situacao == null ? null : nota.situacao.name()
-        );
-    }
-
-    private HistoricoResumoDTO historicoResumo(HistoricoEscolar historico) {
-        return new HistoricoResumoDTO(
-                historico.id,
-                alunoResumo(historico.aluno),
-                historico.notaFinal,
-                historico.frequenciaFinal,
-                historico.situacao == null ? null : historico.situacao.name(),
-                historico.periodoCursado
-        );
+                resultado.media(), resultado.situacao(), frequencia);
     }
 
     private void atualizarCargaMinistrada(OfertaDisciplina oferta) {
-        Integer carga = AulaMinistrada.<AulaMinistrada>list("ofertaDisciplina = ?1", oferta).stream()
-                .map(aula -> aula.cargaHorariaAula == null ? 0 : aula.cargaHorariaAula)
-                .reduce(0, Integer::sum);
-        oferta.cargaHorariaMinistrada = carga;
+        Long carga = entityManager.createQuery("""
+                select coalesce(sum(a.cargaHorariaAula), 0)
+                from AulaMinistrada a where a.ofertaDisciplina = :oferta
+                """, Long.class).setParameter("oferta", oferta).getSingleResult();
+        oferta.cargaHorariaMinistrada = carga.intValue();
     }
 }

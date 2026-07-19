@@ -1,12 +1,12 @@
 package br.edu.sga.service;
 
 import br.edu.sga.entity.Avaliacao;
-import br.edu.sga.entity.HistoricoEscolar;
 import br.edu.sga.entity.MatriculaDisciplina;
 import br.edu.sga.entity.NotaAvaliacao;
 import br.edu.sga.entity.OfertaDisciplina;
 import br.edu.sga.enums.StatusMatriculaDisciplina;
 import br.edu.sga.enums.StatusOfertaDisciplina;
+import br.edu.sga.enums.ResultadoAcademico;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
@@ -52,8 +52,12 @@ public class ResultadoAcademicoService {
         BigDecimal media = calcularMedia(matricula, avaliacoes);
         boolean completo = !avaliacoes.isEmpty() && itens.stream().allMatch(item -> item.nota() != null);
         String preliminar = situacaoFinal(media, completo, frequencia);
-        boolean definitivo = matricula.ofertaDisciplina.status == StatusOfertaDisciplina.CONCLUIDA;
-        String situacao = definitivo || exibirPreliminar ? preliminar : "EM_ANDAMENTO";
+        boolean definitivo = matricula.ofertaDisciplina.status == StatusOfertaDisciplina.CONCLUIDA
+                && matricula.dataConsolidacao != null;
+        ResultadoAcademico consolidado = matricula.resultadoAcademico == null
+                ? ResultadoAcademico.EM_ANDAMENTO : matricula.resultadoAcademico;
+        String situacao = definitivo ? consolidado.name()
+                : exibirPreliminar ? preliminar : ResultadoAcademico.EM_ANDAMENTO.name();
         String statusOferta = matricula.ofertaDisciplina.status == null
                 ? StatusOfertaDisciplina.EM_ANDAMENTO.name() : matricula.ofertaDisciplina.status.name();
         String mensagem = definitivo ? "Resultado homologado."
@@ -66,10 +70,12 @@ public class ResultadoAcademicoService {
     public String situacaoFinal(BigDecimal media, boolean completo,
                                 FrequenciaAcademicaService.ResumoFrequencia frequencia) {
         if (!completo || media == null) return "EM_ANDAMENTO";
-        if (frequencia != null && "REPROVADO_POR_FALTA".equals(frequencia.situacao())) {
-            return "REPROVADO_POR_FREQUENCIA";
-        }
-        return media.compareTo(mediaMinima) >= 0 ? "APROVADO" : "REPROVADO_POR_NOTA";
+        boolean reprovadoNota = media.compareTo(mediaMinima) < 0;
+        boolean reprovadoFrequencia = frequencia != null
+                && "REPROVADO_POR_FALTA".equals(frequencia.situacao());
+        if (reprovadoNota && reprovadoFrequencia) return "REPROVADO_POR_NOTA_E_FREQUENCIA";
+        if (reprovadoFrequencia) return "REPROVADO_POR_FREQUENCIA";
+        return reprovadoNota ? "REPROVADO_POR_NOTA" : "APROVADO";
     }
 
     public BigDecimal calcularMedia(MatriculaDisciplina matricula, List<Avaliacao> avaliacoes) {
@@ -95,14 +101,6 @@ public class ResultadoAcademicoService {
                 List.of(StatusMatriculaDisciplina.ATIVA, StatusMatriculaDisciplina.MATRICULADO));
         matriculas.forEach(matricula -> {
             matricula.notaFinal = calcularMedia(matricula, avaliacoes);
-            sincronizarHistorico(matricula);
         });
-    }
-
-    private void sincronizarHistorico(MatriculaDisciplina matricula) {
-        HistoricoEscolar historico = HistoricoEscolar.find(
-                "aluno = ?1 and ofertaDisciplina = ?2", matricula.aluno, matricula.ofertaDisciplina).firstResult();
-        if (historico == null) return;
-        historico.notaFinal = matricula.notaFinal;
     }
 }

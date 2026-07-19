@@ -3,13 +3,12 @@
     <button type="button" class="secundario" (click)="voltar()">Voltar</button>
     <button type="button" class="secundario" (click)="editar()" *ngIf="turma()">Editar</button>
     <button type="button" class="secundario" (click)="verMatriculas()" *ngIf="turma()">Ver Matriculas</button>
-    <button type="button" class="secundario" (click)="abrirDiario()" *ngIf="turma()">Abrir Diario</button>
     <button type="button" class="perigo-suave" (click)="encerrar()" *ngIf="turma() && turma()?.status !== 'ENCERRADA'">Encerrar Turma</button>
   </div>
 
   <app-page-header
     [titulo]="turma()?.nome || 'Turma Academica'"
-    subtitulo="Detalhes da turma da disciplina"
+    subtitulo="Detalhes administrativos do agrupamento de alunos"
   />
 
   <p class="mensagem" *ngIf="mensagem()">{{ mensagem() }}</p>
@@ -24,18 +23,16 @@
       <h3>Turma Academica</h3>
       <dl>
         <div><dt>Nome da turma</dt><dd>{{ turma.nome }}</dd></div>
-        <div><dt>Disciplina</dt><dd>{{ turma.disciplina?.nome || 'Disciplina nao informada' }}</dd></div>
-        <div><dt>Professor</dt><dd>{{ turma.professor?.nome || 'Nenhum professor vinculado' }}</dd></div>
         <div><dt>Curso de referencia</dt><dd>{{ turma.curso?.nome || 'Sem curso de referencia' }}</dd></div>
         <div><dt>Ano letivo</dt><dd>{{ turma.anoLetivo?.ano || turma.anoPeriodo || 'Ano nao informado' }}</dd></div>
-        <div><dt>Modulo de oferta</dt><dd>{{ turma.disciplina?.modulo?.nome || 'Modulo nao informado' }}</dd></div>
+        <div><dt>Periodo letivo</dt><dd>{{ turma.periodoLetivo?.nome || 'Periodo nao especificado' }}</dd></div>
         <div><dt>Turno</dt><dd>{{ turma.turno || 'Turno nao informado' }}</dd></div>
-        <div><dt>Horario</dt><dd>{{ turma.horario || 'Horario nao definido' }}</dd></div>
-        <div><dt>Sala</dt><dd>{{ turma.sala || 'Sala nao definida' }}</dd></div>
         <div><dt>Quantidade maxima de alunos</dt><dd>{{ capacidade() }}</dd></div>
         <div><dt>Alunos matriculados</dt><dd>{{ matriculados() }}</dd></div>
         <div><dt>Vagas disponiveis</dt><dd>{{ vagasDisponiveis() }}</dd></div>
         <div><dt>Situacao</dt><dd><span class="badge-status" [ngClass]="'status-' + turma.status">{{ statusLabel(turma.status) }}</span></dd></div>
+        <div><dt>Data inicial</dt><dd>{{ turma.dataInicio || 'Nao informada' }}</dd></div>
+        <div><dt>Data final</dt><dd>{{ turma.dataTermino || 'Nao informada' }}</dd></div>
         <div><dt>Descricao</dt><dd>{{ turma.descricao || 'Nenhuma descricao cadastrada.' }}</dd></div>
       </dl>
     </article>
