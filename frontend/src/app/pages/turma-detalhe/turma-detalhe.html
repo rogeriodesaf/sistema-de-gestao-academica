@@ -29,6 +29,7 @@
         <div><dt>Turno</dt><dd>{{ turma.turno || 'Turno nao informado' }}</dd></div>
         <div><dt>Quantidade maxima de alunos</dt><dd>{{ capacidade() }}</dd></div>
         <div><dt>Alunos matriculados</dt><dd>{{ matriculados() }}</dd></div>
+        <div><dt>Matriculas em disciplinas</dt><dd>{{ matriculasEmDisciplinas() }}</dd></div>
         <div><dt>Vagas disponiveis</dt><dd>{{ vagasDisponiveis() }}</dd></div>
         <div><dt>Situacao</dt><dd><span class="badge-status" [ngClass]="'status-' + turma.status">{{ statusLabel(turma.status) }}</span></dd></div>
         <div><dt>Data inicial</dt><dd>{{ turma.dataInicio || 'Nao informada' }}</dd></div>
@@ -40,12 +41,31 @@
     <article>
       <h3>Alunos matriculados</h3>
       <p class="texto-apoio">Consulta das matriculas existentes. Inclusao, cancelamento ou remocao devem ser feitos na tela de Matriculas.</p>
-      <ol *ngIf="alunosAtivos().length; else semAlunos">
-        <li *ngFor="let matricula of alunosAtivos()">
-          <strong>{{ matricula.aluno?.nome || 'Aluno' }}</strong>
-          <span>{{ matricula.aluno?.curso?.nome || matricula.curso?.nome || 'Disciplina Avulsa' }}</span>
-        </li>
-      </ol>
+      <div class="alunos-turma" *ngIf="alunosMatriculados().length; else semAlunos">
+        <section class="aluno-card" *ngFor="let aluno of alunosMatriculados()">
+          <header>
+            <div>
+              <h4>{{ aluno.nomeAluno }}</h4>
+              <p><strong>Curso:</strong> {{ aluno.curso }}</p>
+            </div>
+            <span>{{ aluno.quantidadeDisciplinas }} disciplina(s) matriculada(s)</span>
+          </header>
+
+          <ul>
+            <li *ngFor="let disciplina of aluno.disciplinas">
+              <strong>{{ disciplina.nomeDisciplina }}</strong>
+              <span *ngIf="disciplina.horario">Horario: {{ disciplina.horario }}</span>
+              <span>Matricula: {{ enumLabel(disciplina.situacaoMatricula) }}</span>
+              <span>Resultado: {{ enumLabel(disciplina.resultadoAcademico) }}</span>
+              <span *ngIf="disciplina.dataMatricula">Data: {{ disciplina.dataMatricula | date:'dd/MM/yyyy' }}</span>
+              <div class="aviso-duplicidade" *ngIf="disciplina.quantidadeVinculosDuplicados > 1">
+                Foram encontrados {{ disciplina.quantidadeVinculosDuplicados }} vinculos ativos para a mesma oferta.
+                <button type="button" class="secundario" (click)="verMatriculas()">Regularizar vinculos</button>
+              </div>
+            </li>
+          </ul>
+        </section>
+      </div>
       <ng-template #semAlunos>
         <p>Nenhum aluno matriculado.</p>
       </ng-template>

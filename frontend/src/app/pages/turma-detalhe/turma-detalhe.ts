@@ -14,7 +14,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header';
 })
 export class TurmaDetalhePage implements OnInit {
   turma = signal<any | undefined>(undefined);
-  matriculas = signal<any[]>([]);
+  resumoAlunos = signal<any>({ quantidadeAlunos: 0, quantidadeMatriculas: 0, alunos: [] });
   carregando = signal(true);
   mensagem = signal('');
 
@@ -30,11 +30,11 @@ export class TurmaDetalhePage implements OnInit {
 
     forkJoin({
       turma: this.api.buscar('turmas', id),
-      matriculas: this.api.listar('matriculas-disciplinas')
+      alunos: this.api.obter(`turmas/${id}/alunos`)
     }).subscribe({
       next: dados => {
         this.turma.set(dados.turma);
-        this.matriculas.set((dados.matriculas || []).filter(item => item.ofertaDisciplina?.turma?.id === id));
+        this.resumoAlunos.set(dados.alunos || { quantidadeAlunos: 0, quantidadeMatriculas: 0, alunos: [] });
         this.carregando.set(false);
       },
       error: err => {
@@ -44,13 +44,13 @@ export class TurmaDetalhePage implements OnInit {
     });
   }
 
-  alunosAtivos() {
-    return this.matriculas().filter(item => !['CANCELADA', 'TRANCADA'].includes(item.status));
+  alunosMatriculados() {
+    return this.resumoAlunos().alunos || [];
   }
 
   ocupacao() {
     const total = this.turma()?.quantidadeMaximaAlunos || 0;
-    return `${this.alunosAtivos().length}/${total}`;
+    return `${this.matriculados()}/${total}`;
   }
 
   capacidade() {
@@ -58,7 +58,11 @@ export class TurmaDetalhePage implements OnInit {
   }
 
   matriculados() {
-    return this.alunosAtivos().length;
+    return this.resumoAlunos().quantidadeAlunos || 0;
+  }
+
+  matriculasEmDisciplinas() {
+    return this.resumoAlunos().quantidadeMatriculas || 0;
   }
 
   vagasDisponiveis() {
@@ -75,6 +79,11 @@ export class TurmaDetalhePage implements OnInit {
       CONCLUIDA: 'Concluida'
     };
     return labels[status] || status || 'Nao informada';
+  }
+
+  enumLabel(valor: string) {
+    if (!valor) return 'Nao informado';
+    return valor.toLowerCase().replaceAll('_', ' ').replace(/^./, letra => letra.toUpperCase());
   }
 
   voltar() {
