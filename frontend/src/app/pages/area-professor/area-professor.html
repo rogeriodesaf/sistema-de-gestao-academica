@@ -417,16 +417,19 @@
         </label>
         <label *ngIf="novoArquivo.tipoVinculo === 'AVALIACAO'">
           Avaliacao
-          <select name="avaliacaoArquivo" [(ngModel)]="novoArquivo.referenciaId">
+          <select name="avaliacaoArquivo" [(ngModel)]="novoArquivo.referenciaId"
+                  [disabled]="carregandoAvaliacoes || !avaliacoes.length" required>
             <option [ngValue]="undefined">Selecione</option><option *ngFor="let avaliacao of avaliacoes" [ngValue]="avaliacao.id">{{ avaliacao.nome }}</option>
           </select>
+          <small *ngIf="carregandoAvaliacoes">Carregando avaliações...</small>
+          <small *ngIf="!carregandoAvaliacoes && !avaliacoes.length">Cadastre uma avaliação antes de enviar um PDF.</small>
         </label>
         <label class="campo-longo campo-arquivo">
           Arquivo PDF
           <input type="file" accept="application/pdf,.pdf" (change)="selecionarPdf($event)">
           <span *ngIf="arquivoSelecionado">{{ arquivoSelecionado.name }}</span>
         </label>
-        <div class="acoes-form"><button type="button" (click)="enviarPdf()" [disabled]="enviandoArquivo">{{ enviandoArquivo ? 'Enviando...' : 'Enviar PDF' }}</button></div>
+        <div class="acoes-form"><button type="button" (click)="enviarPdf()" [disabled]="uploadPdfDesabilitado()">{{ enviandoArquivo ? 'Enviando...' : 'Enviar PDF' }}</button></div>
       </div>
       <div class="vazio" *ngIf="!arquivos.length"><h2>Nenhum PDF enviado</h2></div>
       <div class="lista-arquivos" *ngIf="arquivos.length">

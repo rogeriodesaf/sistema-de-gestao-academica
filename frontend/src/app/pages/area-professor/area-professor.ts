@@ -38,6 +38,7 @@ export class AreaProfessorPage implements OnInit {
   carregandoChamada = false;
   salvandoChamada = false;
   salvandoAvaliacao = false;
+  carregandoAvaliacoes = false;
   carregandoNotas = false;
   salvandoNotas = false;
   enviandoArquivo = false;
@@ -453,7 +454,13 @@ export class AreaProfessorPage implements OnInit {
       this.mostrarMensagem('Informe o titulo e selecione um PDF.', 'erro');
       return;
     }
-    if (this.novoArquivo.tipoVinculo !== 'DISCIPLINA' && !this.novoArquivo.referenciaId) {
+    if (this.novoArquivo.tipoVinculo === 'AVALIACAO' && !this.novoArquivo.referenciaId) {
+      this.mostrarMensagem(this.avaliacoes.length
+        ? 'Selecione a avaliacao vinculada.'
+        : 'Cadastre uma avaliação antes de enviar um PDF.', 'erro');
+      return;
+    }
+    if (this.novoArquivo.tipoVinculo === 'AULA' && !this.novoArquivo.referenciaId) {
       this.mostrarMensagem('Selecione a aula ou avaliacao vinculada.', 'erro');
       return;
     }
@@ -519,6 +526,12 @@ export class AreaProfessorPage implements OnInit {
     return ({ DISCIPLINA: 'Disciplina', AULA: 'Aula', AVALIACAO: 'Avaliacao' } as Record<string, string>)[tipo] || tipo;
   }
 
+  uploadPdfDesabilitado() {
+    if (this.enviandoArquivo || !this.novoArquivo.tipoVinculo) return true;
+    return this.novoArquivo.tipoVinculo === 'AVALIACAO'
+      && (this.carregandoAvaliacoes || !this.novoArquivo.referenciaId);
+  }
+
   situacaoFrequenciaTexto(situacao: string) {
     return ({
       OK: 'OK',
@@ -536,8 +549,12 @@ export class AreaProfessorPage implements OnInit {
 
   private carregarAvaliacoes() {
     if (!this.ofertaSelecionadaId) return;
+    this.carregandoAvaliacoes = true;
     this.api.buscarAcao('professor/ofertas', this.ofertaSelecionadaId, 'avaliacoes').pipe(
-      finalize(() => this.changeDetector.detectChanges())
+      finalize(() => {
+        this.carregandoAvaliacoes = false;
+        this.changeDetector.detectChanges();
+      })
     ).subscribe({
       next: dados => {
         this.avaliacoes = Array.isArray(dados) ? dados : [];
