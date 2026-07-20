@@ -32,12 +32,12 @@
     </details>
   </section>
 
-  <section class="bloco" *ngIf="!historico">
+  <section class="bloco" *ngIf="!historico && !disciplina">
     <div class="titulo"><div><h2>Minhas disciplinas</h2><p>Selecione uma disciplina para consultar os detalhes.</p></div></div>
     <ng-container *ngIf="disciplinas.length; else semDisciplinas">
       <h3 *ngIf="disciplinasEmAndamento.length">Em andamento</h3>
       <div class="grade-disciplinas" *ngIf="disciplinasEmAndamento.length">
-        <button type="button" class="disciplina-card" *ngFor="let item of disciplinasEmAndamento" (click)="selecionar(item)">
+        <button type="button" class="disciplina-card" *ngFor="let item of disciplinasEmAndamento" [attr.data-oferta-id]="item.ofertaId" (click)="selecionar(item)">
           <span>{{ item.modulo || item.periodo || 'Disciplina' }}</span><strong>{{ item.nome }}</strong>
           <small>{{ item.turma || 'Turma não informada' }} · {{ item.professor || 'Professor não informado' }}</small>
           <small class="status-oferta">Matrícula: {{ enumTexto(item.situacaoMatricula) }} · Resultado: {{ enumTexto(item.resultadoAcademico) }}</small>
@@ -46,7 +46,7 @@
       </div>
       <h3 *ngIf="disciplinasConcluidas.length">Concluídas</h3>
       <div class="grade-disciplinas" *ngIf="disciplinasConcluidas.length">
-        <button type="button" class="disciplina-card" *ngFor="let item of disciplinasConcluidas" (click)="selecionar(item)">
+        <button type="button" class="disciplina-card" *ngFor="let item of disciplinasConcluidas" [attr.data-oferta-id]="item.ofertaId" (click)="selecionar(item)">
           <span>{{ item.modulo || item.periodo || 'Disciplina' }}</span><strong>{{ item.nome }}</strong>
           <small>{{ item.turma || 'Turma não informada' }} · {{ item.professor || 'Professor não informado' }}</small>
           <small class="status-oferta">{{ enumTexto(item.resultadoAcademico) }} · {{ enumTexto(item.statusDiario) }}</small>
@@ -60,7 +60,7 @@
   </section>
 
   <section class="bloco detalhe" *ngIf="disciplina && !historico">
-    <button type="button" class="link" (click)="disciplina = undefined">← Voltar para disciplinas</button>
+    <div class="barra-retorno"><button type="button" class="secundario voltar-disciplinas" (click)="voltarParaDisciplinas()">← Voltar para Minhas Disciplinas</button></div>
     <div class="titulo"><div><h2>{{ disciplina.nome }}</h2><p>{{ disciplina.turma || 'Turma não informada' }} · {{ disciplina.periodo || 'Período não informado' }}</p></div><span class="pill">{{ enumTexto(disciplina.statusOferta) }}</span></div>
     <p class="aviso-resultado" *ngIf="!disciplina.resultadoDefinitivo">Resultado provisório — aguardando homologação.</p>
     <p class="aviso-resultado concluido" *ngIf="disciplina.resultadoDefinitivo">Resultado final homologado: {{ enumTexto(disciplina.resultadoAcademico) }}.</p>
@@ -108,14 +108,14 @@
     <div *ngIf="aba === 'frequencia' && !carregandoDetalhe">
       <div class="indicadores" *ngIf="frequencia?.percentualPresenca != null; else semFrequencia"><div><small>Aulas ministradas</small><strong>{{ frequencia.aulasMinistradas }}</strong></div><div><small>Presenças</small><strong>{{ frequencia.presencas }}</strong></div><div><small>Faltas</small><strong>{{ frequencia.faltas }}</strong></div><div><small>Justificadas</small><strong>{{ frequencia.justificadas }}</strong></div><div><small>Frequência</small><strong>{{ percentual(frequencia.percentualPresenca) }}</strong></div></div>
       <ng-template #semFrequencia><p class="vazio">Frequência ainda não disponível.</p></ng-template>
-      <div class="tabela" *ngIf="aulas.length"><table><thead><tr><th>Data</th><th>Conteúdo</th><th>Carga horária</th><th>Presença</th><th>Observações</th></tr></thead><tbody><tr *ngFor="let aula of aulas"><td>{{ aula.data | date:'dd/MM/yyyy' }}</td><td>{{ aula.conteudo }}</td><td>{{ aula.cargaHoraria }}h</td><td><span class="pill">{{ enumTexto(aula.status) }}</span></td><td>{{ formatar(aula.observacoes) }}</td></tr></tbody></table></div>
+      <div class="grade-registros" *ngIf="aulas.length"><article class="registro-card" *ngFor="let aula of aulas"><div><small>Data</small><strong>{{ aula.data | date:'dd/MM/yyyy' }}</strong></div><div class="registro-largo"><small>Conteúdo</small><strong>{{ aula.conteudo }}</strong></div><div><small>Carga horária</small><strong>{{ aula.cargaHoraria }}h</strong></div><div><small>Presença</small><span class="pill">{{ enumTexto(aula.status) }}</span></div><div class="registro-largo"><small>Observações</small><span>{{ formatar(aula.observacoes) }}</span></div></article></div>
       <p class="vazio" *ngIf="!aulas.length">Nenhuma aula registrada.</p>
     </div>
 
     <div *ngIf="aba === 'avaliacoes' && resultado && !carregandoDetalhe">
       <div class="indicadores"><div><small>{{ resultado.definitivo ? 'Média final' : 'Média parcial' }}</small><strong>{{ formatar(resultado.media) }}</strong></div><div><small>Média mínima</small><strong>{{ resultado.mediaMinima }}</strong></div><div><small>Resultado acadêmico</small><strong>{{ enumTexto(resultado.situacao) }}</strong></div></div>
       <p class="aviso-resultado">{{ resultado.definitivo ? 'Resultado final homologado.' : 'Resultado provisório — aguardando homologação.' }}</p>
-      <div class="tabela" *ngIf="resultado.avaliacoes.length"><table><thead><tr><th>Avaliação</th><th>Data</th><th>Nota máxima</th><th>Peso</th><th>Nota obtida</th><th>Situação</th></tr></thead><tbody><tr *ngFor="let item of resultado.avaliacoes"><td><strong>{{ item.nome }}</strong><small>{{ item.descricao }}</small></td><td>{{ item.data ? (item.data | date:'dd/MM/yyyy') : '-' }}</td><td>{{ item.notaMaxima }}</td><td>{{ item.peso }}</td><td>{{ item.nota == null ? 'Pendente' : item.nota }}</td><td>{{ enumTexto(item.status) }}</td></tr></tbody></table></div>
+      <div class="grade-registros" *ngIf="resultado.avaliacoes.length"><article class="registro-card" *ngFor="let item of resultado.avaliacoes"><div class="registro-largo"><small>Avaliação</small><strong>{{ item.nome }}</strong><span>{{ item.descricao }}</span></div><div><small>Data</small><strong>{{ item.data ? (item.data | date:'dd/MM/yyyy') : '-' }}</strong></div><div><small>Nota máxima</small><strong>{{ item.notaMaxima }}</strong></div><div><small>Peso</small><strong>{{ item.peso }}</strong></div><div><small>Nota obtida</small><strong>{{ item.nota == null ? 'Pendente' : item.nota }}</strong></div><div><small>Situação</small><span class="pill">{{ enumTexto(item.status) }}</span></div></article></div>
       <p class="vazio" *ngIf="!resultado.avaliacoes.length">Nenhuma avaliação cadastrada.</p>
     </div>
 
