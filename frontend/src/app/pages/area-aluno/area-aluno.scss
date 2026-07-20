@@ -27,6 +27,12 @@ button:disabled { opacity: .6; cursor: wait; } .link { border: 0; background: tr
 .mensagem.erro { background: #fef2f2; color: #b91c1c; padding: .8rem; border-radius: 9px; }
 .aviso-resultado { background: #fff7ed; color: #9a3412; border-radius: 9px; padding: .75rem; }
 .aviso-resultado.concluido { background: #f0fdf4; color: #166534; }
+.pendencias { border: 1px solid #dbe4f0; border-radius: 10px; background: #f8fafc; }
+.pendencias summary { padding: .85rem 1rem; color: #1d4ed8; font-weight: 700; cursor: pointer; }
+.pendencias ul { columns: 2; column-gap: 2rem; margin: 0; padding: 0 2rem 1rem 2.5rem; }
+.pendencias li { break-inside: avoid; margin-bottom: .4rem; color: #475569; }
+.sem-disciplinas { display: grid; gap: .35rem; }
+.sem-disciplinas strong { color: #172033; font-size: 1rem; }
 
 :host-context(html[data-theme="escuro"]) {
   .perfil > div,
@@ -48,4 +54,4 @@ button:disabled { opacity: .6; cursor: wait; } .link { border: 0; background: tr
   }
 }
 
-@media (max-width: 720px) { .cabecalho, .titulo { align-items: stretch; flex-direction: column; } .perfil { grid-template-columns: repeat(2, 1fr); } .bloco { padding: .9rem; } }
+@media (max-width: 720px) { .cabecalho, .titulo { align-items: stretch; flex-direction: column; } .perfil { grid-template-columns: repeat(2, 1fr); } .bloco { padding: .9rem; } .pendencias ul { columns: 1; } }

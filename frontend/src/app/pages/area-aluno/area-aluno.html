@@ -26,7 +26,10 @@
       <div><small>Conclusão</small><strong>{{ integralizacao.percentual }}%</strong></div>
       <div><small>Disciplinas pendentes</small><strong>{{ integralizacao.disciplinasPendentes.length }}</strong></div>
     </div>
-    <p class="vazio" *ngIf="integralizacao.disciplinasPendentes.length">Pendentes: {{ integralizacao.disciplinasPendentes.join(', ') }}</p>
+    <details class="pendencias" *ngIf="integralizacao.disciplinasPendentes.length">
+      <summary>Ver {{ integralizacao.disciplinasPendentes.length }} disciplinas pendentes</summary>
+      <ul><li *ngFor="let disciplina of integralizacao.disciplinasPendentes">{{ disciplina }}</li></ul>
+    </details>
   </section>
 
   <section class="bloco" *ngIf="!historico">
@@ -51,7 +54,9 @@
         </button>
       </div>
     </ng-container>
-    <ng-template #semDisciplinas><p class="vazio">Você ainda não possui disciplinas matriculadas.</p></ng-template>
+    <ng-template #semDisciplinas>
+      <div class="vazio sem-disciplinas"><strong>Nenhuma disciplina matriculada</strong><p>Quando sua matrícula for vinculada a uma oferta, a disciplina aparecerá aqui.</p></div>
+    </ng-template>
   </section>
 
   <section class="bloco detalhe" *ngIf="disciplina && !historico">
