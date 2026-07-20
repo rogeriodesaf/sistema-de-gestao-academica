@@ -232,7 +232,7 @@
     <section class="bloco-professor" *ngIf="alunosCarregados && !diarioBloqueado">
       <div class="titulo-bloco">
         <div>
-          <h2>Registrar nova aula</h2>
+          <h2>{{ aulaEmEdicaoId ? 'Editar aula' : 'Registrar nova aula' }}</h2>
           <p>Informe o que foi ministrado antes de realizar a chamada.</p>
         </div>
       </div>
@@ -255,8 +255,9 @@
           <textarea name="observacoesAula" [(ngModel)]="novaAula.observacoes"></textarea>
         </label>
         <div class="acoes-form">
+          <button type="button" class="secundario" *ngIf="aulaEmEdicaoId" (click)="cancelarEdicaoAula()">Cancelar</button>
           <button type="button" (click)="registrarAula()" [disabled]="salvandoAula || !alunos.length">
-            {{ salvandoAula ? 'Salvando...' : 'Registrar aula' }}
+            {{ salvandoAula ? 'Salvando...' : (aulaEmEdicaoId ? 'Atualizar aula' : 'Registrar aula') }}
           </button>
         </div>
       </div>
@@ -298,7 +299,12 @@
                 </span>
               </td>
               <td>{{ arquivosDaAula(aula.id).length }}</td>
-              <td><button type="button" class="secundario" (click)="$event.stopPropagation(); abrirChamada(aula)">Abrir</button></td>
+              <td class="acoes-tabela">
+                <button type="button" class="secundario" (click)="$event.stopPropagation(); abrirChamada(aula)">Chamada</button>
+                <button type="button" class="secundario" *ngIf="!diarioBloqueado" (click)="$event.stopPropagation(); editarAula(aula)">Editar</button>
+                <button type="button" class="perigo-suave" *ngIf="!diarioBloqueado && !aula.possuiChamada"
+                        (click)="$event.stopPropagation(); excluirAula(aula)">Excluir</button>
+              </td>
             </tr>
           </tbody>
         </table>

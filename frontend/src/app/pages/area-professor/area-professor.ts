@@ -34,6 +34,7 @@ export class AreaProfessorPage implements OnInit {
   carregandoAlunos = false;
   alunosCarregados = false;
   salvandoAula = false;
+  aulaEmEdicaoId?: number;
   carregandoChamada = false;
   salvandoChamada = false;
   salvandoAvaliacao = false;
@@ -113,6 +114,7 @@ export class AreaProfessorPage implements OnInit {
     this.arquivos = [];
     this.alunosCarregados = false;
     this.novaAula = this.formularioAulaInicial();
+    this.aulaEmEdicaoId = undefined;
     this.novaAvaliacao = this.formularioAvaliacaoInicial();
     this.pendenciasEncerramento = [];
   }
@@ -201,21 +203,58 @@ export class AreaProfessorPage implements OnInit {
     }
 
     this.salvandoAula = true;
-    this.api.salvar(`professor/ofertas/${this.ofertaSelecionadaId}/aulas`, this.novaAula).subscribe({
+    const requisicao = this.aulaEmEdicaoId
+      ? this.api.atualizar('professor/aulas', this.aulaEmEdicaoId, this.novaAula)
+      : this.api.salvar(`professor/ofertas/${this.ofertaSelecionadaId}/aulas`, this.novaAula);
+    requisicao.subscribe({
       next: aula => {
-        const aulaRegistrada = { ...(aula as any), chamadaPreenchida: false };
-        this.aulas = [aulaRegistrada, ...this.aulas];
+        const aulaSalva = aula as any;
+        const editando = !!this.aulaEmEdicaoId;
+        this.aulas = editando
+          ? this.aulas.map(item => item.id === aulaSalva.id ? aulaSalva : item)
+          : [aulaSalva, ...this.aulas];
         this.novaAula = this.formularioAulaInicial();
+        this.aulaEmEdicaoId = undefined;
         this.salvandoAula = false;
-        this.mostrarMensagem('Aula registrada com sucesso. Preencha a chamada.', 'sucesso');
+        this.mostrarMensagem(editando ? 'Aula atualizada com sucesso.' : 'Aula registrada com sucesso. Preencha a chamada.', 'sucesso');
         this.carregarResultados();
-        this.abrirChamada(aulaRegistrada);
+        if (!editando) this.abrirChamada(aulaSalva);
       },
       error: err => {
         this.salvandoAula = false;
         this.mostrarMensagem(err?.error?.mensagem || 'Não foi possível registrar a aula.', 'erro');
         this.changeDetector.detectChanges();
       }
+    });
+  }
+
+  editarAula(aula: any) {
+    this.aulaEmEdicaoId = aula.id;
+    this.novaAula = {
+      dataAula: aula.dataAula,
+      conteudoMinistrado: aula.conteudoMinistrado || '',
+      cargaHorariaAula: aula.cargaHorariaAula,
+      observacoes: aula.observacoes || ''
+    };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelarEdicaoAula() {
+    this.aulaEmEdicaoId = undefined;
+    this.novaAula = this.formularioAulaInicial();
+  }
+
+  excluirAula(aula: any) {
+    if (!confirm('Deseja excluir esta aula?')) return;
+    this.api.remover(`professor/aulas/${aula.id}`).subscribe({
+      next: () => {
+        this.aulas = this.aulas.filter(item => item.id !== aula.id);
+        this.chamadasPorAula.delete(aula.id);
+        if (this.aulaEmEdicaoId === aula.id) this.cancelarEdicaoAula();
+        this.carregarResultados();
+        this.mostrarMensagem('Aula excluida com sucesso.', 'sucesso');
+      },
+      error: err => this.mostrarMensagem(err?.error?.mensagem || 'Nao foi possivel excluir a aula.', 'erro')
     });
   }
 

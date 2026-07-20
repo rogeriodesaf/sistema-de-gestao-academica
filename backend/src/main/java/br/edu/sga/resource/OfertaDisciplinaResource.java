@@ -119,7 +119,10 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
         resumo.id = origem.id;
         resumo.turma = turmaResumida(origem.turma);
         resumo.anoLetivo = anoLetivoResumido(origem.anoLetivo);
-        resumo.periodoLetivo = periodoLetivoResumido(origem.periodoLetivo);
+        PeriodoLetivo periodo = origem.periodoLetivo != null
+                ? origem.periodoLetivo
+                : origem.turma == null ? null : origem.turma.periodoLetivo;
+        resumo.periodoLetivo = periodoLetivoResumido(periodo);
         resumo.curso = cursoResumido(origem.curso);
         resumo.modulo = moduloResumido(origem.modulo);
         resumo.disciplina = disciplinaResumida(origem.disciplina);
@@ -226,9 +229,6 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
         if (oferta.anoLetivo == null || oferta.anoLetivo.id == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Ano letivo obrigatorio");
         }
-        if (oferta.periodoLetivo == null || oferta.periodoLetivo.id == null) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Periodo letivo obrigatorio");
-        }
         if (oferta.modulo == null || oferta.modulo.id == null) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Modulo de oferta obrigatorio");
         }
@@ -237,6 +237,13 @@ public class OfertaDisciplinaResource extends CadastroResource.Crud<OfertaDiscip
         }
         Turma turma = Turma.findById(oferta.turma.id);
         AnoLetivo anoLetivo = AnoLetivo.findById(oferta.anoLetivo.id);
+        if ((oferta.periodoLetivo == null || oferta.periodoLetivo.id == null)
+                && turma != null && turma.periodoLetivo != null) {
+            oferta.periodoLetivo = turma.periodoLetivo;
+        }
+        if (oferta.periodoLetivo == null || oferta.periodoLetivo.id == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Periodo letivo obrigatorio");
+        }
         PeriodoLetivo periodoLetivo = oferta.periodoLetivo == null || oferta.periodoLetivo.id == null
                 ? null : PeriodoLetivo.findById(oferta.periodoLetivo.id);
         Curso curso = oferta.curso == null || oferta.curso.id == null ? null : Curso.findById(oferta.curso.id);
