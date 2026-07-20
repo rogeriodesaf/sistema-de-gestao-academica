@@ -73,6 +73,17 @@ export class AreaAlunoPage implements OnInit {
 
   trocarAba(aba: Aba) {
     this.aba = aba;
+    if (aba === 'materiais' && this.disciplina?.ofertaId) this.carregarMateriais();
+  }
+
+  private carregarMateriais() {
+    this.api.obter(`aluno/disciplinas/${this.disciplina.ofertaId}/arquivos?t=${Date.now()}`).subscribe({
+      next: dados => {
+        this.arquivos = Array.isArray(dados) ? dados : [];
+        this.cd.detectChanges();
+      },
+      error: erro => this.erro(erro, 'Não foi possível atualizar os materiais.')
+    });
   }
 
   carregarHistorico() {
