@@ -13,6 +13,14 @@ small { display: block; color: #64748b; } .situacao { color: #15803d; }
 .disciplina-card > span { color: #2563eb; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
 .disciplina-card .status-oferta { color: #475569; font-weight: 700; }
 .disciplina-card > div { display: flex; justify-content: space-between; color: #475569; font-size: .78rem; margin-top: .4rem; }
+.detalhe { width: 100%; min-width: 0; }
+.barra-retorno { position: sticky; top: .5rem; z-index: 5; padding: .35rem 0; background: #fff; }
+.voltar-disciplinas { color: #1d4ed8; border-color: #93c5fd; box-shadow: 0 2px 8px rgb(15 23 42 / 10%); }
+.grade-registros { display: grid; gap: .75rem; }
+.registro-card { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; padding: 1rem; border: 1px solid #dbe4f0; border-radius: 12px; background: #f8fafc; }
+.registro-card > div { display: grid; align-content: start; gap: .25rem; min-width: 0; }
+.registro-card .registro-largo { grid-column: span 2; }
+.registro-card span, .registro-card strong { overflow-wrap: anywhere; }
 button { font: inherit; } .primario, .secundario { border-radius: 9px; padding: .7rem 1rem; cursor: pointer; font-weight: 700; }
 .primario { background: #2563eb; color: #fff; border: 0; } .secundario { background: #fff; border: 1px solid #cbd5e1; color: #1e40af; }
 button:disabled { opacity: .6; cursor: wait; } .link { border: 0; background: transparent; color: #2563eb; cursor: pointer; padding: .35rem; }
@@ -54,4 +62,4 @@ button:disabled { opacity: .6; cursor: wait; } .link { border: 0; background: tr
   }
 }
 
-@media (max-width: 720px) { .cabecalho, .titulo { align-items: stretch; flex-direction: column; } .perfil { grid-template-columns: repeat(2, 1fr); } .bloco { padding: .9rem; } .pendencias ul { columns: 1; } }
+@media (max-width: 720px) { .cabecalho, .titulo { align-items: stretch; flex-direction: column; } .perfil { grid-template-columns: repeat(2, 1fr); } .bloco { padding: .9rem; } .pendencias ul { columns: 1; } .barra-retorno, .voltar-disciplinas { width: 100%; } .registro-card { grid-template-columns: 1fr; } .registro-card .registro-largo { grid-column: auto; } }

@@ -27,6 +27,8 @@ export class AreaAlunoPage implements OnInit {
   carregandoDetalhe = false;
   baixandoHistorico = false;
   mensagem = '';
+  private ofertaAnteriorId?: number;
+  private posicaoLista = 0;
 
   constructor(private api: ApiService, private cd: ChangeDetectorRef) {}
 
@@ -53,8 +55,12 @@ export class AreaAlunoPage implements OnInit {
   }
 
   selecionar(item: any) {
+    this.ofertaAnteriorId = item.ofertaId;
+    this.posicaoLista = window.scrollY;
     this.limparDetalhe();
+    this.disciplina = { ...item };
     this.carregandoDetalhe = true;
+    this.focarInicioDetalhe();
     this.api.buscarAcao('aluno/disciplinas', item.ofertaId, 'detalhes').pipe(finalize(() => {
       this.carregandoDetalhe = false;
       this.cd.detectChanges();
@@ -67,7 +73,26 @@ export class AreaAlunoPage implements OnInit {
         this.plano = detalhes?.plano;
         this.arquivos = Array.isArray(detalhes?.arquivos) ? detalhes.arquivos : [];
       },
-      error: erro => this.erro(erro, 'Não foi possível abrir a disciplina.')
+      error: erro => {
+        this.disciplina = undefined;
+        this.erro(erro, 'Não foi possível abrir a disciplina.');
+      }
+    });
+  }
+
+  voltarParaDisciplinas() {
+    this.limparDetalhe();
+    window.setTimeout(() => {
+      const seletor = `[data-oferta-id="${this.ofertaAnteriorId}"]`;
+      (document.querySelector(seletor) as HTMLElement | null)?.focus({ preventScroll: true });
+      window.scrollTo({ top: this.posicaoLista, behavior: 'auto' });
+    });
+  }
+
+  private focarInicioDetalhe() {
+    window.setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      (document.querySelector('.voltar-disciplinas') as HTMLElement | null)?.focus();
     });
   }
 
