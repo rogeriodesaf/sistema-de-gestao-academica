@@ -114,9 +114,14 @@ export class PlanejamentoAcademicoPage implements OnInit {
 
   editar(oferta: any) {
     this.editandoId = oferta.id;
+    const turma = this.turmas.find(item => item.id === oferta.turma?.id);
+    const periodoLetivoId = oferta.periodoLetivo?.id
+      || turma?.periodoLetivoId
+      || turma?.periodoLetivo?.id
+      || '';
     this.formulario = {
       'anoLetivo.id': oferta.anoLetivo?.id || '',
-      'periodoLetivo.id': oferta.periodoLetivo?.id || '',
+      'periodoLetivo.id': periodoLetivoId,
       'disciplina.id': oferta.disciplina?.id || '',
       'modulo.id': oferta.modulo?.id || '',
       'professor.id': oferta.professor?.id || '',
@@ -274,11 +279,11 @@ export class PlanejamentoAcademicoPage implements OnInit {
   }
 
   private montarOferta(turma: any) {
-    const periodoId = Number(this.formulario['periodoLetivo.id'] || 0);
+    const periodoLetivoId = Number(this.formulario['periodoLetivo.id'] || 0);
     return {
       turma: { id: turma.id },
       anoLetivo: { id: Number(this.formulario['anoLetivo.id']) },
-      periodoLetivo: periodoId ? { id: periodoId } : undefined,
+      periodoLetivo: periodoLetivoId ? { id: periodoLetivoId } : undefined,
       curso: this.formulario['curso.id'] ? { id: Number(this.formulario['curso.id']) } : undefined,
       modulo: { id: Number(this.formulario['modulo.id']) },
       disciplina: { id: Number(this.formulario['disciplina.id']) },

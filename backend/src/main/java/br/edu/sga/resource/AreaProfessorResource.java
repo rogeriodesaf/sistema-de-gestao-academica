@@ -78,7 +78,8 @@ public class AreaProfessorResource {
     public record AlunoResumoDTO(Long id, String nome, String email, String cpf) {}
     public record MatriculaResumoDTO(Long id, AlunoResumoDTO aluno, String status, BigDecimal notaFinal, BigDecimal frequenciaFinal, String observacoes) {}
     public record AulaProfessorDTO(Long id, LocalDate dataAula, String conteudoMinistrado, String observacoes,
-                                   Integer cargaHorariaAula, boolean chamadaPreenchida, long quantidadeArquivos) {}
+                                   Integer cargaHorariaAula, boolean chamadaPreenchida, boolean possuiChamada,
+                                   long quantidadeArquivos) {}
     public record ChamadaItemDTO(Long matriculaId, String status, String observacao) {}
     public record ChamadaDTO(List<ChamadaItemDTO> presencas) {}
     public record FrequenciaChamadaDTO(Long matriculaId, AlunoResumoDTO aluno, String status,
@@ -181,7 +182,56 @@ public class AreaProfessorResource {
         atualizarCargaMinistrada(oferta);
         frequenciaAcademicaService.recalcularOferta(oferta);
         return new AulaProfessorDTO(aula.id, aula.dataAula, aula.conteudoMinistrado, aula.observacoes,
-                aula.cargaHorariaAula, false, 0);
+                aula.cargaHorariaAula, false, false, 0);
+    }
+
+    @PUT
+    @Path("/aulas/{aulaId}")
+    @Transactional
+    public AulaProfessorDTO editarAula(@PathParam("aulaId") Long aulaId, AulaDTO dto) {
+        AulaMinistrada aula = aulaPermitida(aulaId);
+        OfertaDisciplina oferta = aula.ofertaDisciplina;
+        exigirEdicaoLiberada(oferta);
+        validarAula(dto);
+        integridadeAcademicaService.validarDataNaOferta(dto.dataAula(), oferta, "da aula");
+        String conteudo = dto.conteudoMinistrado().trim();
+        if (AulaMinistrada.count(
+                "ofertaDisciplina = ?1 and dataAula = ?2 and conteudoMinistrado = ?3 and id <> ?4",
+                oferta, dto.dataAula(), conteudo, aula.id) > 0) {
+            throw new ApiException(Response.Status.CONFLICT, "Esta aula ja foi registrada");
+        }
+        aula.dataAula = dto.dataAula();
+        aula.conteudoMinistrado = conteudo;
+        aula.observacoes = textoOpcional(dto.observacoes());
+        aula.cargaHorariaAula = dto.cargaHorariaAula();
+        atualizarCargaMinistrada(oferta);
+        frequenciaAcademicaService.recalcularOferta(oferta);
+        long frequencias = Frequencia.count("aula", aula);
+        long arquivos = ArquivoProfessor.count("aula", aula);
+        long matriculados = alunosMatriculados(oferta);
+        return new AulaProfessorDTO(aula.id, aula.dataAula, aula.conteudoMinistrado, aula.observacoes,
+                aula.cargaHorariaAula, matriculados > 0 && frequencias >= matriculados,
+                frequencias > 0, arquivos);
+    }
+
+    @DELETE
+    @Path("/aulas/{aulaId}")
+    @Transactional
+    public void excluirAula(@PathParam("aulaId") Long aulaId) {
+        AulaMinistrada aula = aulaPermitida(aulaId);
+        OfertaDisciplina oferta = aula.ofertaDisciplina;
+        exigirEdicaoLiberada(oferta);
+        if (Frequencia.count("aula", aula) > 0) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Aula com chamada registrada nao pode ser excluida");
+        }
+        if (ArquivoProfessor.count("aula", aula) > 0) {
+            throw new ApiException(Response.Status.CONFLICT,
+                    "Remova os PDFs vinculados antes de excluir a aula");
+        }
+        aula.delete();
+        atualizarCargaMinistrada(oferta);
+        frequenciaAcademicaService.recalcularOferta(oferta);
     }
 
     @GET
@@ -582,7 +632,7 @@ public class AreaProfessorResource {
                     long frequencias = ((Number) item[5]).longValue();
                     return new AulaProfessorDTO((Long) item[0], (LocalDate) item[1], (String) item[2],
                             (String) item[3], (Integer) item[4], matriculados > 0 && frequencias >= matriculados,
-                            ((Number) item[6]).longValue());
+                            frequencias > 0, ((Number) item[6]).longValue());
                 }).toList();
     }
 

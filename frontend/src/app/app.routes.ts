@@ -27,7 +27,7 @@ const camposBase = {
   disciplinas: ['curso.id', 'modulo.id', 'professorResponsavel.id', 'nome', 'codigo', 'cargaHoraria', 'creditos', 'ementaResumo', 'bibliografia', 'ativo'],
   'anos-letivos': ['ano', 'dataInicio', 'dataFim', 'status'],
   'periodos-letivos': ['anoLetivo.id', 'nome', 'ordem', 'tipo', 'dataInicio', 'dataFim', 'status'],
-  'ofertas-disciplinas': ['anoLetivo.id', 'curso.id', 'modulo.id', 'turma.id', 'disciplina.id', 'professor.id', 'vagas', 'horario', 'sala', 'cargaHorariaPrevista', 'cargaHorariaMinistrada', 'dataInicio', 'dataFim', 'status'],
+  'ofertas-disciplinas': ['anoLetivo.id', 'periodoLetivo.id', 'curso.id', 'modulo.id', 'turma.id', 'disciplina.id', 'professor.id', 'vagas', 'horario', 'sala', 'cargaHorariaPrevista', 'cargaHorariaMinistrada', 'dataInicio', 'dataFim', 'status'],
   'montagem-periodo': ['turma.id', 'anoLetivo.id', 'periodoLetivo.id', 'curso.id', 'modulo.id', 'disciplina.id', 'professor.id', 'vagas', 'horario', 'sala', 'cargaHorariaPrevista', 'dataInicio', 'dataFim', 'status'],
   'matriz-curricular': [],
   matriculas: ['aluno.id', 'turma.id', 'disciplina.id'],
