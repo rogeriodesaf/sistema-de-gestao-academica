@@ -444,10 +444,13 @@ public class AreaProfessorResource {
     @Transactional
     public ArquivoResumoDTO enviarArquivo(@RestForm("arquivo") FileUpload arquivo,
                                           @RestForm("titulo") String titulo,
-                                          @RestForm("ofertaId") Long ofertaId,
+                                          @RestForm("ofertaDisciplinaId") Long ofertaDisciplinaId,
                                           @RestForm("aulaId") Long aulaId,
                                           @RestForm("avaliacaoId") Long avaliacaoId) {
-        OfertaDisciplina oferta = ofertaPermitida(ofertaId);
+        if (ofertaDisciplinaId == null) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Oferta da disciplina obrigatoria");
+        }
+        OfertaDisciplina oferta = ofertaPermitida(ofertaDisciplinaId);
         exigirEdicaoLiberada(oferta);
         if (titulo == null || titulo.isBlank()) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Titulo do arquivo obrigatorio");

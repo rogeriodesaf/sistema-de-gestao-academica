@@ -460,7 +460,7 @@ export class AreaProfessorPage implements OnInit {
     const dados = new FormData();
     dados.append('arquivo', this.arquivoSelecionado);
     dados.append('titulo', this.novoArquivo.titulo.trim());
-    dados.append('ofertaId', String(this.ofertaSelecionadaId));
+    dados.append('ofertaDisciplinaId', String(this.ofertaSelecionadaId));
     if (this.novoArquivo.tipoVinculo === 'AULA') dados.append('aulaId', String(this.novoArquivo.referenciaId));
     if (this.novoArquivo.tipoVinculo === 'AVALIACAO') dados.append('avaliacaoId', String(this.novoArquivo.referenciaId));
     this.enviandoArquivo = true;
@@ -470,10 +470,10 @@ export class AreaProfessorPage implements OnInit {
         this.changeDetector.detectChanges();
       })
     ).subscribe({
-      next: () => {
+      next: (arquivo: any) => {
         this.arquivoSelecionado = undefined;
         this.novoArquivo = { titulo: '', tipoVinculo: 'DISCIPLINA', referenciaId: undefined };
-        this.carregarArquivos();
+        this.arquivos = [arquivo, ...this.arquivos.filter(item => item.id !== arquivo.id)];
         this.mostrarMensagem('PDF enviado com sucesso.', 'sucesso');
       },
       error: err => {
