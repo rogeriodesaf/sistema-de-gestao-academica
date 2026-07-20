@@ -22,13 +22,16 @@ export class AreaAlunoPage implements OnInit {
   plano?: any;
   arquivos: any[] = [];
   historico?: any;
+  visualizandoHistorico = false;
   aba: Aba = 'resumo';
   carregando = false;
   carregandoDetalhe = false;
+  carregandoHistorico = false;
   baixandoHistorico = false;
   mensagem = '';
   private ofertaAnteriorId?: number;
   private posicaoLista = 0;
+  private posicaoPortal = 0;
 
   constructor(private api: ApiService, private cd: ChangeDetectorRef) {}
 
@@ -112,14 +115,34 @@ export class AreaAlunoPage implements OnInit {
   }
 
   carregarHistorico() {
+    this.posicaoPortal = window.scrollY;
+    this.visualizandoHistorico = true;
+    this.mensagem = '';
+    this.focarInicioHistorico();
     if (this.historico) return;
-    this.carregandoDetalhe = true;
+    this.carregandoHistorico = true;
     this.api.buscar('aluno', 'historico').pipe(finalize(() => {
-      this.carregandoDetalhe = false;
+      this.carregandoHistorico = false;
       this.cd.detectChanges();
     })).subscribe({
       next: dados => this.historico = dados,
       error: erro => this.erro(erro, 'Não foi possível carregar o histórico.')
+    });
+  }
+
+  voltarAoPortal() {
+    this.visualizandoHistorico = false;
+    this.mensagem = '';
+    window.setTimeout(() => {
+      (document.querySelector('.abrir-historico') as HTMLElement | null)?.focus({ preventScroll: true });
+      window.scrollTo({ top: this.posicaoPortal, behavior: 'auto' });
+    });
+  }
+
+  private focarInicioHistorico() {
+    window.setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      (document.querySelector('.voltar-historico') as HTMLElement | null)?.focus();
     });
   }
 

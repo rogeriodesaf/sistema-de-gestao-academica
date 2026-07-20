@@ -14,6 +14,7 @@ small { display: block; color: #64748b; } .situacao { color: #15803d; }
 .disciplina-card .status-oferta { color: #475569; font-weight: 700; }
 .disciplina-card > div { display: flex; justify-content: space-between; color: #475569; font-size: .78rem; margin-top: .4rem; }
 .detalhe { width: 100%; min-width: 0; color: #172033; }
+.historico { width: 100%; min-width: 0; }
 .barra-retorno { position: sticky; top: .5rem; z-index: 5; padding: .35rem 0; background: #fff; }
 .voltar-disciplinas { color: #1d4ed8; border-color: #93c5fd; box-shadow: 0 2px 8px rgb(15 23 42 / 10%); }
 .grade-registros { display: grid; gap: .75rem; }
@@ -62,6 +63,7 @@ button:disabled { opacity: .6; cursor: wait; } .link { border: 0; background: tr
   }
 
   .bloco.detalhe,
+  .bloco.historico,
   .barra-retorno,
   .registro-card,
   .arquivos article {

@@ -1,10 +1,12 @@
 <section class="portal">
+  <p class="mensagem erro" *ngIf="mensagem">{{ mensagem }}</p>
+
+  <ng-container *ngIf="!visualizandoHistorico">
   <header class="cabecalho">
     <div><span class="rotulo">Portal do aluno</span><h1>{{ perfil?.nome || 'Área do aluno' }}</h1><p>Acompanhe sua vida acadêmica em um único lugar.</p></div>
-    <button type="button" class="secundario" (click)="carregarHistorico()">Histórico escolar</button>
+    <button type="button" class="secundario abrir-historico" (click)="carregarHistorico()">Histórico escolar</button>
   </header>
 
-  <p class="mensagem erro" *ngIf="mensagem">{{ mensagem }}</p>
   <p class="carregando estado-carregando" *ngIf="carregando" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Carregando dados acadêmicos...</span></p>
 
   <div class="perfil" *ngIf="perfil">
@@ -125,12 +127,18 @@
     </div>
   </section>
 
-  <section class="bloco" *ngIf="historico">
-    <div class="titulo"><div><button type="button" class="link" (click)="historico = undefined">← Voltar ao portal</button><h2>Histórico escolar</h2><p>Resultados acadêmicos consolidados.</p></div><button type="button" class="primario" [disabled]="baixandoHistorico" (click)="baixarHistorico()">{{ baixandoHistorico ? 'Gerando...' : 'Baixar PDF oficial' }}</button></div>
+  </ng-container>
+
+  <section class="bloco historico" *ngIf="visualizandoHistorico">
+    <div class="barra-retorno"><button type="button" class="secundario voltar-historico" (click)="voltarAoPortal()">← Voltar para Área do Aluno</button></div>
+    <div class="titulo"><div><h2 tabindex="-1">Histórico escolar</h2><p>Resultados acadêmicos consolidados.</p></div><button *ngIf="historico" type="button" class="primario" [disabled]="baixandoHistorico" (click)="baixarHistorico()">{{ baixandoHistorico ? 'Gerando...' : 'Baixar PDF oficial' }}</button></div>
+    <p class="carregando estado-carregando" *ngIf="carregandoHistorico" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Carregando histórico escolar...</span></p>
+    <ng-container *ngIf="historico && !carregandoHistorico">
     <div class="indicadores"><div><small>Disciplinas concluídas</small><strong>{{ historico.progresso.disciplinasConcluidas }}/{{ historico.progresso.disciplinasPrevistas }}</strong></div><div><small>Carga total</small><strong>{{ historico.progresso.cargaHorariaPrevista }}h</strong></div><div><small>Carga cumprida</small><strong>{{ historico.progresso.cargaHorariaConcluida }}h</strong></div><div><small>Carga restante</small><strong>{{ historico.progresso.cargaHorariaRestante }}h</strong></div><div><small>Créditos totais</small><strong>{{ historico.progresso.creditosPrevistos }}</strong></div><div><small>Créditos cumpridos</small><strong>{{ historico.progresso.creditosConcluidos }}</strong></div><div><small>Créditos restantes</small><strong>{{ historico.progresso.creditosRestantes }}</strong></div><div><small>Progresso</small><strong>{{ formatar(historico.progresso.percentualCurso) }}%</strong></div><div><small>Situação do curso</small><strong>{{ enumTexto(historico.progresso.situacaoCurso) }}</strong></div><div><small>Data de conclusão</small><strong>{{ historico.progresso.dataConclusao ? (historico.progresso.dataConclusao | date:'dd/MM/yyyy') : '-' }}</strong></div><div><small>Coeficiente</small><strong>{{ formatar(historico.progresso.coeficiente) }}</strong></div></div>
     <ng-container *ngIf="historico.componentes.length; else semHistorico">
       <section class="periodo" *ngFor="let periodo of periodosHistorico()"><h3>{{ periodo }}</h3><div class="tabela"><table><thead><tr><th>Disciplina</th><th>Módulo</th><th>Professor</th><th>Carga horária</th><th>Créditos</th><th>Média final</th><th>Frequência final</th><th>Resultado acadêmico</th></tr></thead><tbody><tr *ngFor="let item of historico.porPeriodo[periodo]"><td>{{ item.disciplina }}</td><td>{{ formatar(item.modulo) }}</td><td>{{ formatar(item.professor) }}</td><td>{{ formatar(item.cargaHoraria) }}</td><td>{{ formatar(item.creditos) }}</td><td>{{ formatar(item.nota) }}</td><td>{{ percentual(item.frequencia) }}</td><td><span class="pill">{{ enumTexto(item.situacao) }}</span></td></tr></tbody></table></div></section>
     </ng-container>
     <ng-template #semHistorico><p class="vazio">Nenhum registro disponível no histórico escolar.</p></ng-template>
+    </ng-container>
   </section>
 </section>
