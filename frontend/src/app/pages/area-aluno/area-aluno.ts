@@ -101,7 +101,17 @@ export class AreaAlunoPage implements OnInit {
 
   trocarAba(aba: Aba) {
     this.aba = aba;
+    this.cd.detectChanges();
+    this.focarConteudoAba(aba);
     if (aba === 'materiais' && this.disciplina?.ofertaId) this.carregarMateriais();
+  }
+
+  private focarConteudoAba(aba: Aba) {
+    window.setTimeout(() => {
+      const conteudo = document.getElementById(`conteudo-${aba}`);
+      conteudo?.focus({ preventScroll: true });
+      conteudo?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   private carregarMateriais() {
