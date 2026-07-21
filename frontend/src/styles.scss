@@ -1237,11 +1237,22 @@ tbody tr:hover {
   overflow-x: visible;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .area-aluno,
   .area-professor,
   .area-aluno .bloco,
   .area-professor .card-bloco {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .area-professor .conteudo-aba,
+  .area-professor .bloco-professor,
+  .area-professor .visao-geral,
+  .area-professor .indicadores-professor,
+  .area-professor .acoes-rapidas,
+  .area-professor .lista-arquivos {
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -1265,24 +1276,32 @@ tbody tr:hover {
     display: none !important;
   }
 
-  .area-professor .tabela-responsiva:has(.tabela-cartoes) {
+  .area-professor .tabela-responsiva {
+    width: 100%;
+    max-width: 100%;
     overflow: visible;
   }
 
-  .area-professor .tabela-cartoes {
+  .area-professor .tabela-cartoes,
+  .area-professor .tabela-chamada {
+    width: 100%;
     min-width: 0;
+    max-width: 100%;
   }
 
-  .area-professor .tabela-cartoes thead {
+  .area-professor .tabela-cartoes thead,
+  .area-professor .tabela-chamada thead {
     display: none;
   }
 
-  .area-professor .tabela-cartoes tbody {
+  .area-professor .tabela-cartoes tbody,
+  .area-professor .tabela-chamada tbody {
     display: grid;
     gap: 12px;
   }
 
-  .area-professor .tabela-cartoes tr {
+  .area-professor .tabela-cartoes tr,
+  .area-professor .tabela-chamada tr {
     display: grid;
     overflow: visible;
     border: 1px solid var(--borda);
@@ -1291,7 +1310,9 @@ tbody tr:hover {
   }
 
   .area-professor .tabela-responsiva .tabela-cartoes td,
-  .area-professor .tabela-responsiva .tabela-cartoes td:first-child {
+  .area-professor .tabela-responsiva .tabela-cartoes td:first-child,
+  .area-professor .tabela-responsiva .tabela-chamada td,
+  .area-professor .tabela-responsiva .tabela-chamada td:first-child {
     display: grid;
     grid-template-columns: 1fr;
     gap: 5px;
@@ -1301,7 +1322,8 @@ tbody tr:hover {
     overflow-wrap: anywhere;
   }
 
-  .area-professor .tabela-cartoes td::before {
+  .area-professor .tabela-cartoes td::before,
+  .area-professor .tabela-chamada td::before {
     content: attr(data-label);
     color: var(--texto-secundario);
     font-size: .72rem;
@@ -1309,15 +1331,64 @@ tbody tr:hover {
     text-transform: uppercase;
   }
 
-  .area-professor .tabela-cartoes td:last-child { border-bottom: 0; }
+  .area-professor .tabela-cartoes td:last-child,
+  .area-professor .tabela-chamada td:last-child { border-bottom: 0; }
   .area-professor .tabela-cartoes input,
   .area-professor .tabela-cartoes select,
   .area-professor .formulario-arquivo input,
   .area-professor .formulario-arquivo select { width: 100%; max-width: 100%; }
+
+  .area-professor .formulario-aula,
+  .area-professor .formulario-avaliacao,
+  .area-professor .formulario-arquivo {
+    grid-template-columns: 1fr;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .area-professor .formulario-aula label,
+  .area-professor .formulario-avaliacao label,
+  .area-professor .formulario-arquivo label,
+  .area-professor .formulario-aula .campo-longo,
+  .area-professor .formulario-avaliacao .campo-longo,
+  .area-professor .formulario-arquivo .campo-longo,
+  .area-professor .formulario-aula .acoes-form,
+  .area-professor .formulario-avaliacao .acoes-form,
+  .area-professor .formulario-arquivo .acoes-form {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .area-professor input,
+  .area-professor select,
+  .area-professor textarea {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
   .area-professor .tabela-cartoes .acoes-tabela,
   .area-professor .lista-arquivos .acoes-tabela { display: grid; width: 100%; }
   .area-professor .tabela-cartoes button,
   .area-professor .lista-arquivos button { width: 100%; min-height: 44px; }
+
+  .area-professor .lista-arquivos article,
+  .area-professor .card-cabecalho,
+  .area-professor .titulo-bloco,
+  .area-professor .chamada-cabecalho {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .area-professor .arquivo-descricao,
+  .area-professor .oferta-contexto,
+  .area-professor .acoes-tabela {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
 
   .area-professor .tabela-resultados { display: none; }
   .area-professor .resultados-cards { display: grid; gap: 12px; }
