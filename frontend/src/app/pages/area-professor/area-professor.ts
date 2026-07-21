@@ -513,13 +513,18 @@ export class AreaProfessorPage implements OnInit {
   }
 
   abrirPdf(arquivo: any) {
+    const janela = window.open('about:blank', '_blank');
     this.api.baixar(`professor/arquivos/${arquivo.id}`).subscribe({
       next: conteudo => {
         const url = URL.createObjectURL(new Blob([conteudo], { type: 'application/pdf' }));
-        window.open(url, '_blank', 'noopener');
+        if (janela) janela.location.href = url;
+        else window.location.href = url;
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       },
-      error: err => this.mostrarMensagem(err?.error?.mensagem || 'Nao foi possivel abrir o PDF.', 'erro')
+      error: err => {
+        janela?.close();
+        this.mostrarMensagem(err?.error?.mensagem || 'Não foi possível abrir o PDF.', 'erro');
+      }
     });
   }
 
@@ -672,6 +677,14 @@ export class AreaProfessorPage implements OnInit {
       REPROVADO_POR_FREQUENCIA: 'Reprovado por frequência',
       REPROVADO_POR_NOTA_E_FREQUENCIA: 'Reprovado por nota e frequência'
     } as Record<string, string>)[situacao] || situacao;
+  }
+
+  classeStatus(valor: string): string {
+    if (['APROVADO', 'CONCLUIDO', 'CONCLUIDA', 'PRESENTE', 'ATIVA', 'MATRICULADO', 'OK'].includes(valor)) return 'status-sucesso';
+    if (['REPROVADO', 'REPROVADO_POR_NOTA', 'REPROVADO_POR_FREQUENCIA', 'REPROVADO_POR_NOTA_E_FREQUENCIA', 'REPROVADO_POR_FALTA', 'AUSENTE'].includes(valor)) return 'status-erro';
+    if (['PENDENTE', 'JUSTIFICADO', 'LIMITE', 'AGUARDANDO_HOMOLOGACAO'].includes(valor)) return 'status-atencao';
+    if (['EM_ANDAMENTO', 'ABERTA', 'PLANEJADA', 'LANCADA'].includes(valor)) return 'status-andamento';
+    return 'status-neutro';
   }
 
   private mostrarMensagem(texto: string, tipo: 'sucesso' | 'erro') {

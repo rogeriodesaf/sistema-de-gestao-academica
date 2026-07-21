@@ -63,15 +63,22 @@
 
   <section class="bloco detalhe" *ngIf="disciplina && !historico">
     <div class="barra-retorno"><button type="button" class="secundario voltar-disciplinas" (click)="voltarParaDisciplinas()">← Voltar para Minhas Disciplinas</button></div>
-    <div class="titulo"><div><h2>{{ disciplina.nome }}</h2><p>{{ disciplina.turma || 'Turma não informada' }} · {{ disciplina.periodo || 'Período não informado' }}</p></div><span class="pill">{{ enumTexto(disciplina.statusOferta) }}</span></div>
-    <p class="aviso-resultado" *ngIf="!disciplina.resultadoDefinitivo">Resultado provisório — aguardando homologação.</p>
-    <p class="aviso-resultado concluido" *ngIf="disciplina.resultadoDefinitivo">Resultado final homologado: {{ enumTexto(disciplina.resultadoAcademico) }}.</p>
+    <div class="titulo"><div><h2>{{ disciplina.nome }}</h2><p>{{ disciplina.turma || 'Turma não informada' }} · {{ disciplina.periodo || 'Período não informado' }}</p></div><span class="pill status-chip" [ngClass]="classeStatus(disciplina.statusOferta)">{{ enumTexto(disciplina.statusOferta) }}</span></div>
+    <p class="aviso-resultado status-chip status-atencao" *ngIf="!disciplina.resultadoDefinitivo">Resultado provisório — aguardando homologação.</p>
+    <p class="aviso-resultado concluido status-chip status-sucesso" *ngIf="disciplina.resultadoDefinitivo">Resultado final homologado: {{ enumTexto(disciplina.resultadoAcademico) }}.</p>
+    <label class="seletor-secao seletor-secao-aluno">Seção da disciplina
+      <select [ngModel]="aba" (ngModelChange)="trocarAba($event)">
+        <option value="resumo">Resumo</option><option value="plano">Plano de Ensino</option><option value="aulas">Aulas</option><option value="avaliacoes">Avaliações</option><option value="notas">Notas</option><option value="frequencia">Frequência</option><option value="materiais">Materiais PDF</option>
+      </select>
+    </label>
     <nav class="abas" aria-label="Detalhes da disciplina">
       <button type="button" [class.ativa]="aba === 'resumo'" [attr.aria-selected]="aba === 'resumo'" (click)="trocarAba('resumo')">Resumo</button>
       <button type="button" [class.ativa]="aba === 'plano'" [attr.aria-selected]="aba === 'plano'" (click)="trocarAba('plano')">Plano de ensino</button>
-      <button type="button" [class.ativa]="aba === 'frequencia'" [attr.aria-selected]="aba === 'frequencia'" (click)="trocarAba('frequencia')">Frequência e aulas</button>
-      <button type="button" [class.ativa]="aba === 'avaliacoes'" [attr.aria-selected]="aba === 'avaliacoes'" (click)="trocarAba('avaliacoes')">Avaliações e notas</button>
-      <button type="button" [class.ativa]="aba === 'materiais'" [attr.aria-selected]="aba === 'materiais'" (click)="trocarAba('materiais')">Materiais</button>
+      <button type="button" [class.ativa]="aba === 'aulas'" [attr.aria-selected]="aba === 'aulas'" (click)="trocarAba('aulas')">Aulas</button>
+      <button type="button" [class.ativa]="aba === 'avaliacoes'" [attr.aria-selected]="aba === 'avaliacoes'" (click)="trocarAba('avaliacoes')">Avaliações</button>
+      <button type="button" [class.ativa]="aba === 'notas'" [attr.aria-selected]="aba === 'notas'" (click)="trocarAba('notas')">Notas</button>
+      <button type="button" [class.ativa]="aba === 'frequencia'" [attr.aria-selected]="aba === 'frequencia'" (click)="trocarAba('frequencia')">Frequência</button>
+      <button type="button" [class.ativa]="aba === 'materiais'" [attr.aria-selected]="aba === 'materiais'" (click)="trocarAba('materiais')">Materiais PDF</button>
     </nav>
     <p class="carregando estado-carregando" *ngIf="carregandoDetalhe" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Carregando detalhes...</span></p>
 
@@ -102,7 +109,7 @@
         <div><small>Bibliografia complementar</small><strong>{{ formatar(plano.bibliografiaComplementar) }}</strong></div>
       </div>
       <div class="arquivos" *ngIf="plano?.arquivoNome">
-        <article><div><strong>Plano de ensino em PDF</strong><small>{{ plano.arquivoNome }}</small></div><div><button type="button" class="link" (click)="abrirPlano()">Visualizar</button><button type="button" class="link" (click)="abrirPlano(true)">Baixar</button></div></article>
+        <article><div><strong>Plano de ensino em PDF</strong><small>{{ plano.arquivoNome }}</small></div><div class="acoes-pdf"><button type="button" class="link" (click)="abrirPlano()">Visualizar PDF</button><button type="button" class="link" (click)="abrirPlano(true)">Baixar PDF</button></div></article>
       </div>
       <ng-template #semPlano><p class="vazio">Plano de ensino ainda não disponibilizado.</p></ng-template>
     </div>
@@ -110,22 +117,30 @@
     <div id="conteudo-frequencia" class="conteudo-aba" tabindex="-1" *ngIf="aba === 'frequencia' && !carregandoDetalhe">
       <div class="indicadores" *ngIf="frequencia?.percentualPresenca != null; else semFrequencia"><div><small>Aulas ministradas</small><strong>{{ frequencia.aulasMinistradas }}</strong></div><div><small>Presenças</small><strong>{{ frequencia.presencas }}</strong></div><div><small>Faltas</small><strong>{{ frequencia.faltas }}</strong></div><div><small>Justificadas</small><strong>{{ frequencia.justificadas }}</strong></div><div><small>Frequência</small><strong>{{ percentual(frequencia.percentualPresenca) }}</strong></div></div>
       <ng-template #semFrequencia><p class="vazio">Frequência ainda não disponível.</p></ng-template>
-      <div class="grade-registros" *ngIf="aulas.length"><article class="registro-card" *ngFor="let aula of aulas"><div><small>Data</small><strong>{{ aula.data | date:'dd/MM/yyyy' }}</strong></div><div class="registro-largo"><small>Conteúdo</small><strong>{{ aula.conteudo }}</strong></div><div><small>Carga horária</small><strong>{{ aula.cargaHoraria }}h</strong></div><div><small>Presença</small><span class="pill">{{ enumTexto(aula.status) }}</span></div><div class="registro-largo"><small>Observações</small><span>{{ formatar(aula.observacoes) }}</span></div></article></div>
+    </div>
+
+    <div id="conteudo-aulas" class="conteudo-aba" tabindex="-1" *ngIf="aba === 'aulas' && !carregandoDetalhe">
+      <div class="grade-registros" *ngIf="aulas.length"><article class="registro-card" *ngFor="let aula of aulas"><div><small>Data</small><strong>{{ aula.data | date:'dd/MM/yyyy' }}</strong></div><div class="registro-largo"><small>Conteúdo</small><strong>{{ aula.conteudo }}</strong></div><div><small>Carga horária</small><strong>{{ aula.cargaHoraria }}h</strong></div><div><small>Presença</small><span class="pill status-chip" [ngClass]="classeStatus(aula.status)">{{ enumTexto(aula.status) }}</span></div><div class="registro-largo"><small>Observações</small><span>{{ formatar(aula.observacoes) }}</span></div></article></div>
       <p class="vazio" *ngIf="!aulas.length">Nenhuma aula registrada.</p>
     </div>
 
     <div id="conteudo-avaliacoes" class="conteudo-aba" tabindex="-1" *ngIf="aba === 'avaliacoes' && !carregandoDetalhe">
       <ng-container *ngIf="resultado; else semResultado">
       <div class="indicadores"><div><small>{{ resultado.definitivo ? 'Média final' : 'Média parcial' }}</small><strong>{{ formatar(resultado.media) }}</strong></div><div><small>Média mínima</small><strong>{{ resultado.mediaMinima }}</strong></div><div><small>Resultado acadêmico</small><strong>{{ enumTexto(resultado.situacao) }}</strong></div></div>
-      <p class="aviso-resultado">{{ resultado.definitivo ? 'Resultado final homologado.' : 'Resultado provisório — aguardando homologação.' }}</p>
-      <div class="grade-registros" *ngIf="resultado.avaliacoes.length"><article class="registro-card" *ngFor="let item of resultado.avaliacoes"><div class="registro-largo"><small>Avaliação</small><strong>{{ item.nome }}</strong><span>{{ item.descricao }}</span></div><div><small>Data</small><strong>{{ item.data ? (item.data | date:'dd/MM/yyyy') : '-' }}</strong></div><div><small>Nota máxima</small><strong>{{ item.notaMaxima }}</strong></div><div><small>Peso</small><strong>{{ item.peso }}</strong></div><div><small>Nota obtida</small><strong>{{ item.nota == null ? 'Pendente' : item.nota }}</strong></div><div><small>Situação</small><span class="pill">{{ enumTexto(item.status) }}</span></div></article></div>
+      <p class="aviso-resultado status-chip" [ngClass]="resultado.definitivo ? 'status-sucesso' : 'status-atencao'">{{ resultado.definitivo ? 'Resultado final homologado.' : 'Resultado provisório — aguardando homologação.' }}</p>
+      <div class="grade-registros" *ngIf="resultado.avaliacoes.length"><article class="registro-card" *ngFor="let item of resultado.avaliacoes"><div class="registro-largo"><small>Avaliação</small><strong>{{ item.nome }}</strong><span>{{ item.descricao }}</span></div><div><small>Data</small><strong>{{ item.data ? (item.data | date:'dd/MM/yyyy') : '-' }}</strong></div><div><small>Nota máxima</small><strong>{{ item.notaMaxima }}</strong></div><div><small>Peso</small><strong>{{ item.peso }}</strong></div><div><small>Nota obtida</small><strong>{{ item.nota == null ? 'Pendente' : item.nota }}</strong></div><div><small>Situação</small><span class="pill status-chip" [ngClass]="classeStatus(item.status)">{{ enumTexto(item.status) }}</span></div></article></div>
       <p class="vazio" *ngIf="!resultado.avaliacoes.length">Nenhuma avaliação cadastrada.</p>
       </ng-container>
       <ng-template #semResultado><p class="vazio">Avaliações e notas ainda não disponíveis.</p></ng-template>
     </div>
 
+    <div id="conteudo-notas" class="conteudo-aba" tabindex="-1" *ngIf="aba === 'notas' && resultado && !carregandoDetalhe">
+      <div class="indicadores"><div><small>{{ resultado.definitivo ? 'Média final' : 'Média parcial' }}</small><strong>{{ formatar(resultado.media) }}</strong></div><div><small>Resultado acadêmico</small><strong class="status-chip" [ngClass]="classeStatus(resultado.situacao)">{{ enumTexto(resultado.situacao) }}</strong></div></div>
+      <div class="grade-registros" *ngIf="resultado.avaliacoes.length"><article class="registro-card" *ngFor="let item of resultado.avaliacoes"><div><small>Avaliação</small><strong>{{ item.nome }}</strong></div><div><small>Nota obtida</small><strong>{{ item.nota == null ? 'Pendente' : item.nota }}</strong></div><div><small>Situação</small><span class="status-chip" [ngClass]="classeStatus(item.status)">{{ enumTexto(item.status) }}</span></div></article></div>
+    </div>
+
     <div id="conteudo-materiais" class="arquivos conteudo-aba" tabindex="-1" *ngIf="aba === 'materiais' && !carregandoDetalhe">
-      <article *ngFor="let arquivo of arquivos"><div><strong>{{ arquivo.titulo }}</strong><small>{{ arquivo.nome }} · {{ arquivo.enviadoEm | date:'dd/MM/yyyy' }} · {{ arquivo.referencia }}</small></div><div><button type="button" class="link" (click)="abrirArquivo(arquivo)">Visualizar</button><button type="button" class="link" (click)="abrirArquivo(arquivo, true)">Baixar</button></div></article>
+      <article *ngFor="let arquivo of arquivos"><span class="icone-pdf" aria-hidden="true">PDF</span><div class="arquivo-aluno"><strong>{{ arquivo.titulo }}</strong><small>{{ arquivo.nome }} · {{ arquivo.enviadoEm | date:'dd/MM/yyyy' }} · {{ arquivo.referencia }}</small></div><div class="acoes-pdf"><button type="button" class="link" (click)="abrirArquivo(arquivo)">Visualizar PDF</button><button type="button" class="link" (click)="abrirArquivo(arquivo, true)">Baixar PDF</button></div></article>
       <p class="vazio" *ngIf="!arquivos.length">Nenhum material disponibilizado nesta disciplina.</p>
     </div>
   </section>

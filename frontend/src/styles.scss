@@ -1210,3 +1210,125 @@ tbody tr:hover {
     right: 10px;
   }
 }
+.seletor-secao,
+.resultados-cards {
+  display: none;
+}
+
+.status-chip {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: var(--texto-principal);
+  font-weight: 800;
+}
+
+.status-chip.status-sucesso { border-color: var(--sucesso-texto); background: var(--sucesso-fundo); color: var(--sucesso-texto); }
+.status-chip.status-andamento { border-color: var(--azul-600); background: var(--azul-100); color: var(--azul-800); }
+.status-chip.status-atencao { border-color: var(--aviso-texto); background: var(--aviso-fundo); color: var(--aviso-texto); }
+.status-chip.status-erro { border-color: var(--erro-texto); background: var(--erro-fundo); color: var(--erro-texto); }
+.status-chip.status-neutro { background: var(--cinza-100); color: var(--texto-principal); }
+
+.area-aluno .abas,
+.area-professor .abas-professor {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+@media (max-width: 720px) {
+  .area-aluno,
+  .area-professor,
+  .area-aluno .bloco,
+  .area-professor .card-bloco {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .seletor-secao {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    color: var(--texto-principal);
+    font-weight: 800;
+  }
+
+  .seletor-secao select {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .area-aluno .abas,
+  .area-professor .abas-professor {
+    display: none !important;
+  }
+
+  .area-professor .tabela-responsiva:has(.tabela-cartoes) {
+    overflow: visible;
+  }
+
+  .area-professor .tabela-cartoes {
+    min-width: 0;
+  }
+
+  .area-professor .tabela-cartoes thead {
+    display: none;
+  }
+
+  .area-professor .tabela-cartoes tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .area-professor .tabela-cartoes tr {
+    display: grid;
+    overflow: visible;
+    border: 1px solid var(--borda);
+    border-radius: 9px;
+    background: var(--fundo-card);
+  }
+
+  .area-professor .tabela-responsiva .tabela-cartoes td,
+  .area-professor .tabela-responsiva .tabela-cartoes td:first-child {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 5px;
+    min-width: 0;
+    max-width: 100%;
+    border-bottom: 1px solid var(--borda);
+    overflow-wrap: anywhere;
+  }
+
+  .area-professor .tabela-cartoes td::before {
+    content: attr(data-label);
+    color: var(--texto-secundario);
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .area-professor .tabela-cartoes td:last-child { border-bottom: 0; }
+  .area-professor .tabela-cartoes input,
+  .area-professor .tabela-cartoes select,
+  .area-professor .formulario-arquivo input,
+  .area-professor .formulario-arquivo select { width: 100%; max-width: 100%; }
+  .area-professor .tabela-cartoes .acoes-tabela,
+  .area-professor .lista-arquivos .acoes-tabela { display: grid; width: 100%; }
+  .area-professor .tabela-cartoes button,
+  .area-professor .lista-arquivos button { width: 100%; min-height: 44px; }
+
+  .area-professor .tabela-resultados { display: none; }
+  .area-professor .resultados-cards { display: grid; gap: 12px; }
+  .area-professor .resultados-cards article { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--borda); border-radius: 9px; background: var(--fundo-card); }
+  .area-professor .resultados-cards article div { display: grid; gap: 3px; }
+
+  .area-aluno .resumo,
+  .area-aluno .indicadores { grid-template-columns: 1fr; }
+  .area-aluno .arquivos article { align-items: stretch; flex-direction: column; overflow: visible; }
+  .area-aluno .arquivo-aluno { min-width: 0; overflow-wrap: anywhere; }
+  .area-aluno .acoes-pdf { display: grid; gap: 8px; width: 100%; }
+  .area-aluno .acoes-pdf .link,
+  .area-aluno .voltar-disciplinas { width: 100%; min-height: 44px; }
+}
