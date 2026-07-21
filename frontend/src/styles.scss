@@ -1258,6 +1258,32 @@ tbody tr:hover {
     max-width: 100%;
   }
 
+  .area-professor .conteudo-aba > *,
+  .area-professor .bloco-professor > *,
+  .area-professor .card-cabecalho > *,
+  .area-professor .titulo-bloco > *,
+  .area-professor .acoes-rapidas > *,
+  .area-professor .indicadores-professor > *,
+  .area-professor .lista-arquivos > * {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .area-professor .indicadores-professor article {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    overflow-wrap: anywhere;
+  }
+
+  .area-professor .indicadores-professor small,
+  .area-professor .indicadores-professor strong {
+    display: block;
+    min-width: 0;
+    white-space: normal;
+  }
+
   .seletor-secao {
     display: grid;
     gap: 6px;
@@ -1320,6 +1346,18 @@ tbody tr:hover {
     max-width: 100%;
     border-bottom: 1px solid var(--borda);
     overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .area-professor .tabela-cartoes td > *,
+  .area-professor .tabela-chamada td > *,
+  .area-professor .resultados-cards article > * {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
   }
 
   .area-professor .tabela-cartoes td::before,
@@ -1366,6 +1404,26 @@ tbody tr:hover {
     min-width: 0;
     max-width: 100%;
   }
+
+  .area-professor input[type="file"] {
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .area-professor input[type="file"]::file-selector-button {
+    max-width: 100%;
+    margin: 0;
+    font-size: .88rem;
+    white-space: normal;
+  }
+
+  .area-professor .campo-arquivo span {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+  }
   .area-professor .tabela-cartoes .acoes-tabela,
   .area-professor .lista-arquivos .acoes-tabela { display: grid; width: 100%; }
   .area-professor .tabela-cartoes button,
@@ -1390,6 +1448,38 @@ tbody tr:hover {
     white-space: normal;
   }
 
+  .area-professor h1,
+  .area-professor h2,
+  .area-professor h3,
+  .area-professor p,
+  .area-professor strong,
+  .area-professor span,
+  .area-professor button {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .area-professor .acoes-tabela,
+  .area-professor .acoes-form,
+  .area-professor .seletor-avaliacao-notas .acoes-tabela {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .area-professor .acoes-tabela button,
+  .area-professor .acoes-form button,
+  .area-professor .acoes-rapidas button,
+  .area-professor .zona-diario button {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    white-space: normal;
+  }
+
   .area-professor .tabela-resultados { display: none; }
   .area-professor .resultados-cards { display: grid; gap: 12px; }
   .area-professor .resultados-cards article { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--borda); border-radius: 9px; background: var(--fundo-card); }
@@ -1402,4 +1492,10 @@ tbody tr:hover {
   .area-aluno .acoes-pdf { display: grid; gap: 8px; width: 100%; }
   .area-aluno .acoes-pdf .link,
   .area-aluno .voltar-disciplinas { width: 100%; min-height: 44px; }
+}
+
+@media (max-width: 360px) {
+  .area-professor .indicadores-professor {
+    grid-template-columns: 1fr;
+  }
 }
