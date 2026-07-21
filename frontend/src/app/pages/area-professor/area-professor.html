@@ -54,7 +54,7 @@
       </div>
       <div class="zona-diario">
         <small>Status do diário</small>
-        <strong>{{ statusOfertaTexto(ofertaSelecionada.status) }}</strong>
+        <strong class="status-chip" [ngClass]="classeStatus(ofertaSelecionada.status)">{{ statusOfertaTexto(ofertaSelecionada.status) }}</strong>
         <button type="button" *ngIf="ofertaSelecionada.status === 'EM_ANDAMENTO'"
                 (click)="encerrarDiario()" [disabled]="encerrandoDiario">
           {{ encerrandoDiario ? 'Encerrando...' : 'Encerrar diário' }}
@@ -74,6 +74,11 @@
       <ul><li *ngFor="let pendencia of pendenciasEncerramento">{{ pendencia }}</li></ul>
     </div>
 
+    <label class="seletor-secao seletor-secao-professor">Seção da disciplina
+      <select [ngModel]="abaAtiva" (ngModelChange)="abrirAba($event)">
+        <option value="visao-geral">Visão Geral</option><option value="alunos">Alunos</option><option value="aulas">Aulas e Chamada</option><option value="avaliacoes">Avaliações</option><option value="notas">Notas</option><option value="frequencia">Frequência</option><option value="materiais">Materiais PDF</option>
+      </select>
+    </label>
     <nav class="abas-professor" role="tablist" aria-label="Ferramentas da disciplina">
       <button type="button" role="tab" [class.ativa]="abaAtiva === 'visao-geral'" [attr.aria-selected]="abaAtiva === 'visao-geral'" (click)="abrirAba('visao-geral')">Visão Geral</button>
       <button type="button" role="tab" [class.ativa]="abaAtiva === 'alunos'" [attr.aria-selected]="abaAtiva === 'alunos'" (click)="abrirAba('alunos')">Alunos</button>
@@ -186,13 +191,13 @@
           </thead>
           <tbody>
             <tr *ngFor="let avaliacao of avaliacoes">
-              <td>{{ avaliacao.ordem }}</td>
-              <td><strong>{{ avaliacao.nome }}</strong><span *ngIf="avaliacao.descricao">{{ avaliacao.descricao }}</span></td>
-              <td>{{ avaliacao.data ? (avaliacao.data | date:'dd/MM/yyyy':'UTC') : '-' }}</td>
-              <td>{{ avaliacao.notaMaxima }}</td>
-              <td>{{ avaliacao.peso }}</td>
-              <td>{{ arquivosDaAvaliacao(avaliacao.id).length }}</td>
-              <td class="acoes-tabela">
+              <td data-label="Ordem">{{ avaliacao.ordem }}</td>
+              <td data-label="Avaliação"><strong>{{ avaliacao.nome }}</strong><span *ngIf="avaliacao.descricao">{{ avaliacao.descricao }}</span></td>
+              <td data-label="Data">{{ avaliacao.data ? (avaliacao.data | date:'dd/MM/yyyy':'UTC') : '-' }}</td>
+              <td data-label="Nota máxima">{{ avaliacao.notaMaxima }}</td>
+              <td data-label="Peso">{{ avaliacao.peso }}</td>
+              <td data-label="PDFs">{{ arquivosDaAvaliacao(avaliacao.id).length }}</td>
+              <td data-label="Ações" class="acoes-tabela">
                 <button type="button" (click)="abrirNotas(avaliacao)">{{ diarioBloqueado ? 'Ver notas' : 'Lançar notas' }}</button>
                 <button type="button" class="secundario" *ngIf="!diarioBloqueado" (click)="editarAvaliacao(avaliacao)">Editar</button>
                 <button type="button" class="perigo-suave" *ngIf="!diarioBloqueado" (click)="excluirAvaliacao(avaliacao)">Excluir</button>
@@ -216,10 +221,10 @@
           <thead><tr><th>Aluno</th><th>Nota</th><th>Situação</th><th>Observação</th></tr></thead>
           <tbody>
             <tr *ngFor="let item of notasAvaliacao">
-              <td><strong>{{ item.aluno?.nome }}</strong><span>{{ item.aluno?.email }}</span></td>
-              <td><input type="number" [(ngModel)]="item.nota" [name]="'nota-' + item.matriculaId" min="0" [max]="avaliacaoSelecionada.notaMaxima" step="0.01" [disabled]="diarioBloqueado"></td>
-              <td>{{ item.salva ? 'Lançada' : 'Pendente' }}</td>
-              <td><input type="text" [(ngModel)]="item.observacao" [name]="'obs-nota-' + item.matriculaId" placeholder="Opcional" [disabled]="diarioBloqueado"></td>
+              <td data-label="Aluno"><strong>{{ item.aluno?.nome }}</strong><span>{{ item.aluno?.email }}</span></td>
+              <td data-label="Nota"><input type="number" [(ngModel)]="item.nota" [name]="'nota-' + item.matriculaId" min="0" [max]="avaliacaoSelecionada.notaMaxima" step="0.01" [disabled]="diarioBloqueado"></td>
+              <td data-label="Situação"><span class="status-chip" [ngClass]="item.salva ? 'status-sucesso' : 'status-atencao'">{{ item.salva ? 'Lançada' : 'Pendente' }}</span></td>
+              <td data-label="Observação"><input type="text" [(ngModel)]="item.observacao" [name]="'obs-nota-' + item.matriculaId" placeholder="Opcional" [disabled]="diarioBloqueado"></td>
             </tr>
           </tbody>
         </table>
@@ -246,17 +251,15 @@
           </thead>
           <tbody>
             <tr *ngFor="let resultado of resultados">
-              <td><strong>{{ resultado.aluno?.nome }}</strong></td>
-              <td>{{ resultado.frequencia?.aulasMinistradas || 0 }}</td>
-              <td>{{ resultado.frequencia?.presencas || 0 }}</td>
-              <td>{{ resultado.frequencia?.faltas || 0 }}</td>
-              <td>{{ resultado.frequencia?.faltasJustificadas || 0 }}</td>
-              <td>{{ resultado.frequencia?.percentualPresenca != null ? (resultado.frequencia.percentualPresenca + '%') : '-' }}</td>
-              <td>{{ resultado.frequencia?.percentualFaltas != null ? (resultado.frequencia.percentualFaltas + '%') : '-' }}</td>
-              <td>
-                <span class="situacao-frequencia"
-                      [class.limite]="resultado.frequencia?.situacao === 'LIMITE'"
-                      [class.reprovado]="resultado.frequencia?.situacao === 'REPROVADO_POR_FALTA'">
+              <td data-label="Aluno"><strong>{{ resultado.aluno?.nome }}</strong></td>
+              <td data-label="Aulas">{{ resultado.frequencia?.aulasMinistradas || 0 }}</td>
+              <td data-label="Presenças">{{ resultado.frequencia?.presencas || 0 }}</td>
+              <td data-label="Faltas">{{ resultado.frequencia?.faltas || 0 }}</td>
+              <td data-label="Justificadas">{{ resultado.frequencia?.faltasJustificadas || 0 }}</td>
+              <td data-label="Frequência">{{ resultado.frequencia?.percentualPresenca != null ? (resultado.frequencia.percentualPresenca + '%') : '-' }}</td>
+              <td data-label="Faltas %">{{ resultado.frequencia?.percentualFaltas != null ? (resultado.frequencia.percentualFaltas + '%') : '-' }}</td>
+              <td data-label="Situação">
+                <span class="situacao-frequencia status-chip" [ngClass]="classeStatus(resultado.frequencia?.situacao)">
                   {{ situacaoFrequenciaTexto(resultado.frequencia?.situacao) }}
                 </span>
               </td>
@@ -328,16 +331,16 @@
           </thead>
           <tbody>
             <tr *ngFor="let aula of aulas" class="linha-clicavel" (click)="abrirChamada(aula)">
-              <td>{{ aula.dataAula | date:'dd/MM/yyyy':'UTC' }}</td>
-              <td>{{ aula.conteudoMinistrado }}</td>
-              <td>{{ aula.cargaHorariaAula }}</td>
-              <td>
-                <span class="status-chamada" [class.preenchida]="aula.chamadaPreenchida">
+              <td data-label="Data">{{ aula.dataAula | date:'dd/MM/yyyy':'UTC' }}</td>
+              <td data-label="Conteúdo">{{ aula.conteudoMinistrado }}</td>
+              <td data-label="Carga horária">{{ aula.cargaHorariaAula }}</td>
+              <td data-label="Chamada">
+                <span class="status-chamada status-chip" [ngClass]="aula.chamadaPreenchida ? 'status-sucesso' : 'status-atencao'">
                   {{ aula.chamadaPreenchida ? 'Chamada preenchida' : 'Chamada pendente' }}
                 </span>
               </td>
-              <td>{{ arquivosDaAula(aula.id).length }}</td>
-              <td class="acoes-tabela">
+              <td data-label="Arquivos">{{ arquivosDaAula(aula.id).length }}</td>
+              <td data-label="Ações" class="acoes-tabela">
                 <button type="button" class="secundario" (click)="$event.stopPropagation(); abrirChamada(aula)">Chamada</button>
                 <button type="button" class="secundario" *ngIf="!diarioBloqueado" (click)="$event.stopPropagation(); editarAula(aula)">Editar</button>
                 <button type="button" class="perigo-suave" *ngIf="!diarioBloqueado && !aula.possuiChamada"
@@ -430,10 +433,13 @@
               <td><strong>{{ resultado.aluno?.nome }}</strong></td>
               <td *ngFor="let avaliacao of avaliacoes">{{ notaResultado(resultado, avaliacao.id) ?? '-' }}</td>
               <td><strong>{{ resultado.media ?? '-' }}</strong></td>
-              <td><span class="situacao" [class.aprovado]="resultado.situacao === 'APROVADO'" [class.reprovado]="resultado.situacao?.startsWith('REPROVADO')">{{ resultadoTexto(resultado.situacao) }}</span></td>
+              <td><span class="situacao status-chip" [ngClass]="classeStatus(resultado.situacao)">{{ resultadoTexto(resultado.situacao) }}</span></td>
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="resultados-cards" *ngIf="avaliacoes.length && resultados.length">
+        <article *ngFor="let resultado of resultados"><strong>{{ resultado.aluno?.nome }}</strong><div *ngFor="let avaliacao of avaliacoes"><small>{{ avaliacao.nome }}</small><span>{{ notaResultado(resultado, avaliacao.id) ?? '-' }}</span></div><div><small>Média</small><strong>{{ resultado.media ?? '-' }}</strong></div><span class="status-chip" [ngClass]="classeStatus(resultado.situacao)">{{ resultadoTexto(resultado.situacao) }}</span></article>
       </div>
     </section>
 
@@ -478,7 +484,7 @@
         <article *ngFor="let arquivo of arquivos">
           <span class="icone-pdf" aria-hidden="true">PDF</span>
           <div class="arquivo-descricao"><strong>{{ arquivo.titulo }}</strong><span>{{ arquivo.nomeOriginal }}</span><small>{{ tipoVinculoTexto(arquivo.tipoVinculo) }} · {{ referenciaArquivo(arquivo) }}</small></div>
-          <div class="acoes-tabela"><button type="button" class="secundario" (click)="abrirPdf(arquivo)">Abrir</button><button type="button" class="perigo-suave" *ngIf="!diarioBloqueado" (click)="removerPdf(arquivo)">Remover</button></div>
+          <div class="acoes-tabela"><button type="button" class="secundario" (click)="abrirPdf(arquivo)">Visualizar PDF</button><button type="button" class="perigo-suave" *ngIf="!diarioBloqueado" (click)="removerPdf(arquivo)">Remover</button></div>
         </article>
       </div>
     </section>

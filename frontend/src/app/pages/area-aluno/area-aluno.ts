@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 
-type Aba = 'resumo' | 'plano' | 'frequencia' | 'avaliacoes' | 'materiais';
+type Aba = 'resumo' | 'plano' | 'aulas' | 'avaliacoes' | 'notas' | 'frequencia' | 'materiais';
 
 @Component({
   selector: 'app-area-aluno',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './area-aluno.html',
   styleUrl: './area-aluno.scss'
 })
@@ -169,33 +170,51 @@ export class AreaAlunoPage implements OnInit {
 
   abrirArquivo(arquivo: any, download = false) {
     const sufixo = download ? '/download' : '';
+    const janela = download ? null : window.open('about:blank', '_blank');
     this.api.baixar(`aluno/arquivos/${arquivo.id}${sufixo}`).subscribe({
       next: blob => {
         if (download) this.salvarBlob(blob, arquivo.nome);
         else {
           const url = URL.createObjectURL(blob);
-          window.open(url, '_blank', 'noopener');
+          if (janela) janela.location.href = url;
+          else window.location.href = url;
           setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
       },
-      error: erro => this.erro(erro, 'Arquivo indisponível no momento.')
+      error: erro => {
+        janela?.close();
+        this.erro(erro, 'Arquivo indisponível no momento.');
+      }
     });
   }
 
   abrirPlano(download = false) {
     if (!this.disciplina?.ofertaId) return;
     const sufixo = download ? '/download' : '';
+    const janela = download ? null : window.open('about:blank', '_blank');
     this.api.baixar(`aluno/disciplinas/${this.disciplina.ofertaId}/plano/pdf${sufixo}`).subscribe({
       next: blob => {
         if (download) this.salvarBlob(blob, this.plano?.arquivoNome || 'plano-de-ensino.pdf');
         else {
           const url = URL.createObjectURL(blob);
-          window.open(url, '_blank', 'noopener');
+          if (janela) janela.location.href = url;
+          else window.location.href = url;
           setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
       },
-      error: erro => this.erro(erro, 'Plano de ensino em PDF indisponível no momento.')
+      error: erro => {
+        janela?.close();
+        this.erro(erro, 'Plano de ensino em PDF indisponível no momento.');
+      }
     });
+  }
+
+  classeStatus(valor: string): string {
+    if (['APROVADO', 'CONCLUIDO', 'CONCLUIDA', 'PRESENTE', 'ATIVA', 'MATRICULADO'].includes(valor)) return 'status-sucesso';
+    if (['REPROVADO', 'REPROVADO_POR_NOTA', 'REPROVADO_POR_FREQUENCIA', 'REPROVADO_POR_NOTA_E_FREQUENCIA', 'AUSENTE'].includes(valor)) return 'status-erro';
+    if (['PENDENTE', 'JUSTIFICADO', 'AGUARDANDO_HOMOLOGACAO'].includes(valor)) return 'status-atencao';
+    if (['EM_ANDAMENTO', 'ABERTA', 'PLANEJADA', 'LANCADA'].includes(valor)) return 'status-andamento';
+    return 'status-neutro';
   }
 
   periodosHistorico(): string[] {
