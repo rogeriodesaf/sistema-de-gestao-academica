@@ -5,6 +5,8 @@ import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 
+type AbaProfessor = 'visao-geral' | 'alunos' | 'aulas' | 'avaliacoes' | 'notas' | 'frequencia' | 'materiais';
+
 @Component({
   selector: 'app-area-professor',
   standalone: true,
@@ -45,6 +47,9 @@ export class AreaProfessorPage implements OnInit {
   encerrandoDiario = false;
   pendenciasEncerramento: string[] = [];
   novaAula = this.formularioAulaInicial();
+  abaAtiva: AbaProfessor = 'visao-geral';
+  formularioAulaAberto = false;
+  formularioAvaliacaoAberto = false;
   private ofertasCarregadas = false;
   private posicaoListaAulas = 0;
   private chamadasPorAula = new Map<number, any[]>();
@@ -118,6 +123,10 @@ export class AreaProfessorPage implements OnInit {
     this.aulaEmEdicaoId = undefined;
     this.novaAvaliacao = this.formularioAvaliacaoInicial();
     this.pendenciasEncerramento = [];
+    this.abaAtiva = 'visao-geral';
+    this.formularioAulaAberto = false;
+    this.formularioAvaliacaoAberto = false;
+    if (this.ofertaSelecionadaId) this.carregarAlunos();
   }
 
   carregarAlunos() {
@@ -162,6 +171,7 @@ export class AreaProfessorPage implements OnInit {
 
   encerrarDiario() {
     if (!this.ofertaSelecionadaId || this.diarioBloqueado) return;
+    if (!confirm('Deseja encerrar o diário desta disciplina?')) return;
     this.encerrandoDiario = true;
     this.pendenciasEncerramento = [];
     this.api.salvar(`professor/ofertas/${this.ofertaSelecionadaId}/encerrar-diario`, {}).pipe(
@@ -216,6 +226,7 @@ export class AreaProfessorPage implements OnInit {
           : [aulaSalva, ...this.aulas];
         this.novaAula = this.formularioAulaInicial();
         this.aulaEmEdicaoId = undefined;
+        this.formularioAulaAberto = false;
         this.salvandoAula = false;
         this.mostrarMensagem(editando ? 'Aula atualizada com sucesso.' : 'Aula registrada com sucesso. Preencha a chamada.', 'sucesso');
         this.carregarResultados();
@@ -230,6 +241,8 @@ export class AreaProfessorPage implements OnInit {
   }
 
   editarAula(aula: any) {
+    this.abaAtiva = 'aulas';
+    this.formularioAulaAberto = true;
     this.aulaEmEdicaoId = aula.id;
     this.novaAula = {
       dataAula: aula.dataAula,
@@ -237,12 +250,13 @@ export class AreaProfessorPage implements OnInit {
       cargaHorariaAula: aula.cargaHorariaAula,
       observacoes: aula.observacoes || ''
     };
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.focarElemento('formulario-aula');
   }
 
   cancelarEdicaoAula() {
     this.aulaEmEdicaoId = undefined;
     this.novaAula = this.formularioAulaInicial();
+    this.formularioAulaAberto = false;
   }
 
   excluirAula(aula: any) {
@@ -261,6 +275,7 @@ export class AreaProfessorPage implements OnInit {
 
   abrirChamada(aula: any) {
     if (!aula?.id) return;
+    this.abaAtiva = 'aulas';
     this.posicaoListaAulas = window.scrollY;
     this.aulaSelecionada = aula;
     this.chamada = [];
@@ -340,11 +355,11 @@ export class AreaProfessorPage implements OnInit {
 
   salvarAvaliacao() {
     if (!this.ofertaSelecionadaId || !this.novaAvaliacao.nome.trim()) {
-      this.mostrarMensagem('Informe ao menos o nome da avaliacao.', 'erro');
+      this.mostrarMensagem('Informe ao menos o nome da avaliação.', 'erro');
       return;
     }
     if (this.novaAvaliacao.ordem <= 0 || this.novaAvaliacao.notaMaxima <= 0 || this.novaAvaliacao.peso <= 0) {
-      this.mostrarMensagem('Ordem, nota maxima e peso devem ser maiores que zero.', 'erro');
+      this.mostrarMensagem('Ordem, nota máxima e peso devem ser maiores que zero.', 'erro');
       return;
     }
     this.salvandoAvaliacao = true;
@@ -355,40 +370,48 @@ export class AreaProfessorPage implements OnInit {
       next: () => {
         this.salvandoAvaliacao = false;
         this.novaAvaliacao = this.formularioAvaliacaoInicial();
+        this.formularioAvaliacaoAberto = false;
         this.carregarAvaliacoes();
         this.carregarResultados();
-        this.mostrarMensagem('Avaliacao salva com sucesso.', 'sucesso');
+        this.mostrarMensagem('Avaliação salva com sucesso.', 'sucesso');
       },
       error: err => {
         this.salvandoAvaliacao = false;
-        this.mostrarMensagem(err?.error?.mensagem || 'Nao foi possivel salvar a avaliacao.', 'erro');
+        this.mostrarMensagem(err?.error?.mensagem || 'Não foi possível salvar a avaliação.', 'erro');
       }
     });
   }
 
   editarAvaliacao(avaliacao: any) {
+    this.abaAtiva = 'avaliacoes';
+    this.formularioAvaliacaoAberto = true;
     this.novaAvaliacao = { ...avaliacao, data: avaliacao.data || '' };
+    this.focarElemento('formulario-avaliacao');
   }
 
   cancelarEdicaoAvaliacao() {
     this.novaAvaliacao = this.formularioAvaliacaoInicial();
+    this.formularioAvaliacaoAberto = false;
   }
 
   excluirAvaliacao(avaliacao: any) {
+    if (!confirm(`Deseja excluir a avaliação "${avaliacao.nome}"?`)) return;
     this.api.remover(`professor/avaliacoes/${avaliacao.id}`).subscribe({
       next: () => {
         this.carregarAvaliacoes();
         this.carregarResultados();
-        this.mostrarMensagem('Avaliacao excluida.', 'sucesso');
+        this.mostrarMensagem('Avaliação excluída.', 'sucesso');
       },
-      error: err => this.mostrarMensagem(err?.error?.mensagem || 'Nao foi possivel excluir a avaliacao.', 'erro')
+      error: err => this.mostrarMensagem(err?.error?.mensagem || 'Não foi possível excluir a avaliação.', 'erro')
     });
   }
 
   abrirNotas(avaliacao: any) {
+    this.abaAtiva = 'notas';
     this.avaliacaoSelecionada = avaliacao;
     this.notasAvaliacao = [];
     this.carregandoNotas = true;
+    this.focarElemento('painel-notas');
     this.api.buscarAcao('professor/avaliacoes', avaliacao.id, 'notas').subscribe({
       next: notas => {
         this.notasAvaliacao = (Array.isArray(notas) ? notas : []).map((item: any) => ({
@@ -523,11 +546,57 @@ export class AreaProfessorPage implements OnInit {
   }
 
   tipoVinculoTexto(tipo: string) {
-    return ({ DISCIPLINA: 'Disciplina', AULA: 'Aula', AVALIACAO: 'Avaliacao' } as Record<string, string>)[tipo] || tipo;
+    return ({ DISCIPLINA: 'Disciplina', AULA: 'Aula', AVALIACAO: 'Avaliação' } as Record<string, string>)[tipo] || tipo;
+  }
+
+  abrirAba(aba: AbaProfessor) {
+    this.abaAtiva = aba;
+    this.changeDetector.detectChanges();
+    this.focarElemento(`aba-${aba}`);
+  }
+
+  abrirFormularioAula() {
+    this.abaAtiva = 'aulas';
+    this.formularioAulaAberto = true;
+    this.focarElemento('formulario-aula');
+  }
+
+  abrirFormularioAvaliacao() {
+    this.abaAtiva = 'avaliacoes';
+    this.formularioAvaliacaoAberto = true;
+    this.focarElemento('formulario-avaliacao');
+  }
+
+  rotuloOferta(oferta: any) {
+    return [oferta?.disciplina?.nome, oferta?.turma?.nome,
+      oferta?.modulo?.nome || oferta?.periodoLetivo?.nome, oferta?.horario]
+      .filter(Boolean).join(' — ');
+  }
+
+  referenciaArquivo(arquivo: any) {
+    if (arquivo?.aulaId) {
+      const aula = this.aulas.find(item => item.id === arquivo.aulaId);
+      return aula ? `Aula: ${aula.conteudoMinistrado}` : 'Aula vinculada';
+    }
+    if (arquivo?.avaliacaoId) {
+      const avaliacao = this.avaliacoes.find(item => item.id === arquivo.avaliacaoId);
+      return avaliacao ? `Avaliação: ${avaliacao.nome}` : 'Avaliação vinculada';
+    }
+    return 'Material da disciplina';
+  }
+
+  private focarElemento(id: string) {
+    window.setTimeout(() => {
+      const elemento = document.getElementById(id);
+      elemento?.focus({ preventScroll: true });
+      elemento?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   uploadPdfDesabilitado() {
-    if (this.enviandoArquivo || !this.novoArquivo.tipoVinculo) return true;
+    if (this.enviandoArquivo || !this.novoArquivo.tipoVinculo
+      || !this.novoArquivo.titulo.trim() || !this.arquivoSelecionado) return true;
+    if (this.novoArquivo.tipoVinculo === 'AULA') return !this.novoArquivo.referenciaId;
     return this.novoArquivo.tipoVinculo === 'AVALIACAO'
       && (this.carregandoAvaliacoes || !this.novoArquivo.referenciaId);
   }

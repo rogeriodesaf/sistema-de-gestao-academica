@@ -1,6 +1,8 @@
 .area-professor {
   display: grid;
   gap: 18px;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .seletor-oferta {
@@ -338,6 +340,18 @@
   height: 18px;
 }
 
+.oferta-contexto, .acoes-rapidas { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.zona-diario, .painel-formulario, .seletor-avaliacao-notas { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--borda); border-radius: 8px; background: var(--fundo-card); }
+.abas-professor { position: sticky; top: 0; z-index: 4; display: flex; gap: 4px; overflow-x: auto; padding: 7px; border: 1px solid var(--borda); background: var(--fundo-card); }
+.abas-professor button { flex: 0 0 auto; border: 0; padding: 10px; background: transparent; color: var(--texto-secundario); white-space: nowrap; }
+.abas-professor button.ativa { background: var(--azul-100); color: var(--azul-800); }
+.indicadores-professor { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.indicadores-professor article { padding: 14px; border: 1px solid var(--borda); border-radius: 8px; background: var(--fundo-card); }
+.acoes-rapidas { align-items: center; padding: 16px; background: var(--cinza-50); }
+.acoes-rapidas > div { flex: 1 1 240px; }
+.icone-pdf { flex: 0 0 auto; padding: 8px; border-radius: 6px; background: var(--vermelho-50); color: var(--vermelho) !important; font-weight: 900; }
+.arquivo-descricao { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
 @media (max-width: 980px) {
   .seletor-oferta {
     grid-template-columns: 1fr;
@@ -354,6 +368,15 @@
   .formulario-avaliacao,
   .formulario-arquivo {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+
+  .diario-bloco > .card-cabecalho {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .zona-diario {
+    width: 100%;
   }
 }
 
@@ -448,4 +471,8 @@
   .chamada-cabecalho button {
     width: 100%;
   }
+
+  .oferta-contexto, .acoes-rapidas { align-items: stretch; flex-direction: column; }
+  .abas-professor { margin-inline: -10px; }
+  .acoes-rapidas button, .titulo-bloco > button, .zona-diario button { width: 100%; }
 }
