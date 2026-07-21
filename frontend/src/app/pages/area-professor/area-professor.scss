@@ -340,6 +340,19 @@
   height: 18px;
 }
 
+@media (max-width: 900px) {
+  .tabela-responsiva table {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    table-layout: fixed;
+  }
+
+  .tabela-responsiva td:first-child {
+    min-width: 0;
+  }
+}
+
 .oferta-contexto, .acoes-rapidas { display: flex; flex-wrap: wrap; gap: 10px 16px; }
 .zona-diario, .painel-formulario, .seletor-avaliacao-notas { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--borda); border-radius: 8px; background: var(--fundo-card); }
 .abas-professor { position: sticky; top: 0; z-index: 4; display: flex; gap: 4px; overflow-x: auto; padding: 7px; border: 1px solid var(--borda); background: var(--fundo-card); }
