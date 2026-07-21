@@ -34,7 +34,7 @@
     </details>
   </section>
 
-  <section class="bloco" *ngIf="!historico && !disciplina">
+  <section class="bloco" *ngIf="!disciplina">
     <div class="titulo"><div><h2>Minhas disciplinas</h2><p>Selecione uma disciplina para consultar os detalhes.</p></div></div>
     <ng-container *ngIf="disciplinas.length; else semDisciplinas">
       <h3 *ngIf="disciplinasEmAndamento.length">Em andamento</h3>
