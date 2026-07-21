@@ -12,23 +12,21 @@
       <select name="ofertaSelecionada" [ngModel]="ofertaSelecionadaId" (ngModelChange)="selecionarOferta($event)">
         <option [ngValue]="undefined">Selecione uma disciplina</option>
         <optgroup label="Em andamento" *ngIf="ofertasEmAndamento.length">
-          <option *ngFor="let oferta of ofertasEmAndamento" [ngValue]="oferta.id">{{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}</option>
+          <option *ngFor="let oferta of ofertasEmAndamento" [ngValue]="oferta.id">{{ rotuloOferta(oferta) }}</option>
         </optgroup>
         <optgroup label="Futuras" *ngIf="ofertasFuturas.length">
-          <option *ngFor="let oferta of ofertasFuturas" [ngValue]="oferta.id">{{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}</option>
+          <option *ngFor="let oferta of ofertasFuturas" [ngValue]="oferta.id">{{ rotuloOferta(oferta) }}</option>
         </optgroup>
         <optgroup label="Concluídas" *ngIf="ofertasConcluidas.length">
-          <option *ngFor="let oferta of ofertasConcluidas" [ngValue]="oferta.id">{{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}</option>
+          <option *ngFor="let oferta of ofertasConcluidas" [ngValue]="oferta.id">{{ rotuloOferta(oferta) }}</option>
         </optgroup>
         <optgroup label="Canceladas (consulta)" *ngIf="ofertasCanceladas.length">
-          <option *ngFor="let oferta of ofertasCanceladas" [ngValue]="oferta.id">{{ oferta.disciplina?.nome || 'Disciplina sem nome' }} - {{ oferta.turma?.nome || 'Turma sem nome' }}</option>
+          <option *ngFor="let oferta of ofertasCanceladas" [ngValue]="oferta.id">{{ rotuloOferta(oferta) }}</option>
         </optgroup>
       </select>
     </label>
 
-    <button type="button" (click)="carregarAlunos()" [disabled]="!ofertaSelecionadaId || carregandoAlunos">
-      {{ carregandoAlunos ? 'Carregando...' : 'Ver alunos' }}
-    </button>
+    <span class="seletor-ajuda">A disciplina selecionada permanece ativa ao navegar entre as abas.</span>
   </div>
 
   <div class="vazio estado-carregando" *ngIf="carregandoOfertas" role="status" aria-live="polite">
@@ -44,15 +42,24 @@
   <section class="card-bloco diario-bloco" *ngIf="ofertaSelecionada">
     <div class="card-cabecalho">
       <div>
+        <span class="rotulo-secao">Ambiente da disciplina</span>
         <h2>{{ ofertaSelecionada.disciplina?.nome || 'Disciplina selecionada' }}</h2>
-        <p>{{ ofertaSelecionada.turma?.nome || 'Turma não informada' }}</p>
+        <p class="oferta-contexto">
+          <strong>{{ ofertaSelecionada.turma?.nome || 'Turma não informada' }}</strong>
+          <span>{{ ofertaSelecionada.modulo?.nome || ofertaSelecionada.periodoLetivo?.nome || 'Módulo não informado' }}</span>
+          <span>{{ ofertaSelecionada.horario || 'Horário não informado' }}</span>
+          <span>{{ ofertaSelecionada.sala || 'Sala não informada' }}</span>
+        </p>
+        <p class="professor-oferta">Professor: {{ ofertaSelecionada.professor?.nome || 'Não informado' }}</p>
       </div>
-      <div class="acoes-tabela">
-        <span class="status-oferta">{{ statusOfertaTexto(ofertaSelecionada.status) }}</span>
+      <div class="zona-diario">
+        <small>Status do diário</small>
+        <strong>{{ statusOfertaTexto(ofertaSelecionada.status) }}</strong>
         <button type="button" *ngIf="ofertaSelecionada.status === 'EM_ANDAMENTO'"
                 (click)="encerrarDiario()" [disabled]="encerrandoDiario">
           {{ encerrandoDiario ? 'Encerrando...' : 'Encerrar diário' }}
         </button>
+        <span *ngIf="ofertaSelecionada.status === 'AGUARDANDO_HOMOLOGACAO'">Aguardando homologação da coordenação</span>
       </div>
     </div>
 
@@ -67,19 +74,46 @@
       <ul><li *ngFor="let pendencia of pendenciasEncerramento">{{ pendencia }}</li></ul>
     </div>
 
+    <nav class="abas-professor" role="tablist" aria-label="Ferramentas da disciplina">
+      <button type="button" role="tab" [class.ativa]="abaAtiva === 'visao-geral'" [attr.aria-selected]="abaAtiva === 'visao-geral'" (click)="abrirAba('visao-geral')">Visão Geral</button>
+      <button type="button" role="tab" [class.ativa]="abaAtiva === 'alunos'" [attr.aria-selected]="abaAtiva === 'alunos'" (click)="abrirAba('alunos')">Alunos</button>
+      <button type="button" role="tab" [class.ativa]="abaAtiva === 'aulas'" [attr.aria-selected]="abaAtiva === 'aulas'" (click)="abrirAba('aulas')">Aulas e Chamada</button>
+      <button type="button" role="tab" [class.ativa]="abaAtiva === 'avaliacoes'" [attr.aria-selected]="abaAtiva === 'avaliacoes'" (click)="abrirAba('avaliacoes')">Avaliações</button>
+      <button type="button" role="tab" [class.ativa]="abaAtiva === 'notas'" [attr.aria-selected]="abaAtiva === 'notas'" (click)="abrirAba('notas')">Notas</button>
+      <button type="button" role="tab" [class.ativa]="abaAtiva === 'frequencia'" [attr.aria-selected]="abaAtiva === 'frequencia'" (click)="abrirAba('frequencia')">Frequência</button>
+      <button type="button" role="tab" [class.ativa]="abaAtiva === 'materiais'" [attr.aria-selected]="abaAtiva === 'materiais'" (click)="abrirAba('materiais')">Materiais PDF</button>
+    </nav>
+
+    <section id="aba-visao-geral" class="conteudo-aba visao-geral" tabindex="-1" *ngIf="abaAtiva === 'visao-geral' && !carregandoAlunos">
+      <div class="indicadores-professor" *ngIf="alunosCarregados">
+        <article><small>Alunos</small><strong>{{ alunos.length }}</strong></article>
+        <article><small>Aulas registradas</small><strong>{{ aulas.length }}</strong></article>
+        <article><small>Avaliações</small><strong>{{ avaliacoes.length }}</strong></article>
+        <article><small>Materiais PDF</small><strong>{{ arquivos.length }}</strong></article>
+      </div>
+      <div class="acoes-rapidas" *ngIf="alunosCarregados">
+        <div><h3>Próximas ações</h3><p>Acesse diretamente a ferramenta de que precisa.</p></div>
+        <button type="button" *ngIf="!diarioBloqueado" (click)="abrirFormularioAula()">+ Registrar nova aula</button>
+        <button type="button" class="secundario" (click)="abrirAba('aulas')">Realizar chamada</button>
+        <button type="button" class="secundario" (click)="abrirAba('notas')">Lançar notas</button>
+        <button type="button" class="secundario" (click)="abrirAba('materiais')">Enviar material em PDF</button>
+      </div>
+    </section>
+
     <div class="vazio estado-carregando" *ngIf="carregandoAlunos" role="status" aria-live="polite">
       <span class="spinner" aria-hidden="true"></span>
-      <h2>Carregando alunos</h2>
-      <p>Buscando matrículas ativas desta oferta.</p>
+      <h2>Carregando ambiente da disciplina</h2>
+      <p>Buscando alunos, aulas, avaliações, notas, frequência e materiais.</p>
     </div>
 
-    <div class="vazio" *ngIf="!carregandoAlunos && alunosCarregados && !alunos.length">
+    <section id="aba-alunos" class="conteudo-aba" tabindex="-1" *ngIf="abaAtiva === 'alunos' && !carregandoAlunos">
+    <div class="vazio" *ngIf="alunosCarregados && !alunos.length">
       <h2>Nenhum aluno matriculado</h2>
       <p>Esta oferta ainda não possui alunos com matrícula ativa.</p>
     </div>
 
-    <div class="tabela-responsiva" *ngIf="!carregandoAlunos && alunos.length">
-      <table>
+    <div class="tabela-responsiva" *ngIf="alunos.length">
+      <table class="tabela-alunos tabela-cartoes">
         <thead>
           <tr>
             <th>Aluno</th>
@@ -89,23 +123,25 @@
         </thead>
         <tbody>
           <tr *ngFor="let matricula of alunos">
-            <td><strong>{{ matricula.aluno?.nome || 'Aluno sem nome' }}</strong></td>
-            <td>{{ matricula.aluno?.email || '-' }}</td>
-            <td>{{ matricula.status === 'ATIVA' || matricula.status === 'MATRICULADO' ? 'Ativa' : matricula.status }}</td>
+            <td data-label="Aluno"><strong>{{ matricula.aluno?.nome || 'Aluno sem nome' }}</strong></td>
+            <td data-label="E-mail">{{ matricula.aluno?.email || '-' }}</td>
+            <td data-label="Situação">{{ matricula.status === 'ATIVA' || matricula.status === 'MATRICULADO' ? 'Ativa' : matricula.status }}</td>
           </tr>
         </tbody>
       </table>
     </div>
+    </section>
 
-    <section class="bloco-professor avaliacoes-disciplina">
+    <section id="aba-avaliacoes" class="bloco-professor avaliacoes-disciplina conteudo-aba" tabindex="-1" *ngIf="abaAtiva === 'avaliacoes'">
       <div class="titulo-bloco">
         <div>
           <h2>Avaliações da oferta</h2>
           <p>Defina as avaliações, notas máximas e pesos da oferta selecionada.</p>
         </div>
+        <button type="button" *ngIf="!diarioBloqueado && !formularioAvaliacaoAberto" (click)="abrirFormularioAvaliacao()">+ Nova avaliação</button>
       </div>
 
-      <div class="formulario-avaliacao" *ngIf="!diarioBloqueado">
+      <div id="formulario-avaliacao" class="formulario-avaliacao painel-formulario" tabindex="-1" *ngIf="!diarioBloqueado && formularioAvaliacaoAberto">
         <label>
           Nome
           <input type="text" name="nomeAvaliacao" [(ngModel)]="novaAvaliacao.nome" placeholder="Ex.: Avaliação 1">
@@ -131,7 +167,7 @@
           <textarea name="descricaoAvaliacao" [(ngModel)]="novaAvaliacao.descricao"></textarea>
         </label>
         <div class="acoes-form">
-          <button type="button" class="secundario" *ngIf="novaAvaliacao.id" (click)="cancelarEdicaoAvaliacao()">Cancelar</button>
+          <button type="button" class="secundario" (click)="cancelarEdicaoAvaliacao()">Cancelar</button>
           <button type="button" (click)="salvarAvaliacao()" [disabled]="salvandoAvaliacao">
             {{ salvandoAvaliacao ? 'Salvando...' : (novaAvaliacao.id ? 'Atualizar avaliação' : 'Criar avaliação') }}
           </button>
@@ -144,7 +180,7 @@
       </div>
 
       <div class="tabela-responsiva" *ngIf="avaliacoes.length">
-        <table class="tabela-avaliacoes">
+        <table class="tabela-avaliacoes tabela-cartoes">
           <thead>
             <tr><th>Ordem</th><th>Nome</th><th>Data</th><th>Nota máxima</th><th>Peso</th><th>PDFs</th><th>Ações</th></tr>
           </thead>
@@ -167,7 +203,7 @@
       </div>
     </section>
 
-    <section class="bloco-professor" *ngIf="avaliacaoSelecionada">
+    <section id="painel-notas" class="bloco-professor conteudo-aba" tabindex="-1" *ngIf="abaAtiva === 'notas' && avaliacaoSelecionada">
       <div class="titulo-bloco">
         <div>
           <h2>Notas - {{ avaliacaoSelecionada.nome }}</h2>
@@ -176,13 +212,13 @@
       </div>
       <div class="vazio estado-carregando" *ngIf="carregandoNotas" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><h2>Carregando notas</h2></div>
       <div class="tabela-responsiva" *ngIf="!carregandoNotas && notasAvaliacao.length">
-        <table class="tabela-notas">
+        <table class="tabela-notas tabela-cartoes">
           <thead><tr><th>Aluno</th><th>Nota</th><th>Situação</th><th>Observação</th></tr></thead>
           <tbody>
             <tr *ngFor="let item of notasAvaliacao">
               <td><strong>{{ item.aluno?.nome }}</strong><span>{{ item.aluno?.email }}</span></td>
               <td><input type="number" [(ngModel)]="item.nota" [name]="'nota-' + item.matriculaId" min="0" [max]="avaliacaoSelecionada.notaMaxima" step="0.01" [disabled]="diarioBloqueado"></td>
-              <td>{{ item.salva ? 'Lancada' : 'Pendente' }}</td>
+              <td>{{ item.salva ? 'Lançada' : 'Pendente' }}</td>
               <td><input type="text" [(ngModel)]="item.observacao" [name]="'obs-nota-' + item.matriculaId" placeholder="Opcional" [disabled]="diarioBloqueado"></td>
             </tr>
           </tbody>
@@ -195,15 +231,16 @@
       </div>
     </section>
 
-    <section class="bloco-professor" *ngIf="alunosCarregados && resultados.length">
+    <section id="aba-frequencia" class="bloco-professor conteudo-aba" tabindex="-1" *ngIf="abaAtiva === 'frequencia' && alunosCarregados">
       <div class="titulo-bloco">
         <div>
           <h2>Resumo de frequência</h2>
           <p>Cálculo atualizado pelo backend a cada chamada.</p>
         </div>
       </div>
-      <div class="tabela-responsiva">
-        <table class="tabela-frequencia">
+      <div class="vazio" *ngIf="!resultados.length"><h2>Frequência ainda não disponível</h2><p>O resumo será exibido após o registro das chamadas.</p></div>
+      <div class="tabela-responsiva" *ngIf="resultados.length">
+        <table class="tabela-frequencia tabela-cartoes">
           <thead>
             <tr><th>Aluno</th><th>Aulas</th><th>Presenças</th><th>Faltas</th><th>Justificadas</th><th>Frequência</th><th>Faltas %</th><th>Situação</th></tr>
           </thead>
@@ -229,7 +266,7 @@
       </div>
     </section>
 
-    <section class="bloco-professor" *ngIf="alunosCarregados && !diarioBloqueado">
+    <section id="formulario-aula" class="bloco-professor painel-formulario" tabindex="-1" *ngIf="abaAtiva === 'aulas' && alunosCarregados && !diarioBloqueado && formularioAulaAberto">
       <div class="titulo-bloco">
         <div>
           <h2>{{ aulaEmEdicaoId ? 'Editar aula' : 'Registrar nova aula' }}</h2>
@@ -255,7 +292,7 @@
           <textarea name="observacoesAula" [(ngModel)]="novaAula.observacoes"></textarea>
         </label>
         <div class="acoes-form">
-          <button type="button" class="secundario" *ngIf="aulaEmEdicaoId" (click)="cancelarEdicaoAula()">Cancelar</button>
+          <button type="button" class="secundario" (click)="cancelarEdicaoAula()">Cancelar</button>
           <button type="button" (click)="registrarAula()" [disabled]="salvandoAula || !alunos.length">
             {{ salvandoAula ? 'Salvando...' : (aulaEmEdicaoId ? 'Atualizar aula' : 'Registrar aula') }}
           </button>
@@ -263,12 +300,13 @@
       </div>
     </section>
 
-    <section class="bloco-professor" *ngIf="alunosCarregados">
+    <section id="aba-aulas" class="bloco-professor conteudo-aba" tabindex="-1" *ngIf="abaAtiva === 'aulas' && alunosCarregados && !aulaSelecionada">
       <div class="titulo-bloco">
         <div>
           <h2>Aulas registradas</h2>
           <p>Abra uma aula para preencher ou editar a chamada.</p>
         </div>
+        <button type="button" *ngIf="!diarioBloqueado && !formularioAulaAberto" (click)="abrirFormularioAula()">+ Registrar nova aula</button>
       </div>
 
       <div class="vazio" *ngIf="!aulas.length">
@@ -277,7 +315,7 @@
       </div>
 
       <div class="tabela-responsiva" *ngIf="aulas.length">
-        <table class="tabela-aulas">
+        <table class="tabela-aulas tabela-cartoes">
           <thead>
             <tr>
               <th>Data</th>
@@ -311,7 +349,7 @@
       </div>
     </section>
 
-    <section class="bloco-professor" *ngIf="aulaSelecionada">
+    <section class="bloco-professor conteudo-aba" *ngIf="abaAtiva === 'aulas' && aulaSelecionada">
       <div class="titulo-bloco chamada-cabecalho">
         <div>
           <h2>Chamada de {{ aulaSelecionada.dataAula | date:'dd/MM/yyyy':'UTC' }}</h2>
@@ -373,11 +411,15 @@
       </div>
     </section>
 
-    <section class="bloco-professor" *ngIf="alunosCarregados">
+    <section id="aba-notas" class="bloco-professor conteudo-aba" tabindex="-1" *ngIf="abaAtiva === 'notas' && alunosCarregados">
       <div class="titulo-bloco">
         <div><h2>Notas e médias</h2><p>Média ponderada calculada pelo backend.</p></div>
       </div>
       <div class="vazio" *ngIf="!avaliacoes.length"><h2>Configure as avaliações para visualizar as médias.</h2></div>
+      <div class="seletor-avaliacao-notas" *ngIf="avaliacoes.length">
+        <strong>Selecione uma avaliação para lançar ou editar notas:</strong>
+        <div class="acoes-tabela"><button type="button" class="secundario" *ngFor="let avaliacao of avaliacoes" (click)="abrirNotas(avaliacao)">{{ avaliacao.nome }}</button></div>
+      </div>
       <div class="tabela-responsiva" *ngIf="avaliacoes.length && resultados.length">
         <table class="tabela-resultados">
           <thead>
@@ -395,17 +437,17 @@
       </div>
     </section>
 
-    <section class="bloco-professor" *ngIf="alunosCarregados">
-      <div class="titulo-bloco"><div><h2>Arquivos PDF</h2><p>Anexe materiais da disciplina, aula ou avaliacao.</p></div></div>
+    <section id="aba-materiais" class="bloco-professor conteudo-aba" tabindex="-1" *ngIf="abaAtiva === 'materiais' && alunosCarregados">
+      <div class="titulo-bloco"><div><h2>Materiais PDF</h2><p>Anexe materiais da disciplina, aula ou avaliação.</p></div></div>
       <div class="formulario-arquivo" *ngIf="!diarioBloqueado">
         <label>
-          Titulo
+          Título
           <input type="text" name="tituloArquivo" [(ngModel)]="novoArquivo.titulo">
         </label>
         <label>
-          Vinculo
+          Vínculo
           <select name="tipoVinculo" [(ngModel)]="novoArquivo.tipoVinculo" (ngModelChange)="novoArquivo.referenciaId = undefined">
-            <option value="DISCIPLINA">Disciplina</option><option value="AULA">Aula</option><option value="AVALIACAO">Avaliacao</option>
+            <option value="DISCIPLINA">Disciplina</option><option value="AULA">Aula</option><option value="AVALIACAO">Avaliação</option>
           </select>
         </label>
         <label *ngIf="novoArquivo.tipoVinculo === 'AULA'">
@@ -416,7 +458,7 @@
           </select>
         </label>
         <label *ngIf="novoArquivo.tipoVinculo === 'AVALIACAO'">
-          Avaliacao
+          Avaliação
           <select name="avaliacaoArquivo" [(ngModel)]="novoArquivo.referenciaId"
                   [disabled]="carregandoAvaliacoes || !avaliacoes.length" required>
             <option [ngValue]="undefined">Selecione</option><option *ngFor="let avaliacao of avaliacoes" [ngValue]="avaliacao.id">{{ avaliacao.nome }}</option>
@@ -434,7 +476,8 @@
       <div class="vazio" *ngIf="!arquivos.length"><h2>Nenhum PDF enviado</h2></div>
       <div class="lista-arquivos" *ngIf="arquivos.length">
         <article *ngFor="let arquivo of arquivos">
-          <div><strong>{{ arquivo.titulo }}</strong><span>{{ arquivo.nomeOriginal }} - {{ tipoVinculoTexto(arquivo.tipoVinculo) }}</span></div>
+          <span class="icone-pdf" aria-hidden="true">PDF</span>
+          <div class="arquivo-descricao"><strong>{{ arquivo.titulo }}</strong><span>{{ arquivo.nomeOriginal }}</span><small>{{ tipoVinculoTexto(arquivo.tipoVinculo) }} · {{ referenciaArquivo(arquivo) }}</small></div>
           <div class="acoes-tabela"><button type="button" class="secundario" (click)="abrirPdf(arquivo)">Abrir</button><button type="button" class="perigo-suave" *ngIf="!diarioBloqueado" (click)="removerPdf(arquivo)">Remover</button></div>
         </article>
       </div>
